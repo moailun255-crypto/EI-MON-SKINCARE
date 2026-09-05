@@ -1,0 +1,6 @@
+{
+  "name": "EI MON SKINCARE",
+  "description": "Professional Skincare POS, Inventory Management, Cash Flow & Financial Accounting System in MMK and Myanmar Unicode for Multi-Device & Thermal Printing.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
