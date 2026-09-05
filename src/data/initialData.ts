@@ -17,6 +17,7 @@ export const INITIAL_STORE_PROFILE: StoreProfile = {
   securityPin: '1234',
   pinRequiredForFinance: true,
   activeCashier: 'မအိမွန်',
+  orderDeletePassword: '123456',
 };
 
 export const INITIAL_PRODUCTS: Product[] = [

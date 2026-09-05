@@ -1,13 +1,16 @@
 import React, { useState, useMemo } from 'react';
 import { useStore } from '../../context/StoreContext';
-import { PaymentMethod } from '../../types';
+import { PaymentMethod, Order } from '../../types';
 import { formatMMK, formatDateMy } from '../../utils/format';
 import { PAYMENT_LABELS } from '../../utils/translations';
+import { DeleteOrderModal } from './DeleteOrderModal';
 import {
   ReceiptText,
   Search,
   Printer,
   RotateCcw,
+  Trash2,
+  CheckCircle,
 } from 'lucide-react';
 
 export const TransactionsPage: React.FC = () => {
@@ -23,6 +26,8 @@ export const TransactionsPage: React.FC = () => {
   const [paymentFilter, setPaymentFilter] = useState<PaymentMethod | 'all'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'completed' | 'refunded'>('all');
   const [confirmRefundId, setConfirmRefundId] = useState<string | null>(null);
+  const [deletingOrder, setDeletingOrder] = useState<Order | null>(null);
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   // Filter orders
   const filteredOrders = useMemo(() => {
@@ -317,13 +322,22 @@ export const TransactionsPage: React.FC = () => {
                       {!isRefunded && (
                         <button
                           onClick={() => setConfirmRefundId(order.id)}
-                          className="p-2 rounded-xl bg-stone-100 hover:bg-red-100 hover:text-red-700 text-stone-500 text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer"
-                          title="ငွေပြန်အမ်းမည်"
+                          className="p-2 rounded-xl bg-stone-100 hover:bg-amber-100 hover:text-amber-800 text-stone-500 text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer"
+                          title="ငွေပြန်အမ်းမည် (Refund)"
                         >
                           <RotateCcw className="w-4 h-4" />
                           <span className="hidden sm:inline">ပြန်အမ်း</span>
                         </button>
                       )}
+
+                      <button
+                        onClick={() => setDeletingOrder(order)}
+                        className="p-2 rounded-xl bg-stone-100 hover:bg-red-100 hover:text-red-700 text-stone-500 text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer"
+                        title="မှားယွင်းဖွင့်ထား၍ အမှာစာဖျက်မည် (Delete Order)"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        <span className="hidden sm:inline">ဖျက်မည်</span>
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -332,6 +346,26 @@ export const TransactionsPage: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Toast Notification */}
+      {toastMsg && (
+        <div className="fixed bottom-6 right-6 z-50 bg-stone-900 text-white px-4 py-3 rounded-2xl shadow-xl flex items-center gap-2.5 text-xs font-bold animate-fadeIn border border-stone-700">
+          <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span>{toastMsg}</span>
+        </div>
+      )}
+
+      {/* Delete Order with Password Verification Modal */}
+      {deletingOrder && (
+        <DeleteOrderModal
+          order={deletingOrder}
+          onClose={() => setDeletingOrder(null)}
+          onSuccess={() => {
+            setToastMsg('အမှာစာအား အောင်မြင်စွာ ဖျက်သိမ်းပြီးပါပြီ (လက်ကျန်နှင့် စာရင်းဇယားများ ပြင်ဆင်ပြီး)');
+            setTimeout(() => setToastMsg(null), 3500);
+          }}
+        />
+      )}
 
       {/* Confirm Refund Modal */}
       {confirmRefundId && (

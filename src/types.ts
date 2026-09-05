@@ -118,6 +118,7 @@ export interface StoreProfile {
   securityPin: string;
   pinRequiredForFinance: boolean;
   activeCashier: string;
+  orderDeletePassword?: string;
 }
 
 export type PageTab = 'pos' | 'products' | 'add-product' | 'transactions' | 'finance' | 'security';

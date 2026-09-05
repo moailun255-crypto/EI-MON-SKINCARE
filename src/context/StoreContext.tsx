@@ -72,6 +72,9 @@ interface StoreContextType {
 
   // Order management
   refundOrder: (orderId: string) => void;
+  deleteOrder: (orderId: string) => boolean;
+  verifyDeletePassword: (password: string) => boolean;
+  updateDeletePassword: (oldPassword: string, newPassword: string) => { success: boolean; message: string };
 
   // Settings & Security
   updateStoreProfile: (profile: StoreProfile) => void;
@@ -149,6 +152,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         }
         if (parsed.activeCashier === 'မအိမွန် (Ei Mon)') {
           parsed.activeCashier = 'မအိမွန်';
+        }
+        if (!parsed.orderDeletePassword) {
+          parsed.orderDeletePassword = '123456';
         }
         return parsed;
       }
@@ -475,6 +481,63 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     );
   };
 
+  // Delete erroneous order: automatically restores stock and reduces financial records
+  const deleteOrder = (orderId: string): boolean => {
+    const orderToDelete = orders.find((o) => o.id === orderId);
+    if (!orderToDelete) return false;
+
+    // Restore stock if the order was completed (not yet refunded)
+    if (orderToDelete.status !== 'refunded') {
+      setProducts((prev) =>
+        prev.map((prod) => {
+          const item = orderToDelete.items.find((i) => i.productId === prod.id);
+          if (item) {
+            return {
+              ...prod,
+              stock: prod.stock + item.quantity,
+              updatedAt: new Date().toISOString(),
+            };
+          }
+          return prod;
+        })
+      );
+    }
+
+    // Remove order completely so all financial calculations decrease
+    setOrders((prev) => prev.filter((o) => o.id !== orderId));
+
+    // Clear active receipt modal if it was this order
+    if (activeReceiptOrder?.id === orderId) {
+      setActiveReceiptOrder(null);
+    }
+
+    return true;
+  };
+
+  const verifyDeletePassword = (inputPassword: string): boolean => {
+    const currentPass = storeProfile.orderDeletePassword || '123456';
+    return inputPassword.trim() === currentPass.trim();
+  };
+
+  const updateDeletePassword = (
+    oldPassword: string,
+    newPassword: string
+  ): { success: boolean; message: string } => {
+    const currentPass = storeProfile.orderDeletePassword || '123456';
+    if (oldPassword.trim() !== currentPass.trim()) {
+      return { success: false, message: 'ယခင် လျှို့ဝှက်စကားဝှက် မှားယွင်းနေပါသည်' };
+    }
+    if (!newPassword || newPassword.trim().length < 4) {
+      return { success: false, message: 'စကားဝှက်အသစ်သည် အနည်းဆုံး ၄ လုံး ရှိရပါမည်' };
+    }
+    const updated = {
+      ...storeProfile,
+      orderDeletePassword: newPassword.trim(),
+    };
+    setStoreProfile(updated);
+    return { success: true, message: 'လျှို့ဝှက်စကားဝှက် အသစ် အောင်မြင်စွာ ပြောင်းလဲပြီးပါပြီ' };
+  };
+
   // Store Profile update
   const updateStoreProfile = (newProfile: StoreProfile) => {
     setStoreProfile(newProfile);
@@ -583,6 +646,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         addExpense,
         deleteExpense,
         refundOrder,
+        deleteOrder,
+        verifyDeletePassword,
+        updateDeletePassword,
 
         updateStoreProfile,
         verifyPin,

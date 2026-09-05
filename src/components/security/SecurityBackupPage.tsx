@@ -12,12 +12,17 @@ import {
   AlertTriangle,
   Store,
   Printer,
+  KeyRound,
+  Lock,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 
 export const SecurityBackupPage: React.FC = () => {
   const {
     storeProfile,
     updateStoreProfile,
+    updateDeletePassword,
     exportDatabaseJSON,
     importDatabaseJSON,
     resetToSampleData,
@@ -29,6 +34,45 @@ export const SecurityBackupPage: React.FC = () => {
   const [profileForm, setProfileForm] = useState<StoreProfile>({ ...storeProfile });
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+
+  // Password modification state
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showOldPass, setShowOldPass] = useState(false);
+  const [showNewPass, setShowNewPass] = useState(false);
+  const [passError, setPassError] = useState<string | null>(null);
+  const [passSuccess, setPassSuccess] = useState<string | null>(null);
+
+  const handleUpdatePassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    setPassError(null);
+    setPassSuccess(null);
+
+    if (!oldPassword) {
+      setPassError('ကျေးဇူးပြု၍ ယခင် လျှို့ဝှက်စကားဝှက် ရိုက်ထည့်ပါ (မူလ: 123456)');
+      return;
+    }
+    if (!newPassword || newPassword.length < 4) {
+      setPassError('စကားဝှက် အသစ်သည် အနည်းဆုံး ၄ လုံး ရှိရပါမည်');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPassError('စကားဝှက် အသစ် နှစ်ကြိမ် ရိုက်ထည့်မှု မတူညီပါ');
+      return;
+    }
+
+    const res = updateDeletePassword(oldPassword, newPassword);
+    if (res.success) {
+      setPassSuccess(res.message);
+      setOldPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      showToast(res.message);
+    } else {
+      setPassError(res.message);
+    }
+  };
 
   // Backup Export: triggers browser file download of JSON
   const handleExportJSON = () => {
@@ -256,7 +300,7 @@ export const SecurityBackupPage: React.FC = () => {
         </div>
 
         {/* Right Column (7 cols): Store Profile, Payment Accounts & Thermal Settings */}
-        <div className="lg:col-span-7">
+        <div className="lg:col-span-7 space-y-5">
           <form
             onSubmit={handleSaveProfile}
             className="bg-white p-5 sm:p-6 rounded-3xl border border-stone-200 shadow-xs space-y-4"
@@ -396,6 +440,135 @@ export const SecurityBackupPage: React.FC = () => {
               </button>
             </div>
           </form>
+
+          {/* Order Deletion Manager Password Change Card */}
+          <div className="bg-white p-5 sm:p-6 rounded-3xl border border-stone-200 shadow-xs space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-stone-100">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-amber-50 text-amber-700">
+                  <KeyRound className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-stone-900 text-sm sm:text-base">
+                    အမှာစာဖျက်ရန် လျှို့ဝှက်စကားဝှက်
+                  </h3>
+                  <p className="text-[11px] text-stone-500">
+                    မှားယွင်းဖွင့်ထားသော အမှာစာဖျက်ရန် မန်နေဂျာ စကားဝှက် (မူလ: 123456)
+                  </p>
+                </div>
+              </div>
+
+              <span className="text-[11px] font-mono font-semibold px-2.5 py-1 rounded-full bg-stone-100 text-stone-700 border border-stone-200">
+                Password Protected
+              </span>
+            </div>
+
+            <form onSubmit={handleUpdatePassword} className="space-y-3.5">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {/* Old Password */}
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 mb-1">
+                    ယခင် လျှို့ဝှက်စကားဝှက် *
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showOldPass ? 'text' : 'password'}
+                      required
+                      value={oldPassword}
+                      onChange={(e) => {
+                        setOldPassword(e.target.value);
+                        setPassError(null);
+                        setPassSuccess(null);
+                      }}
+                      placeholder="မူလ: 123456"
+                      className="w-full text-xs sm:text-sm px-3 py-2 pr-8 rounded-xl border border-stone-200 font-mono focus:border-rose-500 focus:ring-1 focus:ring-rose-200 outline-hidden"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowOldPass(!showOldPass)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-stone-400 hover:text-stone-600 cursor-pointer"
+                    >
+                      {showOldPass ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* New Password */}
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 mb-1">
+                    စကားဝှက် အသစ် *
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showNewPass ? 'text' : 'password'}
+                      required
+                      value={newPassword}
+                      onChange={(e) => {
+                        setNewPassword(e.target.value);
+                        setPassError(null);
+                        setPassSuccess(null);
+                      }}
+                      placeholder="စကားဝှက်အသစ်..."
+                      className="w-full text-xs sm:text-sm px-3 py-2 pr-8 rounded-xl border border-stone-200 font-mono focus:border-rose-500 focus:ring-1 focus:ring-rose-200 outline-hidden"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPass(!showNewPass)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-stone-400 hover:text-stone-600 cursor-pointer"
+                    >
+                      {showNewPass ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Confirm New Password */}
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 mb-1">
+                    စကားဝှက် အတည်ပြုပါ *
+                  </label>
+                  <input
+                    type={showNewPass ? 'text' : 'password'}
+                    required
+                    value={confirmPassword}
+                    onChange={(e) => {
+                      setConfirmPassword(e.target.value);
+                      setPassError(null);
+                      setPassSuccess(null);
+                    }}
+                    placeholder="ထပ်မံရိုက်ထည့်ပါ..."
+                    className="w-full text-xs sm:text-sm px-3 py-2 rounded-xl border border-stone-200 font-mono focus:border-rose-500 focus:ring-1 focus:ring-rose-200 outline-hidden"
+                  />
+                </div>
+              </div>
+
+              {passError && (
+                <p className="text-xs font-bold text-red-600 flex items-center gap-1 animate-fadeIn">
+                  <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                  <span>{passError}</span>
+                </p>
+              )}
+
+              {passSuccess && (
+                <p className="text-xs font-bold text-emerald-600 flex items-center gap-1 animate-fadeIn">
+                  <CheckCircle className="w-3.5 h-3.5 shrink-0" />
+                  <span>{passSuccess}</span>
+                </p>
+              )}
+
+              <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <span className="text-[11px] text-stone-400">
+                  💡 စကားဝှက် အသစ် မပြောင်းမီ ယခင်စကားဝှက် မှန်ကန်မှသာ အသစ်သတ်မှတ်နိုင်ပါမည်။
+                </span>
+                <button
+                  type="submit"
+                  className="py-2.5 px-5 rounded-xl bg-stone-900 hover:bg-black text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+                >
+                  <KeyRound className="w-3.5 h-3.5 text-amber-400" />
+                  <span>စကားဝှက် အသစ် ပြောင်းမည်</span>
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
 

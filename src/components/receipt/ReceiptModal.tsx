@@ -3,11 +3,13 @@ import html2canvas from 'html2canvas';
 import { useStore } from '../../context/StoreContext';
 import { Order } from '../../types';
 import { formatMMK, formatDateMy } from '../../utils/format';
+import { DeleteOrderModal } from '../transactions/DeleteOrderModal';
 import {
   Printer,
   X,
   CheckCircle,
   Download,
+  Trash2,
 } from 'lucide-react';
 
 interface ReceiptModalProps {
@@ -18,6 +20,7 @@ interface ReceiptModalProps {
 export const ReceiptModal: React.FC<ReceiptModalProps> = ({ order, onClose }) => {
   const { storeProfile, useMyanmarDigits } = useStore();
   const [isSavingImage, setIsSavingImage] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   if (!order) return null;
 
@@ -306,6 +309,14 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ order, onClose }) =>
             </button>
 
             <button
+              onClick={() => setShowDeleteModal(true)}
+              className="p-3 rounded-xl border border-red-200 hover:bg-red-50 text-red-600 text-xs font-bold flex items-center justify-center transition-colors cursor-pointer"
+              title="မှားယွင်းဖွင့်ထားသော အမှာစာအား ဖျက်သိမ်းမည်"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+
+            <button
               onClick={onClose}
               className="py-3 px-4 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs transition-colors cursor-pointer"
             >
@@ -314,6 +325,18 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ order, onClose }) =>
           </div>
         </div>
       </div>
+
+      {/* Delete Order with Password Verification Modal */}
+      {showDeleteModal && (
+        <DeleteOrderModal
+          order={order}
+          onClose={() => setShowDeleteModal(false)}
+          onSuccess={() => {
+            setShowDeleteModal(false);
+            onClose();
+          }}
+        />
+      )}
     </div>
   );
 };
