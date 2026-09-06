@@ -4,6 +4,7 @@ import { PaymentMethod, Order } from '../../types';
 import { formatMMK, formatDateMy } from '../../utils/format';
 import { PAYMENT_LABELS } from '../../utils/translations';
 import { DeleteOrderModal } from './DeleteOrderModal';
+import { ClearAllOrdersModal } from './ClearAllOrdersModal';
 import {
   ReceiptText,
   Search,
@@ -27,6 +28,7 @@ export const TransactionsPage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<'all' | 'completed' | 'refunded'>('all');
   const [confirmRefundId, setConfirmRefundId] = useState<string | null>(null);
   const [deletingOrder, setDeletingOrder] = useState<Order | null>(null);
+  const [showClearAllModal, setShowClearAllModal] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   // Filter orders
@@ -103,28 +105,42 @@ export const TransactionsPage: React.FC = () => {
           </p>
         </div>
 
-        {/* Date Filter Tabs */}
-        <div className="flex items-center bg-white p-1 rounded-xl border border-stone-200 shadow-xs text-xs">
-          {(
-            [
-              { id: 'today', my: 'ယနေ့' },
-              { id: 'week', my: '၇ ရက်' },
-              { id: 'month', my: '၁ လ' },
-              { id: 'all', my: 'အားလုံး' },
-            ] as const
-          ).map((tab) => (
+        {/* Date Filter Tabs and Clear All Button */}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center bg-white p-1 rounded-xl border border-stone-200 shadow-xs text-xs">
+            {(
+              [
+                { id: 'today', my: 'ယနေ့' },
+                { id: 'week', my: '၇ ရက်' },
+                { id: 'month', my: '၁ လ' },
+                { id: 'all', my: 'အားလုံး' },
+              ] as const
+            ).map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setDateFilter(tab.id)}
+                className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
+                  dateFilter === tab.id
+                    ? 'bg-rose-600 text-white shadow-xs'
+                    : 'text-stone-600 hover:text-stone-900'
+                }`}
+              >
+                {tab.my}
+              </button>
+            ))}
+          </div>
+
+          {/* Delete all transactions flow button */}
+          {orders.length > 0 && (
             <button
-              key={tab.id}
-              onClick={() => setDateFilter(tab.id)}
-              className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
-                dateFilter === tab.id
-                  ? 'bg-rose-600 text-white shadow-xs'
-                  : 'text-stone-600 hover:text-stone-900'
-              }`}
+              onClick={() => setShowClearAllModal(true)}
+              className="px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+              title="အရောင်းမှတ်တမ်းများ အားလုံး ရှင်းလင်းမည်"
             >
-              {tab.my}
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>မှတ်တမ်းအားလုံးရှင်းမည်</span>
             </button>
-          ))}
+          )}
         </div>
       </div>
 
@@ -399,6 +415,11 @@ export const TransactionsPage: React.FC = () => {
           </div>
         </div>
       )}
+      {/* Clear All Orders with Password Verification Modal */}
+      <ClearAllOrdersModal
+        isOpen={showClearAllModal}
+        onClose={() => setShowClearAllModal(false)}
+      />
     </div>
   );
 };

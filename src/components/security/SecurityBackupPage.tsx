@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { StoreProfile } from '../../types';
+import { SupabaseSyncCard } from './SupabaseSyncCard';
 import {
   ShieldCheck,
   Download,
@@ -50,7 +51,7 @@ export const SecurityBackupPage: React.FC = () => {
     setPassSuccess(null);
 
     if (!oldPassword) {
-      setPassError('ကျေးဇူးပြု၍ ယခင် လျှို့ဝှက်စကားဝှက် ရိုက်ထည့်ပါ (မူလ: 123456)');
+      setPassError('ကျေးဇူးပြု၍ ယခင် လျှို့ဝှက်စကားဝှက် ရိုက်ထည့်ပါ');
       return;
     }
     if (!newPassword || newPassword.length < 4) {
@@ -191,6 +192,9 @@ export const SecurityBackupPage: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Supabase Cloud & Realtime Multi-Device Sync Card */}
+      <SupabaseSyncCard />
 
       {/* Grid: Left = Backup & Data Safety, Right = Store Profile & Settings */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
@@ -453,7 +457,7 @@ export const SecurityBackupPage: React.FC = () => {
                     အမှာစာဖျက်ရန် လျှို့ဝှက်စကားဝှက်
                   </h3>
                   <p className="text-[11px] text-stone-500">
-                    မှားယွင်းဖွင့်ထားသော အမှာစာဖျက်ရန် မန်နေဂျာ စကားဝှက် (မူလ: 123456)
+                    မှားယွင်းဖွင့်ထားသော အမှာစာဖျက်ရန် မန်နေဂျာ လျှို့ဝှက်စကားဝှက် ပြောင်းလဲသတ်မှတ်ခြင်း
                   </p>
                 </div>
               </div>
@@ -480,7 +484,7 @@ export const SecurityBackupPage: React.FC = () => {
                         setPassError(null);
                         setPassSuccess(null);
                       }}
-                      placeholder="မူလ: 123456"
+                      placeholder="လက်ရှိ စကားဝှက် ရိုက်ထည့်ပါ..."
                       className="w-full text-xs sm:text-sm px-3 py-2 pr-8 rounded-xl border border-stone-200 font-mono focus:border-rose-500 focus:ring-1 focus:ring-rose-200 outline-hidden"
                     />
                     <button

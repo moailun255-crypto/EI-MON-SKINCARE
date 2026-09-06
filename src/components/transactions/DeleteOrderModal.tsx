@@ -136,9 +136,6 @@ export const DeleteOrderModal: React.FC<DeleteOrderModalProps> = ({
                 <Lock className="w-3.5 h-3.5 text-rose-600" />
                 <span>မန်နေဂျာ လျှို့ဝှက်စကားဝှက်</span>
               </label>
-              <span className="text-[10px] text-stone-400 font-mono">
-                (မူလစကားဝှက်: 123456)
-              </span>
             </div>
 
             <div className="relative">

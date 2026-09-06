@@ -17,6 +17,24 @@ import {
 } from '../data/initialData';
 import { generateReceiptNumber } from '../utils/format';
 import { LanguageMode } from '../utils/translations';
+import {
+  getSupabase,
+  getStoredSupabaseConfig,
+  saveSupabaseConfig as saveSupabaseConfigStorage,
+  clearSupabaseConfig as clearSupabaseConfigStorage,
+  testSupabaseConnection,
+  fetchCloudData,
+  pushProductsToCloud,
+  pushSingleProductToCloud,
+  deleteProductFromCloud,
+  pushOrderToCloud,
+  deleteOrderFromCloud,
+  clearAllOrdersFromCloud,
+  pushExpenseToCloud,
+  deleteExpenseFromCloud,
+  pushProfileToCloud,
+  SupabaseConfig,
+} from '../lib/supabase';
 
 interface StoreContextType {
   products: Product[];
@@ -31,6 +49,15 @@ interface StoreContextType {
   activeReceiptOrder: Order | null;
   isPinLocked: boolean;
   pinAuthError: string | null;
+
+  // Supabase Cloud Sync
+  isCloudConnected: boolean;
+  cloudSyncStatus: 'idle' | 'syncing' | 'synced' | 'error';
+  cloudError: string | null;
+  supabaseConfig: SupabaseConfig;
+  updateSupabaseConfig: (config: SupabaseConfig) => Promise<{ success: boolean; message: string }>;
+  disconnectSupabase: () => void;
+  syncNowWithCloud: () => Promise<void>;
 
   // Navigation
   setActiveTab: (tab: PageTab) => void;
@@ -73,6 +100,7 @@ interface StoreContextType {
   // Order management
   refundOrder: (orderId: string) => void;
   deleteOrder: (orderId: string) => boolean;
+  clearAllOrders: (password: string) => { success: boolean; message: string };
   verifyDeletePassword: (password: string) => boolean;
   updateDeletePassword: (oldPassword: string, newPassword: string) => { success: boolean; message: string };
 
@@ -90,7 +118,7 @@ const StoreContext = createContext<StoreContextType | undefined>(undefined);
 
 const STORAGE_KEYS = {
   PRODUCTS: 'ei_mon_products_v1',
-  ORDERS: 'ei_mon_orders_v1',
+  ORDERS: 'ei_mon_orders_v2', // bumped to v2 so old demo transactions are permanently discarded
   EXPENSES: 'ei_mon_expenses_v1',
   PROFILE: 'ei_mon_profile_v1',
   LANG: 'ei_mon_lang_mode',
@@ -108,27 +136,23 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   });
 
+  // Orders initialized empty to clear all demo dummy transactions cleanly
   const [orders, setOrders] = useState<Order[]>(() => {
     try {
+      localStorage.removeItem('ei_mon_orders_v1'); // wipe demo legacy orders
       const saved = localStorage.getItem(STORAGE_KEYS.ORDERS);
       if (saved) {
         const parsed: Order[] = JSON.parse(saved);
         if (Array.isArray(parsed)) {
-          const sanitized = parsed.map((o) => ({
+          return parsed.map((o) => ({
             ...o,
             paymentMethod: (o.paymentMethod === 'cash' ? 'cash' : 'kpay') as PaymentMethod,
           }));
-          const existingIds = new Set(sanitized.map((o) => o.id));
-          const missing = INITIAL_ORDERS.filter((o) => !existingIds.has(o.id));
-          if (missing.length > 0) {
-            return [...sanitized, ...missing];
-          }
-          return sanitized;
         }
       }
-      return INITIAL_ORDERS;
+      return [];
     } catch {
-      return INITIAL_ORDERS;
+      return [];
     }
   });
 
@@ -174,6 +198,115 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [isPinLocked, setIsPinLocked] = useState<boolean>(false);
   const [pinAuthError, setPinAuthError] = useState<string | null>(null);
 
+  // Supabase Cloud State
+  const [supabaseConfig, setSupabaseConfigState] = useState<SupabaseConfig>(getStoredSupabaseConfig);
+  const [isCloudConnected, setIsCloudConnected] = useState<boolean>(false);
+  const [cloudSyncStatus, setCloudSyncStatus] = useState<'idle' | 'syncing' | 'synced' | 'error'>('idle');
+  const [cloudError, setCloudError] = useState<string | null>(null);
+
+  // Initial cloud sync and realtime multi-device sync
+  useEffect(() => {
+    let isMounted = true;
+    const client = getSupabase();
+    if (!client || !supabaseConfig.url || !supabaseConfig.anonKey) {
+      setIsCloudConnected(false);
+      setCloudSyncStatus('idle');
+      return;
+    }
+
+    const initCloud = async () => {
+      setCloudSyncStatus('syncing');
+      setCloudError(null);
+      try {
+        const testRes = await testSupabaseConnection(supabaseConfig.url, supabaseConfig.anonKey);
+        if (!testRes.success) {
+          if (isMounted) {
+            setIsCloudConnected(false);
+            setCloudSyncStatus('error');
+            setCloudError(testRes.message);
+          }
+          return;
+        }
+
+        if (isMounted) {
+          setIsCloudConnected(true);
+        }
+
+        const cloudData = await fetchCloudData();
+        if (isMounted) {
+          if (cloudData.products && cloudData.products.length > 0) {
+            setProducts(cloudData.products);
+          } else if (products.length > 0) {
+            pushProductsToCloud(products);
+          }
+
+          if (cloudData.orders) {
+            setOrders(cloudData.orders);
+          }
+
+          if (cloudData.expenses && cloudData.expenses.length > 0) {
+            setExpenses(cloudData.expenses);
+          }
+
+          if (cloudData.storeProfile) {
+            setStoreProfile(cloudData.storeProfile);
+          }
+
+          setCloudSyncStatus('synced');
+        }
+      } catch (err: any) {
+        if (isMounted) {
+          setCloudSyncStatus('error');
+          setCloudError(err.message || 'Sync error');
+        }
+      }
+    };
+
+    initCloud();
+
+    // Supabase Realtime multi-device sync
+    const channel = client
+      .channel('pos_multidevice_realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'orders' },
+        async () => {
+          const fresh = await fetchCloudData();
+          if (fresh.orders && isMounted) setOrders(fresh.orders);
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'products' },
+        async () => {
+          const fresh = await fetchCloudData();
+          if (fresh.products && fresh.products.length > 0 && isMounted) setProducts(fresh.products);
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'expenses' },
+        async () => {
+          const fresh = await fetchCloudData();
+          if (fresh.expenses && isMounted) setExpenses(fresh.expenses);
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'store_profile' },
+        async () => {
+          const fresh = await fetchCloudData();
+          if (fresh.storeProfile && isMounted) setStoreProfile(fresh.storeProfile);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      isMounted = false;
+      client.removeChannel(channel);
+    };
+  }, [supabaseConfig]);
+
   // Sync to local storage
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(products));
@@ -198,6 +331,56 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.DIGITS, String(useMyanmarDigits));
   }, [useMyanmarDigits]);
+
+  // Supabase configuration actions
+  const updateSupabaseConfig = async (config: SupabaseConfig): Promise<{ success: boolean; message: string }> => {
+    setCloudSyncStatus('syncing');
+    setCloudError(null);
+    const test = await testSupabaseConnection(config.url, config.anonKey);
+    if (!test.success) {
+      setCloudSyncStatus('error');
+      setCloudError(test.message);
+      return test;
+    }
+
+    saveSupabaseConfigStorage(config);
+    setSupabaseConfigState(config);
+    setIsCloudConnected(true);
+
+    // Initial push existing local data to cloud so other devices immediately have it
+    await Promise.all([
+      pushProductsToCloud(products),
+      pushProfileToCloud(storeProfile),
+      ...orders.map((o) => pushOrderToCloud(o)),
+      ...expenses.map((e) => pushExpenseToCloud(e)),
+    ]);
+
+    setCloudSyncStatus('synced');
+    return { success: true, message: 'Supabase Cloud Database သို့ အောင်မြင်စွာ ချိတ်ဆက်ပြီးပါပြီ!' };
+  };
+
+  const disconnectSupabase = () => {
+    clearSupabaseConfigStorage();
+    setSupabaseConfigState({ url: '', anonKey: '' });
+    setIsCloudConnected(false);
+    setCloudSyncStatus('idle');
+    setCloudError(null);
+  };
+
+  const syncNowWithCloud = async () => {
+    if (!isCloudConnected) return;
+    setCloudSyncStatus('syncing');
+    try {
+      const data = await fetchCloudData();
+      if (data.products && data.products.length > 0) setProducts(data.products);
+      if (data.orders) setOrders(data.orders);
+      if (data.expenses) setExpenses(data.expenses);
+      if (data.storeProfile) setStoreProfile(data.storeProfile);
+      setCloudSyncStatus('synced');
+    } catch {
+      setCloudSyncStatus('error');
+    }
+  };
 
   // Cart operations
   const addToCart = (product: Product, quantity: number = 1) => {
@@ -368,22 +551,25 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
 
     // Deduct stock from products
-    setProducts((prev) =>
-      prev.map((prod) => {
-        const cartItem = cart.find((ci) => ci.product.id === prod.id);
-        if (cartItem) {
-          return {
-            ...prod,
-            stock: Math.max(0, prod.stock - cartItem.quantity),
-            updatedAt: new Date().toISOString(),
-          };
-        }
-        return prod;
-      })
-    );
+    const updatedProducts = products.map((prod) => {
+      const cartItem = cart.find((ci) => ci.product.id === prod.id);
+      if (cartItem) {
+        return {
+          ...prod,
+          stock: Math.max(0, prod.stock - cartItem.quantity),
+          updatedAt: new Date().toISOString(),
+        };
+      }
+      return prod;
+    });
+    setProducts(updatedProducts);
 
     // Save order
     setOrders((prev) => [newOrder, ...prev]);
+
+    // Push to Supabase Cloud if connected
+    pushOrderToCloud(newOrder);
+    pushProductsToCloud(updatedProducts);
 
     // Clear cart and show active receipt
     clearCart();
@@ -401,6 +587,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       updatedAt: new Date().toISOString(),
     };
     setProducts((prev) => [newProduct, ...prev]);
+    pushSingleProductToCloud(newProduct);
   };
 
   const updateProduct = (updated: Product) => {
@@ -414,25 +601,33 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           : p
       )
     );
+    pushSingleProductToCloud(updated);
   };
 
   const deleteProduct = (productId: string) => {
     setProducts((prev) => prev.filter((p) => p.id !== productId));
     removeFromCart(productId);
+    deleteProductFromCloud(productId);
   };
 
   const adjustStock = (productId: string, delta: number) => {
+    let updatedProd: Product | undefined;
     setProducts((prev) =>
-      prev.map((p) =>
-        p.id === productId
-          ? {
-              ...p,
-              stock: Math.max(0, p.stock + delta),
-              updatedAt: new Date().toISOString(),
-            }
-          : p
-      )
+      prev.map((p) => {
+        if (p.id === productId) {
+          updatedProd = {
+            ...p,
+            stock: Math.max(0, p.stock + delta),
+            updatedAt: new Date().toISOString(),
+          };
+          return updatedProd;
+        }
+        return p;
+      })
     );
+    if (updatedProd) {
+      pushSingleProductToCloud(updatedProd);
+    }
   };
 
   // Expense management
@@ -442,10 +637,12 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       id: `exp-${Date.now()}`,
     };
     setExpenses((prev) => [newExp, ...prev]);
+    pushExpenseToCloud(newExp);
   };
 
   const deleteExpense = (id: string) => {
     setExpenses((prev) => prev.filter((e) => e.id !== id));
+    deleteExpenseFromCloud(id);
   };
 
   // Refund order
@@ -454,31 +651,34 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (!orderToRefund || orderToRefund.status === 'refunded') return;
 
     // Restore stock
-    setProducts((prev) =>
-      prev.map((prod) => {
-        const item = orderToRefund.items.find((i) => i.productId === prod.id);
-        if (item) {
-          return {
-            ...prod,
-            stock: prod.stock + item.quantity,
-            updatedAt: new Date().toISOString(),
-          };
-        }
-        return prod;
-      })
-    );
+    const restoredProducts = products.map((prod) => {
+      const item = orderToRefund.items.find((i) => i.productId === prod.id);
+      if (item) {
+        return {
+          ...prod,
+          stock: prod.stock + item.quantity,
+          updatedAt: new Date().toISOString(),
+        };
+      }
+      return prod;
+    });
+    setProducts(restoredProducts);
+    pushProductsToCloud(restoredProducts);
 
     // Update order status
-    setOrders((prev) =>
-      prev.map((o) =>
-        o.id === orderId
-          ? {
-              ...o,
-              status: 'refunded',
-            }
-          : o
-      )
+    const updatedOrders = orders.map((o) =>
+      o.id === orderId
+        ? {
+            ...o,
+            status: 'refunded' as const,
+          }
+        : o
     );
+    setOrders(updatedOrders);
+    const updatedOrder = updatedOrders.find((o) => o.id === orderId);
+    if (updatedOrder) {
+      pushOrderToCloud(updatedOrder);
+    }
   };
 
   // Delete erroneous order: automatically restores stock and reduces financial records
@@ -487,24 +687,26 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (!orderToDelete) return false;
 
     // Restore stock if the order was completed (not yet refunded)
+    let updatedProducts = products;
     if (orderToDelete.status !== 'refunded') {
-      setProducts((prev) =>
-        prev.map((prod) => {
-          const item = orderToDelete.items.find((i) => i.productId === prod.id);
-          if (item) {
-            return {
-              ...prod,
-              stock: prod.stock + item.quantity,
-              updatedAt: new Date().toISOString(),
-            };
-          }
-          return prod;
-        })
-      );
+      updatedProducts = products.map((prod) => {
+        const item = orderToDelete.items.find((i) => i.productId === prod.id);
+        if (item) {
+          return {
+            ...prod,
+            stock: prod.stock + item.quantity,
+            updatedAt: new Date().toISOString(),
+          };
+        }
+        return prod;
+      });
+      setProducts(updatedProducts);
+      pushProductsToCloud(updatedProducts);
     }
 
     // Remove order completely so all financial calculations decrease
     setOrders((prev) => prev.filter((o) => o.id !== orderId));
+    deleteOrderFromCloud(orderId);
 
     // Clear active receipt modal if it was this order
     if (activeReceiptOrder?.id === orderId) {
@@ -512,6 +714,17 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
 
     return true;
+  };
+
+  // Wipe all transaction flow / orders permanently
+  const clearAllOrders = (inputPassword: string): { success: boolean; message: string } => {
+    if (!verifyDeletePassword(inputPassword)) {
+      return { success: false, message: 'လျှို့ဝှက်စကားဝှက် မှားယွင်းနေပါသည် (Incorrect Password)' };
+    }
+    setOrders([]);
+    localStorage.removeItem(STORAGE_KEYS.ORDERS);
+    clearAllOrdersFromCloud();
+    return { success: true, message: 'အရောင်းမှတ်တမ်းများ အားလုံးကို အောင်မြင်စွာ ရှင်းလင်းပြီးပါပြီ (All orders cleared)' };
   };
 
   const verifyDeletePassword = (inputPassword: string): boolean => {
@@ -535,12 +748,14 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       orderDeletePassword: newPassword.trim(),
     };
     setStoreProfile(updated);
+    pushProfileToCloud(updated);
     return { success: true, message: 'လျှို့ဝှက်စကားဝှက် အသစ် အောင်မြင်စွာ ပြောင်းလဲပြီးပါပြီ' };
   };
 
   // Store Profile update
   const updateStoreProfile = (newProfile: StoreProfile) => {
     setStoreProfile(newProfile);
+    pushProfileToCloud(newProfile);
   };
 
   // PIN security
@@ -621,6 +836,15 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         isPinLocked,
         pinAuthError,
 
+        // Cloud sync
+        isCloudConnected,
+        cloudSyncStatus,
+        cloudError,
+        supabaseConfig,
+        updateSupabaseConfig,
+        disconnectSupabase,
+        syncNowWithCloud,
+
         setActiveTab,
         setLanguageMode,
         setUseMyanmarDigits,
@@ -647,6 +871,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         deleteExpense,
         refundOrder,
         deleteOrder,
+        clearAllOrders,
         verifyDeletePassword,
         updateDeletePassword,
 
