@@ -8,13 +8,11 @@ import {
   Upload,
   FileSpreadsheet,
   Save,
-  RotateCcw,
   CheckCircle,
   AlertTriangle,
   Store,
   Printer,
   KeyRound,
-  Lock,
   Eye,
   EyeOff,
 } from 'lucide-react';
@@ -26,7 +24,6 @@ export const SecurityBackupPage: React.FC = () => {
     updateDeletePassword,
     exportDatabaseJSON,
     importDatabaseJSON,
-    resetToSampleData,
     products,
     orders,
   } = useStore();
@@ -34,7 +31,6 @@ export const SecurityBackupPage: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [profileForm, setProfileForm] = useState<StoreProfile>({ ...storeProfile });
   const [toastMsg, setToastMsg] = useState<string | null>(null);
-  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   // Password modification state
   const [oldPassword, setOldPassword] = useState('');
@@ -283,23 +279,6 @@ export const SecurityBackupPage: React.FC = () => {
                 <Download className="w-3.5 h-3.5 text-stone-400" />
               </button>
             </div>
-          </div>
-
-          {/* Reset Demo Data */}
-          <div className="bg-red-50/50 p-4 rounded-2xl border border-red-200 space-y-2">
-            <h4 className="text-xs font-bold text-red-900 flex items-center gap-1.5">
-              <AlertTriangle className="w-4 h-4 text-red-600" />
-              <span>စနစ်စတင်အခြေအနေသို့ ပြန်ထားမည်</span>
-            </h4>
-            <p className="text-[11px] text-red-700">
-              စမ်းသပ်ဒေတာများကို မူလအခြေအနေအတိုင်း ပြန်လည်သတ်မှတ်လိုပါက အသုံးပြုပါ။
-            </p>
-            <button
-              onClick={() => setShowResetConfirm(true)}
-              className="py-1.5 px-3 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition-colors cursor-pointer"
-            >
-              ပြန်လည်သတ်မှတ်မည်
-            </button>
           </div>
         </div>
 
@@ -575,43 +554,6 @@ export const SecurityBackupPage: React.FC = () => {
           </div>
         </div>
       </div>
-
-      {/* Reset Confirmation Modal */}
-      {showResetConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl max-w-sm w-full p-5 shadow-2xl border border-stone-200 text-center space-y-4">
-            <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 mx-auto flex items-center justify-center">
-              <RotateCcw className="w-6 h-6" />
-            </div>
-            <div>
-              <h3 className="font-bold text-stone-900 text-base">
-                မူလ စမ်းသပ်ဒေတာများသို့ ပြန်ထားမည်မှာ သေချာပါသလား?
-              </h3>
-              <p className="text-xs text-stone-500 mt-1">
-                လက်ရှိ အရောင်းမှတ်တမ်းများအားလုံးကို မူလနမူနာဒေတာဖြင့် ပြန်လည်အစားထိုးပါမည်။
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setShowResetConfirm(false)}
-                className="flex-1 py-2.5 rounded-xl border border-stone-300 text-xs font-bold text-stone-700 cursor-pointer"
-              >
-                မလုပ်တော့ပါ
-              </button>
-              <button
-                onClick={() => {
-                  resetToSampleData();
-                  setShowResetConfirm(false);
-                  showToast('မူလဒေတာများဖြင့် ပြန်လည်စတင်ပြီးပါပြီ');
-                }}
-                className="flex-1 py-2.5 rounded-xl bg-red-600 text-white text-xs font-bold hover:bg-red-700 cursor-pointer"
-              >
-                ပြန်လည်သတ်မှတ်မည်
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

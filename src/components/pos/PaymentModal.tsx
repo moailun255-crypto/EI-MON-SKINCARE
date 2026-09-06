@@ -3,6 +3,7 @@ import { useStore } from '../../context/StoreContext';
 import { PaymentMethod } from '../../types';
 import { formatMMK } from '../../utils/format';
 import { PAYMENT_LABELS } from '../../utils/translations';
+import { playPaymentSuccessChime } from '../../utils/scannerSound';
 import {
   X,
   CheckCircle2,
@@ -11,6 +12,9 @@ import {
   Phone,
   Printer,
   Tag,
+  CreditCard,
+  Smartphone,
+  Building2,
 } from 'lucide-react';
 
 interface PaymentModalProps {
@@ -49,16 +53,18 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
   if (!isOpen) return null;
 
-  // Myanmar quick cash denominations (5,000, 10,000, 20,000, 50,000, 100,000 MMK)
+  // Myanmar quick cash denominations (exact, 10,000, 20,000, 50,000, 100,000 MMK)
   const quickCashOptions = [
     finalPayable,
     Math.ceil(finalPayable / 5000) * 5000,
     Math.ceil(finalPayable / 10000) * 10000,
+    Math.ceil(finalPayable / 20000) * 20000,
     Math.ceil(finalPayable / 50000) * 50000,
     100000,
   ].filter((val, idx, arr) => val >= finalPayable && arr.indexOf(val) === idx);
 
   const handleFinishCheckout = () => {
+    playPaymentSuccessChime();
     checkout({
       paymentMethod,
       amountReceived: paymentMethod === 'cash' ? amountReceived : finalPayable,
@@ -70,21 +76,28 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     onClose();
   };
 
+  const paymentMethodsList: { id: PaymentMethod; label: string; sub: string; icon: React.ReactNode }[] = [
+    { id: 'cash', label: 'ငွေသား (Cash)', sub: 'ရူဘီငွေစက္ကူ', icon: <Banknote className="w-4 h-4 text-emerald-600" /> },
+    { id: 'kpay', label: 'KBZPay', sub: 'KPay စကင် / ဖုန်း', icon: <Smartphone className="w-4 h-4 text-blue-600" /> },
+    { id: 'wave', label: 'WavePay', sub: 'Wave Money', icon: <Smartphone className="w-4 h-4 text-amber-500" /> },
+    { id: 'bank', label: 'ဘဏ်လွှဲ / AYA / CB', sub: 'Mobile Banking', icon: <Building2 className="w-4 h-4 text-violet-600" /> },
+  ];
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-stone-900/60 backdrop-blur-xs">
-      <div className="bg-white rounded-3xl max-w-lg w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden border border-stone-100">
+      <div className="bg-white rounded-3xl max-w-lg w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden border border-stone-100 animate-in zoom-in-95">
         {/* Modal Header */}
         <div className="px-5 py-4 border-b border-stone-200 bg-stone-50/80 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-rose-600 text-white flex items-center justify-center font-bold">
+            <div className="w-9 h-9 rounded-xl bg-rose-600 text-white flex items-center justify-center font-bold shadow-2xs">
               <Banknote className="w-5 h-5" />
             </div>
             <div>
               <h3 className="font-extrabold text-stone-900 text-base sm:text-lg">
                 ငွေပေးချေမှု ရှင်းတမ်း
               </h3>
-              <p className="text-xs text-stone-500">
-                EI MON SKINCARE • MMK (ကျပ်)
+              <p className="text-xs text-stone-500 font-medium">
+                {storeProfile.name || 'EI MON SKINCARE'} • MMK (ကျပ်)
               </p>
             </div>
           </div>
@@ -99,8 +112,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
         {/* Modal Body */}
         <div className="p-4 sm:p-5 overflow-y-auto space-y-4">
           {/* Total Display Banner */}
-          <div className="p-4 rounded-2xl bg-gradient-to-br from-rose-50 to-amber-50 border border-rose-200 text-center">
-            <p className="text-xs font-semibold text-stone-600 uppercase tracking-wider">
+          <div className="p-4 rounded-2xl bg-gradient-to-br from-rose-50 via-amber-50/50 to-stone-50 border border-rose-200/80 text-center">
+            <p className="text-xs font-bold text-stone-500 uppercase tracking-wider">
               ကျသင့်ငွေ စုစုပေါင်း
             </p>
             <h2 className="text-2xl sm:text-3xl font-black text-rose-700 mt-1">
@@ -118,32 +131,33 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
             <label className="block text-xs font-bold text-stone-700 mb-2">
               ငွေပေးချေမှုပုံစံ ရွေးချယ်ပါ
             </label>
-            <div className="grid grid-cols-2 gap-3">
-              {(['cash', 'kpay'] as PaymentMethod[]).map((method) => {
-                const isSelected = paymentMethod === method;
-                const label = method === 'cash' ? 'ငွေသား' : 'KBZPay';
-                const sub = method === 'cash' ? 'CASH' : 'KBZPAY';
+            <div className="grid grid-cols-2 gap-2">
+              {paymentMethodsList.map((method) => {
+                const isSelected = paymentMethod === method.id;
                 return (
                   <button
-                    key={method}
+                    key={method.id}
                     type="button"
-                    onClick={() => setPaymentMethod(method)}
-                    className={`p-3 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer ${
+                    onClick={() => setPaymentMethod(method.id)}
+                    className={`p-2.5 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer ${
                       isSelected
                         ? 'border-rose-600 bg-rose-50/70 ring-2 ring-rose-500/20 shadow-xs'
                         : 'border-stone-200 hover:border-stone-300 bg-white'
                     }`}
                   >
                     <div className="flex items-center justify-between w-full mb-1">
-                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-stone-500">
-                        {sub}
-                      </span>
+                      <div className="flex items-center gap-1.5">
+                        {method.icon}
+                        <span className="text-[10px] font-extrabold uppercase tracking-wider text-stone-500">
+                          {method.sub}
+                        </span>
+                      </div>
                       {isSelected && (
                         <CheckCircle2 className="w-4 h-4 text-rose-600" />
                       )}
                     </div>
-                    <span className="text-sm font-black text-stone-900 leading-tight">
-                      {label}
+                    <span className="text-xs font-black text-stone-900 leading-tight">
+                      {method.label}
                     </span>
                   </button>
                 );
@@ -213,7 +227,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                   {PAYMENT_LABELS[paymentMethod]?.my || paymentMethod.toUpperCase()}
                 </div>
                 <span className="text-xs text-stone-600 font-medium">
-                  ဖြင့် ပေးချေမည်
+                  ဖြင့် တိုက်ရိုက်လက်ခံမည်
                 </span>
               </div>
               <div className="text-right">

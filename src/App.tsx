@@ -9,6 +9,7 @@ import { TransactionsPage } from './components/transactions/TransactionsPage';
 import { FinancePage } from './components/finance/FinancePage';
 import { SecurityBackupPage } from './components/security/SecurityBackupPage';
 import { ReceiptModal } from './components/receipt/ReceiptModal';
+import { SupabaseSetupBanner } from './components/security/SupabaseSetupBanner';
 
 function MainLayout() {
   const { activeTab, activeReceiptOrder, setActiveReceiptOrder } = useStore();
@@ -18,6 +19,9 @@ function MainLayout() {
     <div className="min-h-screen bg-stone-100 flex flex-col pb-20 sm:pb-8 text-stone-900 font-sans selection:bg-rose-100 selection:text-rose-900">
       {/* Top Header */}
       <Header onOpenMobileCart={() => setIsMobileCartOpen(true)} />
+
+      {/* Supabase Setup Notification Banner if database tables not initialized */}
+      <SupabaseSetupBanner />
 
       {/* Main Navigation Tabs */}
       <Navigation />

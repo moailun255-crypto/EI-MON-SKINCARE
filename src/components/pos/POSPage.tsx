@@ -6,7 +6,7 @@ import { CATEGORY_LABELS } from '../../utils/translations';
 import { CartPanel } from './CartPanel';
 import { PaymentModal } from './PaymentModal';
 import { CameraScannerModal } from './CameraScannerModal';
-import { playBarcodeBeep } from '../../utils/scannerSound';
+import { playBarcodeBeep, playCartAddSound } from '../../utils/scannerSound';
 import {
   Search,
   Barcode,
@@ -17,6 +17,11 @@ import {
   AlertCircle,
   X,
   Sparkles,
+  TrendingUp,
+  Receipt,
+  AlertTriangle,
+  Boxes,
+  Flame,
 } from 'lucide-react';
 
 interface POSPageProps {
@@ -32,10 +37,11 @@ export const POSPage: React.FC<POSPageProps> = ({
     products,
     addToCart,
     useMyanmarDigits,
+    orders,
   } = useStore();
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<ProductCategory>('all');
+  const [selectedCategory, setSelectedCategory] = useState<ProductCategory | 'popular' | 'low_stock'>('all');
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isCameraScannerOpen, setIsCameraScannerOpen] = useState(false);
   const [justAddedId, setJustAddedId] = useState<string | null>(null);
@@ -48,6 +54,21 @@ export const POSPage: React.FC<POSPageProps> = ({
 
   const searchInputRef = useRef<HTMLInputElement>(null);
 
+  // Compute Today's POS Quick Stats
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayOrders = useMemo(
+    () => orders.filter((o) => o.createdAt.startsWith(todayStr) && o.status === 'completed'),
+    [orders, todayStr]
+  );
+  const todayRevenue = useMemo(
+    () => todayOrders.reduce((sum, o) => sum + o.grandTotal, 0),
+    [todayOrders]
+  );
+  const lowStockCount = useMemo(
+    () => products.filter((p) => p.stock <= p.minStockAlert).length,
+    [products]
+  );
+
   // Filter products by search term & category
   const filteredProducts = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -55,11 +76,22 @@ export const POSPage: React.FC<POSPageProps> = ({
       const matchesSearch =
         q === '' ||
         item.nameMy.toLowerCase().includes(q) ||
+        item.nameEn.toLowerCase().includes(q) ||
+        item.brand.toLowerCase().includes(q) ||
         item.sku.toLowerCase().includes(q) ||
         item.barcode.includes(q);
 
-      const matchesCategory =
-        selectedCategory === 'all' || item.category === selectedCategory;
+      let matchesCategory = true;
+      if (selectedCategory === 'all') {
+        matchesCategory = true;
+      } else if (selectedCategory === 'low_stock') {
+        matchesCategory = item.stock <= item.minStockAlert;
+      } else if (selectedCategory === 'popular') {
+        // Higher selling items or high stock priority
+        matchesCategory = item.stock > 0;
+      } else {
+        matchesCategory = item.category === selectedCategory;
+      }
 
       return matchesSearch && matchesCategory;
     });
@@ -181,25 +213,86 @@ export const POSPage: React.FC<POSPageProps> = ({
   };
 
   const handleProductClick = (product: Product) => {
-    if (product.stock <= 0) return;
+    if (product.stock <= 0) {
+      playBarcodeBeep('error');
+      return;
+    }
     addToCart(product, 1);
+    playCartAddSound();
     setJustAddedId(product.id);
     setTimeout(() => setJustAddedId(null), 600);
   };
 
-  const categoriesList: ProductCategory[] = [
-    'all',
-    'serum',
-    'toner',
-    'sunscreen',
-    'moisturizer',
-    'cleanser',
-    'mask',
-    'treatment',
+  const categoriesList: { id: ProductCategory | 'popular' | 'low_stock'; labelMy: string; count?: number; icon?: React.ReactNode }[] = [
+    { id: 'all', labelMy: 'အားလုံး', count: products.length },
+    { id: 'popular', labelMy: 'လူကြိုက်များ', icon: <Flame className="w-3 h-3 text-rose-500" /> },
+    { id: 'low_stock', labelMy: 'လက်ကျန်နည်း', count: lowStockCount, icon: <AlertTriangle className="w-3 h-3 text-amber-500" /> },
+    { id: 'serum', labelMy: 'ဆာရမ်' },
+    { id: 'toner', labelMy: 'တိုနာ' },
+    { id: 'sunscreen', labelMy: 'နေလောင်ကာ' },
+    { id: 'moisturizer', labelMy: 'ခရင်မ်' },
+    { id: 'cleanser', labelMy: 'မျက်နှာသစ်' },
+    { id: 'mask', labelMy: 'Mask ကပ်ခွာ' },
+    { id: 'treatment', labelMy: 'ကုထုံးဆေး' },
   ];
 
   return (
     <div className="max-w-7xl mx-auto px-2 sm:px-4 py-2.5 sm:py-3">
+      {/* Top POS Quick-Metrics Dashboard Strip */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
+        {/* Today's Total Sales */}
+        <div className="p-2.5 sm:p-3 rounded-2xl bg-white border border-stone-200/90 shadow-2xs flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+            <TrendingUp className="w-4 h-4" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[10px] text-stone-400 font-semibold truncate">ယနေ့ရောင်းရငွေ</p>
+            <p className="text-xs sm:text-sm font-black text-stone-900 truncate">
+              {formatMMK(todayRevenue, useMyanmarDigits)}
+            </p>
+          </div>
+        </div>
+
+        {/* Today's Orders Count */}
+        <div className="p-2.5 sm:p-3 rounded-2xl bg-white border border-stone-200/90 shadow-2xs flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+            <Receipt className="w-4 h-4" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[10px] text-stone-400 font-semibold truncate">ယနေ့ဘောင်ချာ</p>
+            <p className="text-xs sm:text-sm font-black text-stone-900 truncate">
+              {todayOrders.length} <span className="text-[10px] text-stone-500 font-normal">စောင်</span>
+            </p>
+          </div>
+        </div>
+
+        {/* Low Stock Warnings */}
+        <div className="p-2.5 sm:p-3 rounded-2xl bg-white border border-stone-200/90 shadow-2xs flex items-center gap-2.5">
+          <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${lowStockCount > 0 ? 'bg-amber-50 text-amber-600 animate-pulse' : 'bg-stone-50 text-stone-400'}`}>
+            <AlertTriangle className="w-4 h-4" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[10px] text-stone-400 font-semibold truncate">လက်ကျန်သတိပေးချက်</p>
+            <p className={`text-xs sm:text-sm font-black truncate ${lowStockCount > 0 ? 'text-amber-600' : 'text-stone-900'}`}>
+              {lowStockCount} <span className="text-[10px] text-stone-500 font-normal">မျိုး</span>
+            </p>
+          </div>
+        </div>
+
+        {/* Total Products in Catalog */}
+        <div className="p-2.5 sm:p-3 rounded-2xl bg-white border border-stone-200/90 shadow-2xs flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-stone-100 text-stone-700 flex items-center justify-center shrink-0">
+            <Boxes className="w-4 h-4" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[10px] text-stone-400 font-semibold truncate">ဆိုင်ရှိပစ္စည်းများ</p>
+            <p className="text-xs sm:text-sm font-black text-stone-900 truncate">
+              {products.length} <span className="text-[10px] text-stone-500 font-normal">မျိုး</span>
+            </p>
+          </div>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 items-start">
         {/* Left Side: Skincare Products Catalog */}
         <div className="lg:col-span-8 space-y-2.5">
@@ -216,8 +309,8 @@ export const POSPage: React.FC<POSPageProps> = ({
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="ပစ္စည်းအမည်၊ SKU သို့မဟုတ် ဘားကုဒ်ဖြင့် ရှာမည်..."
-                  className="w-full text-xs sm:text-sm pl-9 pr-16 py-2 rounded-xl border border-stone-200 focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-500 bg-stone-50/50"
+                  placeholder="ပစ္စည်းအမည်၊ အမှတ်တံဆိပ် (Brand)၊ SKU သို့မဟုတ် ဘားကုဒ်ဖြင့် ရှာမည်..."
+                  className="w-full text-xs sm:text-sm pl-9 pr-16 py-2 rounded-xl border border-stone-200 focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-500 bg-stone-50/60"
                 />
                 {searchQuery && (
                   <button
@@ -230,7 +323,7 @@ export const POSPage: React.FC<POSPageProps> = ({
                 )}
               </form>
 
-              {/* Sleek Camera Scanner Button */}
+              {/* Camera Scanner Button */}
               <button
                 type="button"
                 onClick={() => setIsCameraScannerOpen(true)}
@@ -244,18 +337,24 @@ export const POSPage: React.FC<POSPageProps> = ({
             {/* Category Filter Horizontal Chips */}
             <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none pt-0.5">
               {categoriesList.map((cat) => {
-                const isSelected = selectedCategory === cat;
+                const isSelected = selectedCategory === cat.id;
                 return (
                   <button
-                    key={cat}
-                    onClick={() => setSelectedCategory(cat)}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+                    key={cat.id}
+                    onClick={() => setSelectedCategory(cat.id)}
+                    className={`px-2.5 py-1 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1 border ${
                       isSelected
-                        ? 'bg-rose-600 text-white shadow-2xs font-bold'
-                        : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                        ? 'bg-rose-600 border-rose-600 text-white shadow-2xs font-bold'
+                        : 'bg-stone-50 border-stone-200 text-stone-600 hover:bg-stone-100 hover:text-stone-900'
                     }`}
                   >
-                    <span>{CATEGORY_LABELS[cat]?.my}</span>
+                    {cat.icon}
+                    <span>{cat.labelMy}</span>
+                    {cat.count !== undefined && (
+                      <span className={`text-[10px] px-1 py-0.2 rounded-full font-bold ${isSelected ? 'bg-white/20 text-white' : 'bg-stone-200 text-stone-700'}`}>
+                        {cat.count}
+                      </span>
+                    )}
                   </button>
                 );
               })}
@@ -292,12 +391,12 @@ export const POSPage: React.FC<POSPageProps> = ({
           {/* Compact, High-Density Skincare Product Grid */}
           <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2.5">
             {filteredProducts.length === 0 ? (
-              <div className="col-span-full py-10 text-center bg-white rounded-2xl border border-stone-200 p-5">
-                <Sparkles className="w-8 h-8 text-rose-300 mx-auto mb-1.5" />
+              <div className="col-span-full py-12 text-center bg-white rounded-2xl border border-stone-200 p-6">
+                <Sparkles className="w-8 h-8 text-rose-300 mx-auto mb-2" />
                 <p className="font-bold text-stone-700 text-xs sm:text-sm">
                   ရှာဖွေမှုနှင့် ကိုက်ညီသော ပစ္စည်းမတွေ့ပါ
                 </p>
-                <p className="text-[11px] text-stone-400 mt-0.5">
+                <p className="text-[11px] text-stone-400 mt-1">
                   အခြား အမည် သို့မဟုတ် ဘားကုဒ်ဖြင့် ရှာကြည့်ပါ
                 </p>
               </div>
@@ -307,30 +406,33 @@ export const POSPage: React.FC<POSPageProps> = ({
                 const isLowStock = product.stock > 0 && product.stock <= product.minStockAlert;
                 const isJustAdded = justAddedId === product.id;
 
+                // Visual stock bar calculation (capped at 25 for 100% scale)
+                const stockPercent = Math.min(100, Math.max(12, (product.stock / 25) * 100));
+
                 return (
                   <div
                     key={product.id}
                     onClick={() => handleProductClick(product)}
-                    className={`group rounded-xl border p-2.5 flex flex-col justify-between relative cursor-pointer select-none transition-all duration-150 hover:border-rose-400 hover:shadow-xs active:scale-[0.98] ${
+                    className={`group rounded-2xl border p-2.5 sm:p-3 flex flex-col justify-between relative cursor-pointer select-none transition-all duration-150 hover:border-rose-400 hover:shadow-sm active:scale-[0.98] ${
                       isOutOfStock
                         ? 'opacity-50 border-stone-200 bg-stone-50 cursor-not-allowed'
                         : 'border-stone-200 bg-white'
-                    } ${isJustAdded ? 'ring-2 ring-emerald-500 bg-emerald-50/30' : ''}`}
+                    } ${isJustAdded ? 'ring-2 ring-emerald-500 bg-emerald-50/40 shadow-xs' : ''}`}
                   >
                     <div>
-                      {/* Category & Stock Pill */}
+                      {/* Brand & Stock Header */}
                       <div className="flex items-center justify-between gap-1 mb-1.5">
-                        <span className="text-[10px] text-stone-600 bg-stone-100 px-1.5 py-0.5 rounded font-medium truncate">
-                          {CATEGORY_LABELS[product.category]?.my}
+                        <span className="text-[9px] sm:text-[10px] text-rose-700 bg-rose-50 border border-rose-100 px-1.5 py-0.5 rounded-md font-bold truncate">
+                          {product.brand || CATEGORY_LABELS[product.category]?.my}
                         </span>
 
                         <span
-                          className={`px-1.5 py-0.5 rounded text-[10px] font-bold shrink-0 ${
+                          className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold shrink-0 ${
                             isOutOfStock
                               ? 'bg-red-500 text-white'
                               : isLowStock
                               ? 'bg-amber-400 text-stone-900'
-                              : 'text-emerald-700 bg-emerald-50'
+                              : 'text-emerald-700 bg-emerald-50 border border-emerald-200/60'
                           }`}
                         >
                           {isOutOfStock ? 'ကုန်ပြီ' : `ကျန်: ${product.stock}`}
@@ -343,12 +445,26 @@ export const POSPage: React.FC<POSPageProps> = ({
                       </h3>
 
                       {/* Barcode & Volume */}
-                      <div className="flex items-center justify-between text-[10px] text-stone-400 font-mono mb-2">
+                      <div className="flex items-center justify-between text-[10px] text-stone-400 font-mono mb-1.5">
                         <span>{product.volume}</span>
                         <span className="flex items-center gap-0.5">
                           <Barcode className="w-2.5 h-2.5 text-stone-400" />
                           <span>{product.barcode.slice(-5)}</span>
                         </span>
+                      </div>
+
+                      {/* Stock Health Bar */}
+                      <div className="w-full bg-stone-100 rounded-full h-1 overflow-hidden mb-2">
+                        <div
+                          className={`h-full rounded-full transition-all duration-300 ${
+                            isOutOfStock
+                              ? 'bg-red-500'
+                              : isLowStock
+                              ? 'bg-amber-400'
+                              : 'bg-emerald-500'
+                          }`}
+                          style={{ width: `${stockPercent}%` }}
+                        />
                       </div>
                     </div>
 
@@ -361,9 +477,9 @@ export const POSPage: React.FC<POSPageProps> = ({
                       <button
                         type="button"
                         disabled={isOutOfStock}
-                        className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all cursor-pointer ${
+                        className={`w-7 h-7 rounded-xl flex items-center justify-center transition-all cursor-pointer shadow-2xs ${
                           isJustAdded
-                            ? 'bg-emerald-600 text-white'
+                            ? 'bg-emerald-600 text-white scale-110'
                             : isOutOfStock
                             ? 'bg-stone-100 text-stone-300'
                             : 'bg-stone-100 text-stone-700 group-hover:bg-rose-600 group-hover:text-white'

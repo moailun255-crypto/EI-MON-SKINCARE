@@ -36,13 +36,13 @@ export const DeleteOrderModal: React.FC<DeleteOrderModalProps> = ({
     setErrorMessage(null);
 
     if (!password) {
-      setErrorMessage('ကျေးဇူးပြု၍ စကားဝှက် ရိုက်ထည့်ပါ (မူလ: 123456)');
+      setErrorMessage('ကျေးဇူးပြု၍ စကားဝှက် ရိုက်ထည့်ပါ (请输入管理员安全密码)');
       return;
     }
 
     const isValid = verifyDeletePassword(password);
     if (!isValid) {
-      setErrorMessage('လျှို့ဝှက်စကားဝှက် မှားယွင်းနေပါသည် (မူလ စကားဝှက်: 123456)');
+      setErrorMessage('လျှို့ဝှက်စကားဝှက် မှားယွင်းနေပါသည် (管理员密码错误)');
       return;
     }
 

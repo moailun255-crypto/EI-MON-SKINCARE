@@ -64,26 +64,26 @@ export const Navigation: React.FC = () => {
   return (
     <>
       {/* Desktop & Tablet Top Navigation Bar */}
-      <nav className="hidden sm:block bg-stone-900 text-stone-300 border-b border-stone-800">
+      <nav className="hidden sm:block bg-stone-900 text-stone-300 border-b border-stone-800 shadow-inner">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="flex items-center space-x-1 overflow-x-auto py-1 scrollbar-none">
+          <div className="flex items-center space-x-1.5 overflow-x-auto py-1.5 scrollbar-none">
             {navItems.map((item) => {
               const isActive = activeTab === item.id;
               return (
                 <button
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
-                  className={`flex items-center gap-2 px-3.5 py-2.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all relative cursor-pointer ${
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all duration-150 relative cursor-pointer ${
                     isActive
-                      ? 'bg-rose-600 text-white shadow-sm'
-                      : 'text-stone-300 hover:text-white hover:bg-stone-800'
+                      ? 'bg-rose-600 text-white shadow-xs'
+                      : 'text-stone-300 hover:text-white hover:bg-stone-800/90'
                   }`}
                 >
                   {item.icon}
                   <span>{item.titleMy}</span>
                   {item.badge !== undefined && (
                     <span
-                      className={`ml-1 text-[10px] font-bold px-1.5 py-0.2 rounded-full ${
+                      className={`ml-1 text-[10px] font-extrabold px-1.5 py-0.5 rounded-full ${
                         item.badgeColor || 'bg-rose-500 text-white'
                       }`}
                     >

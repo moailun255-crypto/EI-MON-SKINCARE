@@ -54,6 +54,7 @@ interface StoreContextType {
   isCloudConnected: boolean;
   cloudSyncStatus: 'idle' | 'syncing' | 'synced' | 'error';
   cloudError: string | null;
+  needsTableSetup: boolean;
   supabaseConfig: SupabaseConfig;
   updateSupabaseConfig: (config: SupabaseConfig) => Promise<{ success: boolean; message: string }>;
   disconnectSupabase: () => void;
@@ -203,6 +204,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [isCloudConnected, setIsCloudConnected] = useState<boolean>(false);
   const [cloudSyncStatus, setCloudSyncStatus] = useState<'idle' | 'syncing' | 'synced' | 'error'>('idle');
   const [cloudError, setCloudError] = useState<string | null>(null);
+  const [needsTableSetup, setNeedsTableSetup] = useState<boolean>(false);
 
   // Initial cloud sync and realtime multi-device sync
   useEffect(() => {
@@ -224,12 +226,14 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             setIsCloudConnected(false);
             setCloudSyncStatus('error');
             setCloudError(testRes.message);
+            setNeedsTableSetup(Boolean(testRes.needsTableSetup));
           }
           return;
         }
 
         if (isMounted) {
           setIsCloudConnected(true);
+          setNeedsTableSetup(false);
         }
 
         const cloudData = await fetchCloudData();
@@ -340,12 +344,14 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (!test.success) {
       setCloudSyncStatus('error');
       setCloudError(test.message);
+      setNeedsTableSetup(Boolean(test.needsTableSetup));
       return test;
     }
 
     saveSupabaseConfigStorage(config);
     setSupabaseConfigState(config);
     setIsCloudConnected(true);
+    setNeedsTableSetup(false);
 
     // Initial push existing local data to cloud so other devices immediately have it
     await Promise.all([
@@ -365,20 +371,56 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setIsCloudConnected(false);
     setCloudSyncStatus('idle');
     setCloudError(null);
+    setNeedsTableSetup(false);
   };
 
   const syncNowWithCloud = async () => {
-    if (!isCloudConnected) return;
+    const client = getSupabase();
+    if (!client || !supabaseConfig.url || !supabaseConfig.anonKey) return;
     setCloudSyncStatus('syncing');
+    setCloudError(null);
     try {
+      const testRes = await testSupabaseConnection(supabaseConfig.url, supabaseConfig.anonKey);
+      if (!testRes.success) {
+        setIsCloudConnected(false);
+        setCloudSyncStatus('error');
+        setCloudError(testRes.message);
+        setNeedsTableSetup(Boolean(testRes.needsTableSetup));
+        return;
+      }
+
+      setIsCloudConnected(true);
+      setNeedsTableSetup(false);
+
       const data = await fetchCloudData();
-      if (data.products && data.products.length > 0) setProducts(data.products);
-      if (data.orders) setOrders(data.orders);
-      if (data.expenses) setExpenses(data.expenses);
-      if (data.storeProfile) setStoreProfile(data.storeProfile);
+      if (data.products && data.products.length > 0) {
+        setProducts(data.products);
+      } else if (products.length > 0) {
+        await pushProductsToCloud(products);
+      }
+
+      if (data.orders && data.orders.length > 0) {
+        setOrders(data.orders);
+      } else if (orders.length > 0) {
+        await Promise.all(orders.map((o) => pushOrderToCloud(o)));
+      }
+
+      if (data.expenses && data.expenses.length > 0) {
+        setExpenses(data.expenses);
+      } else if (expenses.length > 0) {
+        await Promise.all(expenses.map((e) => pushExpenseToCloud(e)));
+      }
+
+      if (data.storeProfile) {
+        setStoreProfile(data.storeProfile);
+      } else {
+        await pushProfileToCloud(storeProfile);
+      }
+
       setCloudSyncStatus('synced');
-    } catch {
+    } catch (err: any) {
       setCloudSyncStatus('error');
+      setCloudError(err.message || 'Sync error');
     }
   };
 
@@ -840,6 +882,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         isCloudConnected,
         cloudSyncStatus,
         cloudError,
+        needsTableSetup,
         supabaseConfig,
         updateSupabaseConfig,
         disconnectSupabase,

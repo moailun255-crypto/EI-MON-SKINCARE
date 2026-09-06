@@ -74,8 +74,14 @@ export const getSupabase = (): SupabaseClient | null => {
   }
 };
 
+export interface ConnectionTestResult {
+  success: boolean;
+  needsTableSetup?: boolean;
+  message: string;
+}
+
 // Test connection
-export const testSupabaseConnection = async (url: string, anonKey: string): Promise<{ success: boolean; message: string }> => {
+export const testSupabaseConnection = async (url: string, anonKey: string): Promise<ConnectionTestResult> => {
   if (!url || !anonKey) {
     return { success: false, message: 'URL နှင့် Anon Key နှစ်ခုလုံး ဖြည့်စွက်ပေးရန် လိုအပ်ပါသည်' };
   }
@@ -88,11 +94,17 @@ export const testSupabaseConnection = async (url: string, anonKey: string): Prom
     const { error } = await testClient.from('products').select('id').limit(1);
 
     if (error) {
-      // If table doesn't exist yet, but connection was authenticated
-      if (error.code === '42P01') {
+      // If table doesn't exist yet in Supabase schema cache
+      if (
+        error.code === '42P01' ||
+        error.code === 'PGRST205' ||
+        error.message?.includes('Could not find the table') ||
+        error.message?.includes('schema cache')
+      ) {
         return {
-          success: true,
-          message: 'Supabase ချိတ်ဆက်မှု အောင်မြင်ပါသည် (ဇယားများ မဆောက်ရသေးပါ၊ SQL Script ကို Run ပေးပါ)',
+          success: false,
+          needsTableSetup: true,
+          message: 'Supabase 云端数据库尚未建立 products 等数据表！请在 Supabase 的 SQL Editor 中粘贴并运行建表 SQL 脚本。',
         };
       }
       return { success: false, message: `ချိတ်ဆက်မှု မအောင်မြင်ပါ: ${error.message}` };

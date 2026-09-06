@@ -41,7 +41,7 @@ export interface CartItem {
   lineTotal: number; // finalPrice * quantity
 }
 
-export type PaymentMethod = 'cash' | 'kpay';
+export type PaymentMethod = 'cash' | 'kpay' | 'wave' | 'bank';
 
 export interface OrderItem {
   productId: string;
