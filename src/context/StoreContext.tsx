@@ -27,6 +27,8 @@ import {
   pushProductsToCloud,
   pushSingleProductToCloud,
   deleteProductFromCloud,
+  deleteMultipleProductsFromCloud,
+  clearAllProductsFromCloud,
   pushOrderToCloud,
   deleteOrderFromCloud,
   clearAllOrdersFromCloud,

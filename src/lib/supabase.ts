@@ -104,7 +104,7 @@ export const testSupabaseConnection = async (url: string, anonKey: string): Prom
         return {
           success: false,
           needsTableSetup: true,
-          message: 'Supabase 云端数据库尚未建立 products 等数据表！请在 Supabase 的 SQL Editor 中粘贴并运行建表 SQL 脚本。',
+          message: 'Supabase Cloud Database တွင် products ဇယားများ မရှိသေးပါ။ SQL Editor တွင် SQL Script အား Run ပေးပါရန် (Database tables not found, please run SQL script)',
         };
       }
       return { success: false, message: `ချိတ်ဆက်မှု မအောင်မြင်ပါ: ${error.message}` };
@@ -288,6 +288,26 @@ export const deleteProductFromCloud = async (productId: string) => {
     await client.from('products').delete().eq('id', productId);
   } catch (err) {
     console.error('Error deleting product from Supabase:', err);
+  }
+};
+
+export const deleteMultipleProductsFromCloud = async (productIds: string[]) => {
+  const client = getSupabase();
+  if (!client || productIds.length === 0) return;
+  try {
+    await client.from('products').delete().in('id', productIds);
+  } catch (err) {
+    console.error('Error deleting products batch from Supabase:', err);
+  }
+};
+
+export const clearAllProductsFromCloud = async () => {
+  const client = getSupabase();
+  if (!client) return;
+  try {
+    await client.from('products').delete().neq('id', 'keep_none_empty_placeholder_prod');
+  } catch (err) {
+    console.error('Error clearing products from Supabase:', err);
   }
 };
 

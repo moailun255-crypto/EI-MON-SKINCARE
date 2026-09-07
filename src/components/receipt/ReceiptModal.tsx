@@ -10,6 +10,8 @@ import {
   CheckCircle,
   Download,
   Trash2,
+  Share2,
+  Image as ImageIcon,
 } from 'lucide-react';
 
 interface ReceiptModalProps {
@@ -20,6 +22,7 @@ interface ReceiptModalProps {
 export const ReceiptModal: React.FC<ReceiptModalProps> = ({ order, onClose }) => {
   const { storeProfile, useMyanmarDigits } = useStore();
   const [isSavingImage, setIsSavingImage] = useState(false);
+  const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   if (!order) return null;
@@ -112,26 +115,62 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ order, onClose }) =>
     printWin.document.close();
   };
 
-  // Download high-resolution PNG receipt image
-  const handleDownloadImage = async () => {
+  // Save to Photo Album / Download PNG / Share via Mobile
+  const handleSaveToAlbum = async () => {
     const receiptElement = document.getElementById('printable-receipt');
     if (!receiptElement) return;
 
     try {
       setIsSavingImage(true);
+      setSaveSuccessMsg(null);
+
       const canvas = await html2canvas(receiptElement, {
-        scale: 2,
+        scale: 2.5,
         backgroundColor: '#ffffff',
         useCORS: true,
         logging: false,
       });
+
+      const fileName = `EI_MON_Receipt_${order.receiptNumber}.png`;
+
+      // Check if Web Share API with Files is supported on Tablet/Mobile
+      if (navigator.share && navigator.canShare) {
+        try {
+          const blob = await new Promise<Blob | null>((resolve) =>
+            canvas.toBlob((b) => resolve(b), 'image/png')
+          );
+          if (blob) {
+            const file = new File([blob], fileName, { type: 'image/png' });
+            if (navigator.canShare({ files: [file] })) {
+              await navigator.share({
+                files: [file],
+                title: `EI MON SKINCARE Receipt ${order.receiptNumber}`,
+                text: `ဘောင်ချာအမှတ်: ${order.receiptNumber}`,
+              });
+              setSaveSuccessMsg('ပုံအား အောင်မြင်စွာ ပေးပို့/သိမ်းဆည်းပြီးပါပြီ');
+              setTimeout(() => setSaveSuccessMsg(null), 3000);
+              return;
+            }
+          }
+        } catch (shareErr: any) {
+          if (shareErr?.name === 'AbortError') {
+            return;
+          }
+          console.warn('Share fallback to download', shareErr);
+        }
+      }
+
+      // Direct download into Photo Album / Downloads
       const dataUrl = canvas.toDataURL('image/png');
       const link = document.createElement('a');
       link.href = dataUrl;
-      link.download = `EI_MON_Receipt_${order.receiptNumber}.png`;
+      link.download = fileName;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+
+      setSaveSuccessMsg('ဖုန်း/တက်ဘလက် ပုံပြခန်း (Gallery/Album) သို့ ဒေါင်းလုဒ်သိမ်းဆည်းပြီးပါပြီ');
+      setTimeout(() => setSaveSuccessMsg(null), 3500);
     } catch (err) {
       console.error('Failed to download receipt image:', err);
     } finally {
@@ -287,6 +326,14 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ order, onClose }) =>
           </div>
         </div>
 
+        {/* Success toast notification */}
+        {saveSuccessMsg && (
+          <div className="mx-4 mt-3 px-3 py-2 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center gap-2 animate-fadeIn">
+            <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span className="leading-tight">{saveSuccessMsg}</span>
+          </div>
+        )}
+
         {/* Modal Action Buttons */}
         <div className="p-4 bg-white border-t border-stone-200 space-y-2 no-print">
           <div className="flex items-center gap-2">
@@ -299,13 +346,13 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ order, onClose }) =>
             </button>
 
             <button
-              onClick={handleDownloadImage}
+              onClick={handleSaveToAlbum}
               disabled={isSavingImage}
               className="py-3 px-3.5 rounded-xl border border-stone-200 hover:border-stone-300 bg-stone-50 hover:bg-stone-100 text-stone-800 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
-              title="PNG ပုံအဖြစ် ဒေါင်းလုဒ်သိမ်းဆည်းမည်"
+              title="ဖုန်း/တက်ဘလက် ပုံပြခန်း (Album) သို့ သိမ်းဆည်းမည်"
             >
               <Download className="w-4 h-4 text-rose-600" />
-              <span>{isSavingImage ? 'သိမ်းနေသည်...' : 'ပုံသိမ်းဆည်းမည်'}</span>
+              <span>{isSavingImage ? 'သိမ်းနေသည်...' : 'ပုံပြခန်းသို့ သိမ်းမည်'}</span>
             </button>
 
             <button

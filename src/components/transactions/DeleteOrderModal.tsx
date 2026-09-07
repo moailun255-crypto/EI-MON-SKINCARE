@@ -27,22 +27,29 @@ export const DeleteOrderModal: React.FC<DeleteOrderModalProps> = ({
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isShake, setIsShake] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
   if (!order) return null;
+
+  const triggerError = (msg: string) => {
+    setErrorMessage(msg);
+    setIsShake(true);
+    setTimeout(() => setIsShake(false), 500);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
 
     if (!password) {
-      setErrorMessage('ကျေးဇူးပြု၍ စကားဝှက် ရိုက်ထည့်ပါ (请输入管理员安全密码)');
+      triggerError('ကျေးဇူးပြု၍ စီမံခန့်ခွဲသူ လျှို့ဝှက်စကားဝှက် ရိုက်ထည့်ပါ (Please enter manager password)');
       return;
     }
 
     const isValid = verifyDeletePassword(password);
     if (!isValid) {
-      setErrorMessage('လျှို့ဝှက်စကားဝှက် မှားယွင်းနေပါသည် (管理员密码错误)');
+      triggerError('လျှို့ဝှက်စကားဝှက် မမှန်ကန်ပါ (စကားဝှက်မှားနေပါသည်) / 密码错误，请重新输入');
       return;
     }
 
@@ -54,7 +61,7 @@ export const DeleteOrderModal: React.FC<DeleteOrderModalProps> = ({
         if (onSuccess) onSuccess();
         onClose();
       } else {
-        setErrorMessage('အမှာစာ ဖျက်သိမ်းရာတွင် အမှားဖြစ်ပေါ်ပါသည်');
+        triggerError('အမှာစာ ဖျက်သိမ်းရာတွင် အမှားဖြစ်ပေါ်ပါသည် (Failed to delete order)');
       }
     }, 150);
   };
@@ -138,7 +145,7 @@ export const DeleteOrderModal: React.FC<DeleteOrderModalProps> = ({
               </label>
             </div>
 
-            <div className="relative">
+            <div className={`relative transition-transform ${isShake ? 'animate-bounce' : ''}`}>
               <input
                 type={showPassword ? 'text' : 'password'}
                 autoFocus
@@ -148,7 +155,11 @@ export const DeleteOrderModal: React.FC<DeleteOrderModalProps> = ({
                   setErrorMessage(null);
                 }}
                 placeholder="စကားဝှက် ရိုက်ထည့်ပါ..."
-                className="w-full px-3.5 py-2.5 pr-10 rounded-xl border border-stone-300 focus:border-rose-500 focus:ring-2 focus:ring-rose-200 text-xs sm:text-sm font-mono transition-all outline-hidden"
+                className={`w-full px-3.5 py-2.5 pr-10 rounded-xl border text-xs sm:text-sm font-mono transition-all outline-hidden ${
+                  errorMessage
+                    ? 'border-red-500 bg-red-50/40 text-red-900 focus:ring-2 focus:ring-red-200'
+                    : 'border-stone-300 focus:border-rose-500 focus:ring-2 focus:ring-rose-200'
+                }`}
               />
               <button
                 type="button"
@@ -160,10 +171,10 @@ export const DeleteOrderModal: React.FC<DeleteOrderModalProps> = ({
             </div>
 
             {errorMessage && (
-              <p className="text-xs font-bold text-red-600 flex items-center gap-1 pt-1 animate-fadeIn">
-                <AlertTriangle className="w-3.5 h-3.5" />
-                <span>{errorMessage}</span>
-              </p>
+              <div className="p-2.5 rounded-xl bg-red-100/80 border border-red-300 text-xs font-bold text-red-700 flex items-start gap-2 pt-1 animate-fadeIn">
+                <AlertTriangle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                <span className="leading-snug">{errorMessage}</span>
+              </div>
             )}
           </div>
 

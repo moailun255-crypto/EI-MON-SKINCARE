@@ -43,7 +43,7 @@ export const SupabaseSetupBanner: React.FC = () => {
   };
 
   const handleRetrySync = async () => {
-    setRetryStatus('正在检查数据库表并同步...');
+    setRetryStatus('စစ်ဆေးချိတ်ဆက်နေသည်...');
     await syncNowWithCloud();
     setTimeout(() => {
       setRetryStatus(null);
@@ -61,10 +61,10 @@ export const SupabaseSetupBanner: React.FC = () => {
             </div>
             <div>
               <p className="font-bold text-sm sm:text-base leading-tight">
-                ⚠️ Supabase 数据库尚未建表，云端数据同步未生效！
+                ⚠️ Supabase Cloud Database သို့ ချိတ်ဆက်မိသော်လည်း ဇယားများ မဆောက်ရသေးပါ
               </p>
               <p className="text-xs text-white/90 font-medium">
-                Supabase ချိတ်ဆက်မိသော်လည်း ဒေတာဇယားများ မဆောက်ရသေးပါ (SQL Script ကို Run ပေးရန် လိုအပ်ပါသည်)
+                ဒေတာများ အချိန်နှင့်တပြေးညီ တပြိုင်တည်း ထပ်တူကျစေရန် SQL Script ကို Supabase တွင် Run ပေးပါရန်
               </p>
             </div>
           </div>
@@ -76,7 +76,7 @@ export const SupabaseSetupBanner: React.FC = () => {
               className="px-3.5 py-1.5 rounded-xl bg-white text-orange-900 font-bold text-xs hover:bg-orange-50 transition-colors shadow-xs flex items-center gap-1.5 cursor-pointer"
             >
               <Copy className="w-3.5 h-3.5 text-orange-600" />
-              <span>查看指引并一键复制 SQL</span>
+              <span>SQL ဇယားလမ်းညွှန် ကြည့်မည်</span>
             </button>
 
             <a
@@ -85,7 +85,7 @@ export const SupabaseSetupBanner: React.FC = () => {
               rel="noopener noreferrer"
               className="px-3 py-1.5 rounded-xl bg-black/20 hover:bg-black/30 text-white font-medium text-xs transition-colors flex items-center gap-1.5 cursor-pointer"
             >
-              <span>打开 Supabase SQL Editor</span>
+              <span>Supabase SQL Editor ဖွင့်မည်</span>
               <ExternalLink className="w-3.5 h-3.5" />
             </a>
 
@@ -96,7 +96,7 @@ export const SupabaseSetupBanner: React.FC = () => {
               className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-colors shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${cloudSyncStatus === 'syncing' ? 'animate-spin' : ''}`} />
-              <span>我已运行 SQL，立即同步</span>
+              <span>SQL Run ပြီးပါက ချက်ချင်းချိတ်မည်</span>
             </button>
           </div>
         </div>
@@ -114,10 +114,10 @@ export const SupabaseSetupBanner: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="font-bold text-stone-900 text-base leading-tight">
-                    Supabase 数据库建表与实时同步指引
+                    Supabase Database ဇယားများ တည်ဆောက်ခြင်း လမ်းညွှန်
                   </h3>
                   <p className="text-xs text-stone-500">
-                    只需 3 步，耗时约 30 秒，即可开启全设备毫秒级实时同步
+                    စက္ကန့် ၃၀ အတွင်း အဆင့် ၃ ဆင့်ဖြင့် အလွယ်တကူ ချိတ်ဆက်နိုင်ပါသည်
                   </p>
                 </div>
               </div>
@@ -139,10 +139,10 @@ export const SupabaseSetupBanner: React.FC = () => {
                 </span>
                 <div className="flex-1">
                   <h4 className="font-bold text-stone-900 mb-1">
-                    点击下方按钮，一键复制建表 SQL 脚本
+                    အောက်ပါ ခလုတ်ကိုနှိပ်၍ SQL Script ကို ကူးယူပါ
                   </h4>
                   <p className="text-xs text-stone-600 mb-2.5">
-                    该脚本会自动在您的 Supabase 项目中创建 products（商品）、orders（订单）、expenses（支出）、store_profile（店铺设置）四张表，并开通行级安全（RLS）和实时通讯订阅（Realtime）。
+                    ဤ Script သည် သင်၏ Supabase Project တွင် products, orders, expenses, store_profile ဇယားများကို အလိုအလျောက် တည်ဆောက်ပေးပြီး Realtime Sync ကို ဖွင့်ပေးပါမည်။
                   </p>
                   <button
                     type="button"
@@ -152,12 +152,12 @@ export const SupabaseSetupBanner: React.FC = () => {
                     {isCopied ? (
                       <>
                         <Check className="w-4 h-4 text-emerald-400" />
-                        <span className="text-emerald-300">已成功复制全部 SQL 代码！</span>
+                        <span className="text-emerald-300">SQL ကုဒ် အားလုံး ကူးယူပြီးပါပြီ!</span>
                       </>
                     ) : (
                       <>
                         <Copy className="w-4 h-4" />
-                        <span>一键复制建表 SQL 脚本 (Copy SQL)</span>
+                        <span>SQL Script အားလုံး ကူးယူမည် (Copy SQL)</span>
                       </>
                     )}
                   </button>
@@ -171,10 +171,10 @@ export const SupabaseSetupBanner: React.FC = () => {
                 </span>
                 <div className="flex-1">
                   <h4 className="font-bold text-stone-900 mb-1">
-                    打开 Supabase 后台的 SQL Editor 并粘贴运行
+                    Supabase SQL Editor သို့သွား၍ Paste လုပ်ပြီး RUN နှိပ်ပါ
                   </h4>
                   <p className="text-xs text-stone-600 mb-2.5">
-                    点击下方链接进入您项目的 SQL 编辑器页面，按 <kbd className="px-1.5 py-0.5 bg-white border border-stone-300 rounded text-[10px] font-mono">Ctrl + V</kbd> 粘贴刚才复制的代码，然后点击右下角绿色的 <strong>"RUN"</strong> 按钮。
+                    အောက်ပါ လင့်ခ်ကိုနှိပ်၍ SQL Editor သို့သွားပါ၊ ကူးယူထားသော ကုဒ်ကို Paste ထည့်သွင်းပြီး အစိမ်းရောင် <strong>"RUN"</strong> ခလုတ်ကို နှိပ်ပေးပါ။
                   </p>
                   <a
                     href={sqlEditorUrl}
@@ -182,7 +182,7 @@ export const SupabaseSetupBanner: React.FC = () => {
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition-colors shadow-xs"
                   >
-                    <span>直接打开 Supabase SQL Editor</span>
+                    <span>Supabase SQL Editor သို့ တိုက်ရိုက်သွားရန်</span>
                     <ExternalLink className="w-4 h-4" />
                   </a>
                 </div>
@@ -195,10 +195,10 @@ export const SupabaseSetupBanner: React.FC = () => {
                 </span>
                 <div className="flex-1">
                   <h4 className="font-bold text-stone-900 mb-1">
-                    在 Supabase 点击 RUN 完成后，回到此处点击「立即同步」
+                    Supabase တွင် RUN ပြီးပါက ဤနေရာတွင် «ဒေတာ ချက်ချင်းချိတ်မည်» နှိပ်ပါ
                   </h4>
                   <p className="text-xs text-stone-600 mb-2.5">
-                    系统检测到数据表已建立后，会自动将现有的美妆护肤库存推送到云端，并激活手机与电脑之间的实时同步。
+                    စနစ်က ဒေတာဇယားများ အဆင်သင့်ဖြစ်သည်နှင့် ကုန်ပစ္စည်းများနှင့် စာရင်းများကို Cloud သို့ အလိုအလျောက် ထပ်တူပြုပေးပါမည်။
                   </p>
                   <button
                     type="button"
@@ -212,7 +212,7 @@ export const SupabaseSetupBanner: React.FC = () => {
                     className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-2 transition-colors cursor-pointer shadow-xs disabled:opacity-50"
                   >
                     <RefreshCw className={`w-4 h-4 ${cloudSyncStatus === 'syncing' ? 'animate-spin' : ''}`} />
-                    <span>我已在 Supabase 运行完毕，立即同步数据</span>
+                    <span>SQL Run ပြီးပါပြီ၊ ဒေတာ ချက်ချင်းချိတ်မည်</span>
                   </button>
                   {retryStatus && (
                     <p className="text-xs font-semibold text-emerald-700 mt-2">
@@ -237,14 +237,14 @@ export const SupabaseSetupBanner: React.FC = () => {
             {/* Modal Footer */}
             <div className="px-5 py-3.5 bg-stone-50 border-t border-stone-200 flex items-center justify-between">
               <span className="text-xs text-stone-500">
-                项目 ID: <span className="font-mono font-semibold text-stone-700">{projectRef}</span>
+                Project ID: <span className="font-mono font-semibold text-stone-700">{projectRef}</span>
               </span>
               <button
                 type="button"
                 onClick={() => setIsOpenModal(false)}
                 className="px-4 py-1.5 rounded-xl bg-stone-200 hover:bg-stone-300 text-stone-700 font-bold text-xs transition-colors cursor-pointer"
               >
-                关闭
+                ပိတ်မည်
               </button>
             </div>
           </div>

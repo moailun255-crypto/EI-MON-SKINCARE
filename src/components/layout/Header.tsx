@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../../context/StoreContext';
+import { BrandLogo } from '../common/BrandLogo';
 import {
-  Sparkles,
   ShoppingCart,
   CloudOff,
   RefreshCw,
@@ -100,25 +100,8 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileCart }) => {
   return (
     <header className="bg-white border-b border-stone-200 sticky top-0 z-30 shadow-xs">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2 sm:py-2.5 flex items-center justify-between gap-2">
-        {/* Brand identity: Strictly "EI MON SKINCARE" */}
-        <div className="flex items-center gap-2.5 sm:gap-3">
-          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-rose-500 via-rose-600 to-amber-400 text-white flex items-center justify-center shadow-xs">
-            <Sparkles className="w-5 h-5 animate-pulse" />
-          </div>
-          <div>
-            <div className="flex items-center gap-1.5">
-              <span className="font-extrabold text-stone-900 tracking-tight text-base sm:text-lg">
-                EI MON SKINCARE
-              </span>
-              <span className="hidden md:inline-flex items-center text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
-                အရောင်းစနစ်
-              </span>
-            </div>
-            <p className="text-[11px] text-stone-500 font-medium truncate max-w-[180px] sm:max-w-xs">
-              အလှကုန်နှင့် အသားအရေထိန်းပစ္စည်း POS
-            </p>
-          </div>
-        </div>
+        {/* Brand identity: Upgraded Luxury Skincare Logo */}
+        <BrandLogo size="md" />
 
         {/* Center Live Clock (Visible on desktop & tablets) */}
         <div className="hidden lg:flex items-center gap-2 px-3 py-1 rounded-xl bg-stone-50 border border-stone-200/80 text-stone-700">

@@ -15,6 +15,8 @@ import {
   KeyRound,
   Eye,
   EyeOff,
+  Lock,
+  Check,
 } from 'lucide-react';
 
 export const SecurityBackupPage: React.FC = () => {
@@ -441,9 +443,11 @@ export const SecurityBackupPage: React.FC = () => {
                 </div>
               </div>
 
-              <span className="text-[11px] font-mono font-semibold px-2.5 py-1 rounded-full bg-stone-100 text-stone-700 border border-stone-200">
-                Password Protected
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-mono font-semibold px-2.5 py-1 rounded-full bg-stone-100 text-stone-700 border border-stone-200">
+                  Password Protected
+                </span>
+              </div>
             </div>
 
             <form onSubmit={handleUpdatePassword} className="space-y-3.5">
@@ -491,7 +495,7 @@ export const SecurityBackupPage: React.FC = () => {
                         setPassError(null);
                         setPassSuccess(null);
                       }}
-                      placeholder="စကားဝှက်အသစ်..."
+                      placeholder="အနည်းဆုံး ၄ လုံး..."
                       className="w-full text-xs sm:text-sm px-3 py-2 pr-8 rounded-xl border border-stone-200 font-mono focus:border-rose-500 focus:ring-1 focus:ring-rose-200 outline-hidden"
                     />
                     <button
@@ -501,6 +505,17 @@ export const SecurityBackupPage: React.FC = () => {
                     >
                       {showNewPass ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                     </button>
+                  </div>
+                  {/* Password requirement hint */}
+                  <div className="flex items-center gap-1 mt-1">
+                    {newPassword.length >= 4 ? (
+                      <Check className="w-3 h-3 text-emerald-500" />
+                    ) : (
+                      <div className="w-1.5 h-1.5 rounded-full bg-stone-300" />
+                    )}
+                    <span className={`text-[10px] ${newPassword.length >= 4 ? 'text-emerald-600 font-semibold' : 'text-stone-400'}`}>
+                      အနည်းဆုံး ၄ လုံး ({newPassword.length}/4)
+                    </span>
                   </div>
                 </div>
 
@@ -521,6 +536,22 @@ export const SecurityBackupPage: React.FC = () => {
                     placeholder="ထပ်မံရိုက်ထည့်ပါ..."
                     className="w-full text-xs sm:text-sm px-3 py-2 rounded-xl border border-stone-200 font-mono focus:border-rose-500 focus:ring-1 focus:ring-rose-200 outline-hidden"
                   />
+                  {/* Matching confirmation hint */}
+                  {confirmPassword && (
+                    <div className="flex items-center gap-1 mt-1">
+                      {newPassword === confirmPassword ? (
+                        <>
+                          <Check className="w-3 h-3 text-emerald-500" />
+                          <span className="text-[10px] text-emerald-600 font-semibold">စကားဝှက် ကိုက်ညီပါသည်</span>
+                        </>
+                      ) : (
+                        <>
+                          <AlertTriangle className="w-3 h-3 text-red-500" />
+                          <span className="text-[10px] text-red-500 font-semibold">စကားဝှက် မကိုက်ညီသေးပါ</span>
+                        </>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -540,7 +571,7 @@ export const SecurityBackupPage: React.FC = () => {
 
               <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <span className="text-[11px] text-stone-400">
-                  💡 စကားဝှက် အသစ် မပြောင်းမီ ယခင်စကားဝှက် မှန်ကန်မှသာ အသစ်သတ်မှတ်နိုင်ပါမည်။
+                  💡 စကားဝှက် အသစ် မပြောင်းမီ လက်ရှိ စကားဝှက် အတည်ပြုပြီးမှသာ အောင်မြင်ပါမည်။
                 </span>
                 <button
                   type="submit"

@@ -70,7 +70,7 @@ export const SupabaseSyncCard: React.FC = () => {
   const handleVerifyPassword = (e: React.FormEvent) => {
     e.preventDefault();
     if (!verifyPasswordInput.trim()) {
-      setPasswordError('ကျေးဇူးပြု၍ စီမံခန့်ခွဲသူ လျှို့ဝှက်စကားဝှက် ရိုက်ထည့်ပါ (请输入管理员安全密码)');
+      setPasswordError('ကျေးဇူးပြု၍ စီမံခန့်ခွဲသူ လျှို့ဝှက်စကားဝှက် ရိုက်ထည့်ပါ');
       return;
     }
 
@@ -80,10 +80,10 @@ export const SupabaseSyncCard: React.FC = () => {
       setPasswordError(null);
       setActionFeedback({
         type: 'success',
-        message: 'စကားဝှက် အောင်မြင်ပါသည်! ယခု Supabase ချိတ်ဆက်မှု အချက်အလက်များကို ပြင်ဆင်နိုင်ပါပြီ (安全核验通过，已解锁配置编辑权限)',
+        message: 'စကားဝှက် မှန်ကန်ပါသည်! Supabase ချိတ်ဆက်မှု အချက်အလက်များကို ပြင်ဆင်နိုင်ပါပြီ',
       });
     } else {
-      setPasswordError('လျှို့ဝှက်စကားဝှက် မှားယွင်းနေပါသည် (管理员安全密码错误，核验失败)');
+      setPasswordError('လျှို့ဝှက်စကားဝှက် မှားယွင်းနေပါသည်');
     }
   };
 
@@ -145,7 +145,7 @@ export const SupabaseSyncCard: React.FC = () => {
       handleOpenUnlockModal();
       return;
     }
-    if (window.confirm('Supabase Cloud ချိတ်ဆက်မှုကို ဖြုတ်ရန် သေချာပါသလား? အော့ဖ်လိုင်းစနစ်ဖြင့်သာ အလုပ်လုပ်တော့မည် ဖြစ်ပါသည် (确定断开云端同步？)')) {
+    if (window.confirm('Supabase Cloud ချိတ်ဆက်မှုကို ဖြုတ်ရန် သေချာပါသလား? အော့ဖ်လိုင်းစနစ်ဖြင့်သာ အလုပ်လုပ်တော့မည် ဖြစ်ပါသည်')) {
       disconnectSupabase();
       setIsUnlocked(true);
     }
@@ -278,14 +278,14 @@ export const SupabaseSyncCard: React.FC = () => {
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xs font-black text-stone-900">
-                {isUnlocked ? 'ပြင်ဆင်ခွင့် ဖွင့်ထားသည် (已解锁编辑权限)' : 'လုံခြုံရေးစကားဝှက်ဖြင့် ကာကွယ်ထားသည် (修改受密码保护)'}
+                {isUnlocked ? 'ပြင်ဆင်ခွင့် ဖွင့်ထားသည်' : 'လုံခြုံရေးစကားဝှက်ဖြင့် ကာကွယ်ထားသည်'}
               </span>
               <span className={`text-[10px] px-2 py-0.5 rounded-md font-extrabold ${isUnlocked ? 'bg-amber-200 text-amber-900' : 'bg-stone-200 text-stone-700'}`}>
                 {isUnlocked ? 'Unlocked' : 'Protected'}
               </span>
             </div>
             <p className="text-[11px] text-stone-500 mt-0.5">
-              ဝန်ထမ်းများ အမှားယွင်းဖြင့် မပြင်ဆင်မိစေရန် Supabase URL နှင့် Public Key ပြင်ဆင်ခြင်းကို စီမံခန့်ခွဲသူ စကားဝှက်ဖြင့် ကာကွယ်ထားပါသည် (防止员工误触或擅自修改)
+              ဝန်ထမ်းများ အမှားယွင်းဖြင့် မပြင်ဆင်မိစေရန် Supabase URL နှင့် Public Key ပြင်ဆင်ခြင်းကို စီမံခန့်ခွဲသူ စကားဝှက်ဖြင့် ကာကွယ်ထားပါသည်
             </p>
           </div>
         </div>
@@ -298,7 +298,7 @@ export const SupabaseSyncCard: React.FC = () => {
               className="px-3 py-1.5 rounded-xl border border-stone-300 bg-white hover:bg-stone-100 text-stone-700 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
             >
               <Lock className="w-3.5 h-3.5 text-stone-500" />
-              <span>ချက်ချင်း ပြန်ပိတ်မည် (锁定)</span>
+              <span>ချက်ချင်း ပြန်ပိတ်မည်</span>
             </button>
           ) : (
             <button
@@ -307,7 +307,7 @@ export const SupabaseSyncCard: React.FC = () => {
               className="px-3.5 py-1.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
             >
               <KeyRound className="w-3.5 h-3.5 text-amber-400" />
-              <span>စကားဝှက်ဖြင့် ဖွင့်မည် (核验密码解锁)</span>
+              <span>စကားဝှက်ဖြင့် ဖွင့်မည်</span>
             </button>
           )}
         </div>
@@ -434,7 +434,7 @@ export const SupabaseSyncCard: React.FC = () => {
               <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
               <div>
                 <p className="font-bold text-xs sm:text-sm text-stone-900">
-                  ⚠️ Supabase 项目连接成功，但尚未建立数据表！
+                  ⚠️ Supabase Cloud Database သို့ ချိတ်ဆက်မိသော်လည်း Database ဇယားများ မရှိသေးပါ
                 </p>
                 <p className="text-[11px] text-stone-600 mt-0.5">
                   Supabase ချိတ်ဆက်မိသော်လည်း Database ဇယားများ မရှိသေးပါ။ အောက်ပါ SQL Script ကို ကူးယူပြီး Supabase SQL Editor တွင် Run ပေးပါရန်။
@@ -448,7 +448,7 @@ export const SupabaseSyncCard: React.FC = () => {
                 className="px-3 py-1.5 rounded-lg bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
               >
                 {copiedSql ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                <span>{copiedSql ? '已复制 SQL!' : '一键复制建表 SQL'}</span>
+                <span>{copiedSql ? 'ကူးယူပြီးပါပြီ!' : 'SQL Script အားလုံး ကူးယူမည်'}</span>
               </button>
               <a
                 href={sqlEditorUrl}
@@ -456,7 +456,7 @@ export const SupabaseSyncCard: React.FC = () => {
                 rel="noopener noreferrer"
                 className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
               >
-                <span>打开 Supabase SQL Editor</span>
+                <span>Supabase SQL Editor ဖွင့်မည်</span>
                 <ExternalLink className="w-3.5 h-3.5" />
               </a>
               <button
@@ -466,7 +466,7 @@ export const SupabaseSyncCard: React.FC = () => {
                 className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${cloudSyncStatus === 'syncing' ? 'animate-spin' : ''}`} />
-                <span>我已运行 SQL，立即同步</span>
+                <span>SQL Run ပြီးပါပြီ၊ ဒေတာ ချက်ချင်းချိတ်မည်</span>
               </button>
             </div>
           </div>
@@ -495,7 +495,7 @@ export const SupabaseSyncCard: React.FC = () => {
                 ) : (
                   <>
                     <Cloud className="w-4 h-4" />
-                    <span>{isCloudConnected ? 'ချိတ်ဆက်မှု ပြင်ဆင်သိမ်းမည် (保存配置)' : 'Supabase နှင့် ချိတ်ဆက်မည်'}</span>
+                    <span>{isCloudConnected ? 'ချိတ်ဆက်မှု ပြင်ဆင်သိမ်းမည်' : 'Supabase နှင့် ချိတ်ဆက်မည်'}</span>
                   </>
                 )}
               </button>
@@ -506,7 +506,7 @@ export const SupabaseSyncCard: React.FC = () => {
                 className="px-5 py-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-xs sm:text-sm font-bold flex items-center gap-2 shadow-xs transition-colors cursor-pointer"
               >
                 <Lock className="w-4 h-4 text-amber-400" />
-                <span>စကားဝှက်ရိုက်ထည့်ပြီးမှ ပြင်ဆင်မည် (核验密码以修改)</span>
+                <span>စကားဝှက်ရိုက်ထည့်ပြီးမှ ပြင်ဆင်မည်</span>
               </button>
             )}
 
@@ -593,7 +593,7 @@ export const SupabaseSyncCard: React.FC = () => {
                     စီမံခန့်ခွဲသူ စကားဝှက် စစ်ဆေးခြင်း
                   </h4>
                   <p className="text-[11px] text-stone-400">
-                    管理员安全核验 (Supabase 云配置保护)
+                    Supabase Cloud Security Verification
                   </p>
                 </div>
               </div>
@@ -613,7 +613,7 @@ export const SupabaseSyncCard: React.FC = () => {
             <form onSubmit={handleVerifyPassword} className="space-y-3">
               <div>
                 <label className="block text-xs font-bold text-stone-700 mb-1">
-                  လုံခြုံရေး လျှို့ဝှက်စကားဝှက် (管理员安全密码)
+                  လုံခြုံရေး လျှို့ဝှက်စကားဝှက်
                 </label>
                 <div className="relative">
                   <input
@@ -653,14 +653,14 @@ export const SupabaseSyncCard: React.FC = () => {
                   onClick={() => setShowUnlockModal(false)}
                   className="px-4 py-2 rounded-xl text-stone-600 hover:bg-stone-100 text-xs font-bold transition-colors cursor-pointer"
                 >
-                  မလုပ်တော့ပါ (取消)
+                  မလုပ်တော့ပါ
                 </button>
                 <button
                   type="submit"
                   className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-colors cursor-pointer shadow-xs flex items-center gap-1.5"
                 >
                   <Unlock className="w-3.5 h-3.5" />
-                  <span>အတည်ပြုဖွင့်မည် (核验解锁)</span>
+                  <span>အတည်ပြုဖွင့်မည်</span>
                 </button>
               </div>
             </form>
