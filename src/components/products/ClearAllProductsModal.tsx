@@ -132,7 +132,7 @@ export const ClearAllProductsModal: React.FC<ClearAllProductsModalProps> = ({
                   setPassword(e.target.value);
                   setErrorMsg(null);
                 }}
-                placeholder="စကားဝှက် ရိုက်ထည့်ပါ (ပုံမှန်: 123456)..."
+                placeholder="စကားဝှက် ရိုက်ထည့်ပါ..."
                 className={`w-full text-xs sm:text-sm px-3.5 py-2.5 pr-10 rounded-xl border font-mono outline-hidden transition-all ${
                   errorMsg
                     ? 'border-red-500 bg-red-50/40 text-red-900 focus:ring-2 focus:ring-red-200'

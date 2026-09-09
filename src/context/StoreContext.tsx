@@ -64,6 +64,8 @@ interface StoreContextType {
 
   // Navigation
   setActiveTab: (tab: PageTab) => void;
+  goBack: () => void;
+  canGoBack: boolean;
   setLanguageMode: (mode: LanguageMode) => void;
   setUseMyanmarDigits: (val: boolean) => void;
   setSelectedProductForEdit: (product: Product | null) => void;
@@ -199,7 +201,34 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   });
 
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [activeTab, setActiveTab] = useState<PageTab>('pos');
+  const [activeTab, setActiveTabState] = useState<PageTab>('pos');
+  const [tabHistory, setTabHistory] = useState<PageTab[]>(['pos']);
+
+  const setActiveTab = (tab: PageTab) => {
+    setActiveTabState(tab);
+    setTabHistory((prev) => {
+      if (prev[prev.length - 1] === tab) return prev;
+      return [...prev, tab];
+    });
+  };
+
+  const goBack = () => {
+    if (selectedProductForEdit) {
+      setSelectedProductForEdit(null);
+    }
+    setTabHistory((prev) => {
+      if (prev.length <= 1) {
+        setActiveTabState('pos');
+        return ['pos'];
+      }
+      const nextHistory = prev.slice(0, -1);
+      const prevTab = nextHistory[nextHistory.length - 1] || 'pos';
+      setActiveTabState(prevTab);
+      return nextHistory;
+    });
+  };
+
+  const canGoBack = activeTab !== 'pos' || tabHistory.length > 1;
   const [languageMode, setLanguageMode] = useState<LanguageMode>('my');
   const [useMyanmarDigits, setUseMyanmarDigits] = useState<boolean>(false);
 
@@ -1001,6 +1030,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         syncNowWithCloud,
 
         setActiveTab,
+        goBack,
+        canGoBack,
         setLanguageMode,
         setUseMyanmarDigits,
         setSelectedProductForEdit,

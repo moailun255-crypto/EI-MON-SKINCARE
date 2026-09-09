@@ -19,6 +19,7 @@ import {
   Check,
   X,
   CheckCircle,
+  ArrowLeft,
 } from 'lucide-react';
 
 export const ProductListPage: React.FC = () => {
@@ -129,6 +130,16 @@ export const ProductListPage: React.FC = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setActiveTab('pos')}
+            className="px-3.5 py-2.5 rounded-xl border border-stone-200 hover:border-stone-300 bg-white hover:bg-stone-50 text-stone-700 text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 shadow-2xs transition-all cursor-pointer min-h-[44px]"
+            title="အရောင်းကောင်တာသို့ ပြန်သွားမည်"
+          >
+            <ArrowLeft className="w-4 h-4 text-rose-600" />
+            <span>အရောင်းကောင်တာ (POS)</span>
+          </button>
+
           {products.length > 0 && (
             <button
               onClick={() => setIsClearAllModalOpen(true)}

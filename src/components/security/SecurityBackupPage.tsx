@@ -17,6 +17,7 @@ import {
   EyeOff,
   Lock,
   Check,
+  ArrowLeft,
 } from 'lucide-react';
 
 export const SecurityBackupPage: React.FC = () => {
@@ -28,6 +29,7 @@ export const SecurityBackupPage: React.FC = () => {
     importDatabaseJSON,
     products,
     orders,
+    setActiveTab,
   } = useStore();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -172,7 +174,7 @@ export const SecurityBackupPage: React.FC = () => {
   return (
     <div className="max-w-5xl mx-auto px-3 sm:px-6 py-4 sm:py-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-xl sm:text-2xl font-black text-stone-900 tracking-tight flex items-center gap-2">
             <ShieldCheck className="w-6 h-6 sm:w-7 sm:h-7 text-emerald-600" />
@@ -183,12 +185,24 @@ export const SecurityBackupPage: React.FC = () => {
           </p>
         </div>
 
-        {toastMsg && (
-          <div className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-100 text-emerald-800 text-xs font-bold shadow-xs animate-fadeIn">
-            <CheckCircle className="w-4 h-4" />
-            <span>{toastMsg}</span>
-          </div>
-        )}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setActiveTab('pos')}
+            className="px-3.5 py-2 rounded-xl bg-white border border-stone-200 hover:border-stone-300 text-stone-700 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs min-h-[40px]"
+            title="အရောင်းကောင်တာသို့ ပြန်သွားမည်"
+          >
+            <ArrowLeft className="w-4 h-4 text-rose-600" />
+            <span>အရောင်းကောင်တာ (POS)</span>
+          </button>
+
+          {toastMsg && (
+            <div className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-100 text-emerald-800 text-xs font-bold shadow-xs animate-fadeIn">
+              <CheckCircle className="w-4 h-4" />
+              <span>{toastMsg}</span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Supabase Cloud & Realtime Multi-Device Sync Card */}

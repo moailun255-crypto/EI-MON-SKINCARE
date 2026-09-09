@@ -17,6 +17,7 @@ import {
   CalendarDays,
   ShoppingBag,
   CheckCircle2,
+  ArrowLeft,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -37,6 +38,7 @@ export const FinancePage: React.FC = () => {
     deleteExpense,
     storeProfile,
     useMyanmarDigits,
+    setActiveTab,
   } = useStore();
 
   const [dateRange, setDateRange] = useState<'this-month' | 'today' | 'all'>('this-month');
@@ -282,7 +284,17 @@ export const FinancePage: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setActiveTab('pos')}
+            className="px-3.5 py-2 rounded-xl bg-white border border-stone-200 hover:border-stone-300 text-stone-700 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs min-h-[40px]"
+            title="အရောင်းကောင်တာသို့ ပြန်သွားမည်"
+          >
+            <ArrowLeft className="w-4 h-4 text-rose-600" />
+            <span>အရောင်းကောင်တာ (POS)</span>
+          </button>
+
           {/* Time range selector */}
           <div className="flex items-center bg-white p-1 rounded-xl border border-stone-200 shadow-xs text-xs">
             <button

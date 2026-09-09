@@ -22,6 +22,7 @@ export const AddProductPage: React.FC = () => {
     selectedProductForEdit,
     setSelectedProductForEdit,
     setActiveTab,
+    goBack,
   } = useStore();
 
   const isEditing = Boolean(selectedProductForEdit);
@@ -144,13 +145,16 @@ export const AddProductPage: React.FC = () => {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button
+            type="button"
             onClick={() => {
               setSelectedProductForEdit(null);
-              setActiveTab('products');
+              goBack();
             }}
-            className="p-2 rounded-xl bg-white border border-stone-200 text-stone-700 hover:bg-stone-50 cursor-pointer"
+            className="flex items-center gap-2 px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-2xl bg-white border border-stone-200 hover:border-stone-300 text-stone-700 hover:text-rose-700 hover:bg-rose-50/50 shadow-2xs font-bold text-xs sm:text-sm active:scale-95 transition-all cursor-pointer min-h-[44px]"
+            title="နောက်သို့ ပြန်သွားမည် (Go Back)"
           >
-            <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+            <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 text-rose-600 shrink-0" />
+            <span>နောက်သို့ (Back)</span>
           </button>
           <div>
             <h1 className="text-xl sm:text-2xl font-black text-stone-900">
@@ -434,11 +438,12 @@ export const AddProductPage: React.FC = () => {
             type="button"
             onClick={() => {
               setSelectedProductForEdit(null);
-              setActiveTab('products');
+              goBack();
             }}
-            className="py-2.5 px-5 rounded-xl border border-stone-300 text-stone-700 text-xs sm:text-sm font-bold hover:bg-stone-50 transition-colors cursor-pointer"
+            className="py-2.5 px-5 rounded-2xl border border-stone-300 text-stone-700 text-xs sm:text-sm font-bold hover:bg-stone-50 transition-colors cursor-pointer flex items-center gap-1.5 min-h-[44px]"
           >
-            မလုပ်တော့ပါ
+            <ArrowLeft className="w-4 h-4 text-stone-500" />
+            <span>မလုပ်တော့ပါ (နောက်သို့)</span>
           </button>
 
           <button

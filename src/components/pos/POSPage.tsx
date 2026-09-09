@@ -38,6 +38,8 @@ export const POSPage: React.FC<POSPageProps> = ({
     addToCart,
     useMyanmarDigits,
     orders,
+    cartItemCount,
+    cartTotal,
   } = useStore();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -237,7 +239,7 @@ export const POSPage: React.FC<POSPageProps> = ({
   ];
 
   return (
-    <div className="max-w-7xl mx-auto px-2 sm:px-4 py-2.5 sm:py-3">
+    <div className="max-w-7xl mx-auto px-2 sm:px-4 py-2.5 sm:py-3 pb-28 sm:pb-6">
       {/* Top POS Quick-Metrics Dashboard Strip */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
         {/* Today's Total Sales */}
@@ -504,6 +506,33 @@ export const POSPage: React.FC<POSPageProps> = ({
           <CartPanel onCheckout={() => setIsPaymentModalOpen(true)} />
         </div>
       </div>
+
+      {/* Mobile Bottom Floating Cart Summary Bar */}
+      {cartItemCount > 0 && !isMobileCartOpen && (
+        <div className="md:hidden fixed bottom-16 left-3 right-3 z-30 animate-slideUp">
+          <button
+            type="button"
+            onClick={() => setIsMobileCartOpen && setIsMobileCartOpen(true)}
+            className="w-full bg-stone-900/95 backdrop-blur-md text-white p-3 rounded-2xl shadow-xl border border-stone-800 flex items-center justify-between cursor-pointer active:scale-[0.98] transition-transform"
+          >
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-rose-600 text-white flex items-center justify-center font-black text-xs shadow-xs">
+                {cartItemCount}
+              </div>
+              <div className="text-left">
+                <p className="text-[10px] text-stone-400 font-medium leading-tight">စျေးဝယ်ခြင်းတွင် ထည့်ထားသည်</p>
+                <p className="text-xs font-black text-rose-300 leading-tight">
+                  {formatMMK(cartTotal, useMyanmarDigits)}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-600 text-white font-bold text-xs shadow-xs">
+              <span>ခြင်းတောင်းကြည့်မည်</span>
+              <span>&rarr;</span>
+            </div>
+          </button>
+        </div>
+      )}
 
       {/* Mobile Cart Drawer */}
       {isMobileCartOpen && (

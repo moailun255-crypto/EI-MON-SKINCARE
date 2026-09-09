@@ -12,6 +12,7 @@ import {
   VolumeX,
   UserCheck,
   Languages,
+  ArrowLeft,
 } from 'lucide-react';
 import { getSoundMuted, setSoundMuted } from '../../utils/scannerSound';
 
@@ -25,6 +26,8 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileCart }) => {
     cartItemCount,
     activeTab,
     setActiveTab,
+    goBack,
+    canGoBack,
     isCloudConnected,
     cloudSyncStatus,
     syncNowWithCloud,
@@ -100,8 +103,21 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileCart }) => {
   return (
     <header className="bg-white border-b border-stone-200 sticky top-0 z-30 shadow-xs">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2 sm:py-2.5 flex items-center justify-between gap-2">
-        {/* Brand identity: Upgraded Luxury Skincare Logo */}
-        <BrandLogo size="md" />
+        {/* Brand identity & Back Button */}
+        <div className="flex items-center gap-2">
+          {activeTab !== 'pos' && (
+            <button
+              type="button"
+              onClick={goBack}
+              className="flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-stone-100 hover:bg-rose-50 text-stone-800 hover:text-rose-700 border border-stone-200 hover:border-rose-200 font-bold text-xs sm:text-sm transition-all active:scale-95 cursor-pointer shadow-2xs shrink-0"
+              title="နောက်သို့ ပြန်သွားမည် (Go Back)"
+            >
+              <ArrowLeft className="w-4 h-4 text-rose-600 shrink-0" />
+              <span>နောက်သို့ (Back)</span>
+            </button>
+          )}
+          <BrandLogo size="md" />
+        </div>
 
         {/* Center Live Clock (Visible on desktop & tablets) */}
         <div className="hidden lg:flex items-center gap-2 px-3 py-1 rounded-xl bg-stone-50 border border-stone-200/80 text-stone-700">
