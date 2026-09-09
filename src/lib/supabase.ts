@@ -137,7 +137,7 @@ const mapProductToRow = (p: Product) => ({
   updated_at: p.updatedAt,
 });
 
-const mapRowToProduct = (row: any): Product => ({
+export const mapRowToProduct = (row: any): Product => ({
   id: row.id,
   nameMy: row.name_my,
   nameEn: row.name_en,
@@ -281,33 +281,51 @@ export const pushSingleProductToCloud = async (product: Product) => {
   }
 };
 
-export const deleteProductFromCloud = async (productId: string) => {
+export const deleteProductFromCloud = async (productId: string): Promise<boolean> => {
   const client = getSupabase();
-  if (!client) return;
+  if (!client) return false;
   try {
-    await client.from('products').delete().eq('id', productId);
+    const { error } = await client.from('products').delete().eq('id', productId);
+    if (error) {
+      console.error('Error deleting product from Supabase:', error);
+      return false;
+    }
+    return true;
   } catch (err) {
     console.error('Error deleting product from Supabase:', err);
+    return false;
   }
 };
 
-export const deleteMultipleProductsFromCloud = async (productIds: string[]) => {
+export const deleteMultipleProductsFromCloud = async (productIds: string[]): Promise<boolean> => {
   const client = getSupabase();
-  if (!client || productIds.length === 0) return;
+  if (!client || productIds.length === 0) return false;
   try {
-    await client.from('products').delete().in('id', productIds);
+    const { error } = await client.from('products').delete().in('id', productIds);
+    if (error) {
+      console.error('Error deleting products batch from Supabase:', error);
+      return false;
+    }
+    return true;
   } catch (err) {
     console.error('Error deleting products batch from Supabase:', err);
+    return false;
   }
 };
 
-export const clearAllProductsFromCloud = async () => {
+export const clearAllProductsFromCloud = async (): Promise<boolean> => {
   const client = getSupabase();
-  if (!client) return;
+  if (!client) return false;
   try {
-    await client.from('products').delete().neq('id', 'keep_none_empty_placeholder_prod');
+    const { error } = await client.from('products').delete().neq('id', 'keep_none_empty_placeholder_prod');
+    if (error) {
+      console.error('Error clearing products from Supabase:', error);
+      return false;
+    }
+    return true;
   } catch (err) {
     console.error('Error clearing products from Supabase:', err);
+    return false;
   }
 };
 

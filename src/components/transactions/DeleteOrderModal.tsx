@@ -49,7 +49,7 @@ export const DeleteOrderModal: React.FC<DeleteOrderModalProps> = ({
 
     const isValid = verifyDeletePassword(password);
     if (!isValid) {
-      triggerError('လျှို့ဝှက်စကားဝှက် မမှန်ကန်ပါ (စကားဝှက်မှားနေပါသည်) / 密码错误，请重新输入');
+      triggerError('လျှို့ဝှက်စကားဝှက် မမှန်ကန်ပါ (Incorrect Password)');
       return;
     }
 

@@ -10,7 +10,6 @@ import {
   PaymentMethod,
 } from '../types';
 import {
-  INITIAL_PRODUCTS,
   INITIAL_ORDERS,
   INITIAL_EXPENSES,
   INITIAL_STORE_PROFILE,
@@ -24,6 +23,7 @@ import {
   clearSupabaseConfig as clearSupabaseConfigStorage,
   testSupabaseConnection,
   fetchCloudData,
+  mapRowToProduct,
   pushProductsToCloud,
   pushSingleProductToCloud,
   deleteProductFromCloud,
@@ -94,6 +94,8 @@ interface StoreContextType {
   addProduct: (productData: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updateProduct: (product: Product) => void;
   deleteProduct: (productId: string) => void;
+  deleteMultipleProducts: (productIds: string[]) => void;
+  clearAllProducts: (password: string) => { success: boolean; message: string };
   adjustStock: (productId: string, delta: number) => void;
 
   // Expense management
@@ -114,7 +116,6 @@ interface StoreContextType {
   unlockSystem: () => void;
   exportDatabaseJSON: () => string;
   importDatabaseJSON: (jsonStr: string) => boolean;
-  resetToSampleData: () => void;
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -133,9 +134,15 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [products, setProducts] = useState<Product[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
-      return saved ? JSON.parse(saved) : INITIAL_PRODUCTS;
+      if (saved !== null) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return parsed;
+        }
+      }
+      return [];
     } catch {
-      return INITIAL_PRODUCTS;
+      return [];
     }
   });
 
@@ -240,22 +247,24 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
         const cloudData = await fetchCloudData();
         if (isMounted) {
-          if (cloudData.products && cloudData.products.length > 0) {
+          if (cloudData.products !== null) {
             setProducts(cloudData.products);
-          } else if (products.length > 0) {
-            pushProductsToCloud(products);
+            localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(cloudData.products));
           }
 
-          if (cloudData.orders) {
+          if (cloudData.orders !== null) {
             setOrders(cloudData.orders);
+            localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify(cloudData.orders));
           }
 
-          if (cloudData.expenses && cloudData.expenses.length > 0) {
+          if (cloudData.expenses !== null) {
             setExpenses(cloudData.expenses);
+            localStorage.setItem(STORAGE_KEYS.EXPENSES, JSON.stringify(cloudData.expenses));
           }
 
-          if (cloudData.storeProfile) {
+          if (cloudData.storeProfile !== null) {
             setStoreProfile(cloudData.storeProfile);
+            localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(cloudData.storeProfile));
           }
 
           setCloudSyncStatus('synced');
@@ -278,15 +287,40 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         { event: '*', schema: 'public', table: 'orders' },
         async () => {
           const fresh = await fetchCloudData();
-          if (fresh.orders && isMounted) setOrders(fresh.orders);
+          if (fresh.orders !== null && isMounted) {
+            setOrders(fresh.orders);
+            localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify(fresh.orders));
+          }
         }
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'products' },
-        async () => {
+        async (payload) => {
+          // 1. Instant optimistic update on all listening devices
+          if (payload.eventType === 'DELETE') {
+            const deletedId = (payload.old as any)?.id;
+            if (deletedId) {
+              setProducts((prev) => prev.filter((p) => p.id !== deletedId));
+              setCart((prev) => prev.filter((item) => item.product.id !== deletedId));
+            }
+          } else if (payload.eventType === 'INSERT' && payload.new && (payload.new as any).id) {
+            const newProd = mapRowToProduct(payload.new);
+            setProducts((prev) => {
+              const exists = prev.some((p) => p.id === newProd.id);
+              return exists ? prev.map((p) => (p.id === newProd.id ? newProd : p)) : [newProd, ...prev];
+            });
+          } else if (payload.eventType === 'UPDATE' && payload.new && (payload.new as any).id) {
+            const updatedProd = mapRowToProduct(payload.new);
+            setProducts((prev) => prev.map((p) => (p.id === updatedProd.id ? updatedProd : p)));
+          }
+
+          // 2. Full fetch to guarantee multi-item and complete sync consistency across all devices
           const fresh = await fetchCloudData();
-          if (fresh.products && fresh.products.length > 0 && isMounted) setProducts(fresh.products);
+          if (fresh.products !== null && isMounted) {
+            setProducts(fresh.products);
+            localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(fresh.products));
+          }
         }
       )
       .on(
@@ -294,7 +328,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         { event: '*', schema: 'public', table: 'expenses' },
         async () => {
           const fresh = await fetchCloudData();
-          if (fresh.expenses && isMounted) setExpenses(fresh.expenses);
+          if (fresh.expenses !== null && isMounted) {
+            setExpenses(fresh.expenses);
+            localStorage.setItem(STORAGE_KEYS.EXPENSES, JSON.stringify(fresh.expenses));
+          }
         }
       )
       .on(
@@ -302,14 +339,70 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         { event: '*', schema: 'public', table: 'store_profile' },
         async () => {
           const fresh = await fetchCloudData();
-          if (fresh.storeProfile && isMounted) setStoreProfile(fresh.storeProfile);
+          if (fresh.storeProfile !== null && isMounted) {
+            setStoreProfile(fresh.storeProfile);
+            localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(fresh.storeProfile));
+          }
         }
       )
       .subscribe();
 
+    // Multi-device sync on app tab/window focus
+    const handleVisibilitySync = () => {
+      if (document.visibilityState === 'visible') {
+        fetchCloudData().then((fresh) => {
+          if (!isMounted) return;
+          if (fresh.products !== null) {
+            setProducts(fresh.products);
+            localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(fresh.products));
+          }
+          if (fresh.orders !== null) {
+            setOrders(fresh.orders);
+            localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify(fresh.orders));
+          }
+          if (fresh.expenses !== null) {
+            setExpenses(fresh.expenses);
+            localStorage.setItem(STORAGE_KEYS.EXPENSES, JSON.stringify(fresh.expenses));
+          }
+          if (fresh.storeProfile !== null) {
+            setStoreProfile(fresh.storeProfile);
+            localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(fresh.storeProfile));
+          }
+        });
+      }
+    };
+    window.addEventListener('visibilitychange', handleVisibilitySync);
+    window.addEventListener('focus', handleVisibilitySync);
+
+    // Periodic sync interval (every 10 seconds)
+    const intervalSync = setInterval(() => {
+      fetchCloudData().then((fresh) => {
+        if (!isMounted) return;
+        if (fresh.products !== null) {
+          setProducts(fresh.products);
+          localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(fresh.products));
+        }
+        if (fresh.orders !== null) {
+          setOrders(fresh.orders);
+          localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify(fresh.orders));
+        }
+        if (fresh.expenses !== null) {
+          setExpenses(fresh.expenses);
+          localStorage.setItem(STORAGE_KEYS.EXPENSES, JSON.stringify(fresh.expenses));
+        }
+        if (fresh.storeProfile !== null) {
+          setStoreProfile(fresh.storeProfile);
+          localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(fresh.storeProfile));
+        }
+      });
+    }, 10000);
+
     return () => {
       isMounted = false;
       client.removeChannel(channel);
+      window.removeEventListener('visibilitychange', handleVisibilitySync);
+      window.removeEventListener('focus', handleVisibilitySync);
+      clearInterval(intervalSync);
     };
   }, [supabaseConfig]);
 
@@ -395,28 +488,24 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setNeedsTableSetup(false);
 
       const data = await fetchCloudData();
-      if (data.products && data.products.length > 0) {
+      if (data.products !== null) {
         setProducts(data.products);
-      } else if (products.length > 0) {
-        await pushProductsToCloud(products);
+        localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(data.products));
       }
 
-      if (data.orders && data.orders.length > 0) {
+      if (data.orders !== null) {
         setOrders(data.orders);
-      } else if (orders.length > 0) {
-        await Promise.all(orders.map((o) => pushOrderToCloud(o)));
+        localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify(data.orders));
       }
 
-      if (data.expenses && data.expenses.length > 0) {
+      if (data.expenses !== null) {
         setExpenses(data.expenses);
-      } else if (expenses.length > 0) {
-        await Promise.all(expenses.map((e) => pushExpenseToCloud(e)));
+        localStorage.setItem(STORAGE_KEYS.EXPENSES, JSON.stringify(data.expenses));
       }
 
-      if (data.storeProfile) {
+      if (data.storeProfile !== null) {
         setStoreProfile(data.storeProfile);
-      } else {
-        await pushProfileToCloud(storeProfile);
+        localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(data.storeProfile));
       }
 
       setCloudSyncStatus('synced');
@@ -624,6 +713,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Product management
   const addProduct = (productData: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>) => {
+    localStorage.removeItem('ei_mon_products_explicitly_cleared');
     const newProduct: Product = {
       ...productData,
       id: `prod-${Date.now()}`,
@@ -635,6 +725,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const updateProduct = (updated: Product) => {
+    localStorage.removeItem('ei_mon_products_explicitly_cleared');
     setProducts((prev) =>
       prev.map((p) =>
         p.id === updated.id
@@ -649,9 +740,40 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const deleteProduct = (productId: string) => {
-    setProducts((prev) => prev.filter((p) => p.id !== productId));
+    setProducts((prev) => {
+      const updated = prev.filter((p) => p.id !== productId);
+      if (updated.length === 0) {
+        localStorage.setItem('ei_mon_products_explicitly_cleared', 'true');
+      }
+      return updated;
+    });
     removeFromCart(productId);
     deleteProductFromCloud(productId);
+  };
+
+  const deleteMultipleProducts = (productIds: string[]) => {
+    if (productIds.length === 0) return;
+    const idSet = new Set(productIds);
+    setProducts((prev) => prev.filter((p) => !idSet.has(p.id)));
+    productIds.forEach((id) => removeFromCart(id));
+    deleteMultipleProductsFromCloud(productIds);
+  };
+
+  const clearAllProducts = (inputPassword: string): { success: boolean; message: string } => {
+    if (!verifyDeletePassword(inputPassword)) {
+      return {
+        success: false,
+        message: 'လုံခြုံရေး လျှို့ဝှက်စကားဝှက် မှားယွင်းနေပါသည် (Password incorrect)',
+      };
+    }
+    setProducts([]);
+    clearCart();
+    localStorage.setItem(STORAGE_KEYS.PRODUCTS, '[]');
+    clearAllProductsFromCloud();
+    return {
+      success: true,
+      message: 'ကုန်ပစ္စည်းစာရင်း အားလုံးကို အောင်မြင်စွာ ဖျက်ပစ်ပြီးပါပြီ (All products cleared successfully)',
+    };
   };
 
   const adjustStock = (productId: string, delta: number) => {
@@ -852,18 +974,6 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  const resetToSampleData = () => {
-    setProducts(INITIAL_PRODUCTS);
-    setOrders(INITIAL_ORDERS);
-    setExpenses(INITIAL_EXPENSES);
-    setStoreProfile(INITIAL_STORE_PROFILE);
-    clearCart();
-    localStorage.removeItem(STORAGE_KEYS.PRODUCTS);
-    localStorage.removeItem(STORAGE_KEYS.ORDERS);
-    localStorage.removeItem(STORAGE_KEYS.EXPENSES);
-    localStorage.removeItem(STORAGE_KEYS.PROFILE);
-  };
-
   return (
     <StoreContext.Provider
       value={{
@@ -910,6 +1020,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         addProduct,
         updateProduct,
         deleteProduct,
+        deleteMultipleProducts,
+        clearAllProducts,
         adjustStock,
 
         addExpense,
@@ -926,7 +1038,6 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         unlockSystem,
         exportDatabaseJSON,
         importDatabaseJSON,
-        resetToSampleData,
       }}
     >
       {children}

@@ -216,7 +216,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileCart }) => {
           {activeTab === 'pos' && onOpenMobileCart && (
             <button
               onClick={onOpenMobileCart}
-              className="lg:hidden relative p-2 rounded-xl bg-rose-600 text-white hover:bg-rose-700 shadow-xs flex items-center justify-center cursor-pointer"
+              className="md:hidden relative p-2 rounded-xl bg-rose-600 text-white hover:bg-rose-700 shadow-xs flex items-center justify-center cursor-pointer"
             >
               <ShoppingCart className="w-4 h-4" />
               {cartItemCount > 0 && (

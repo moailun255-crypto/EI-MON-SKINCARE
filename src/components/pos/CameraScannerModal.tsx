@@ -7,12 +7,16 @@ interface CameraScannerModalProps {
   isOpen: boolean;
   onClose: () => void;
   onScan?: (code: string) => { success: boolean; message: string; productName?: string };
+  title?: string;
+  elementId?: string;
 }
 
 export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
   isOpen,
   onClose,
   onScan,
+  title,
+  elementId,
 }) => {
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [scanSuccessText, setScanSuccessText] = useState<string | null>(null);
@@ -22,7 +26,7 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
   const lastCodeRef = useRef<string>('');
   const lastTimeRef = useRef<number>(0);
 
-  const scannerElementId = 'minimal-pos-camera-view';
+  const scannerElementId = elementId || 'minimal-pos-camera-view';
 
   const startCamera = async () => {
     try {
@@ -161,7 +165,7 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
               <Camera className="w-4 h-4" />
             </div>
             <h3 className="text-sm font-bold text-stone-900">
-              ဘားကုဒ် စကင်ဖတ်ရန်
+              {title || 'ဘားကုဒ် စကင်ဖတ်ရန်'}
             </h3>
           </div>
           <button

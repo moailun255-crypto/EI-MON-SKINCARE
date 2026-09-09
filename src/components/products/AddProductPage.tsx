@@ -3,12 +3,16 @@ import { useStore } from '../../context/StoreContext';
 import { ProductCategory, SkinType } from '../../types';
 import { generateSKU } from '../../utils/format';
 import { CATEGORY_LABELS, SKIN_TYPE_LABELS } from '../../utils/translations';
+import { CameraScannerModal } from '../pos/CameraScannerModal';
 import {
   Save,
   ArrowLeft,
   Sparkles,
   RefreshCw,
   CheckCircle,
+  Camera,
+  X,
+  Barcode,
 } from 'lucide-react';
 
 export const AddProductPage: React.FC = () => {
@@ -27,32 +31,42 @@ export const AddProductPage: React.FC = () => {
   const [barcode, setBarcode] = useState('');
   const [category, setCategory] = useState<ProductCategory>('serum');
   const [skinType, setSkinType] = useState<SkinType[]>(['all']);
-  const [volume, setVolume] = useState('၅၀ မီလီလီတာ');
-  const [costPrice, setCostPrice] = useState<number | ''>(20000);
-  const [sellingPrice, setSellingPrice] = useState<number | ''>(30000);
-  const [stock, setStock] = useState<number | ''>(20);
+  const [volume, setVolume] = useState('');
+  const [costPrice, setCostPrice] = useState<number | ''>('');
+  const [sellingPrice, setSellingPrice] = useState<number | ''>('');
+  const [stock, setStock] = useState<number | ''>('');
   const [minStockAlert, setMinStockAlert] = useState<number | ''>(5);
   const [descriptionMy, setDescriptionMy] = useState('');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [isCameraScannerOpen, setIsCameraScannerOpen] = useState(false);
 
-  // Populate form if editing
+  // Populate form if editing, or initialize clean empty form without auto-filling barcode
   useEffect(() => {
     if (selectedProductForEdit) {
       setNameMy(selectedProductForEdit.nameMy);
       setSku(selectedProductForEdit.sku);
-      setBarcode(selectedProductForEdit.barcode);
+      setBarcode(selectedProductForEdit.barcode || '');
       setCategory(selectedProductForEdit.category);
       setSkinType(selectedProductForEdit.skinType);
-      setVolume(selectedProductForEdit.volume);
-      setCostPrice(selectedProductForEdit.costPrice);
-      setSellingPrice(selectedProductForEdit.sellingPrice);
-      setStock(selectedProductForEdit.stock);
-      setMinStockAlert(selectedProductForEdit.minStockAlert);
+      setVolume(selectedProductForEdit.volume || '');
+      setCostPrice(selectedProductForEdit.costPrice || '');
+      setSellingPrice(selectedProductForEdit.sellingPrice || '');
+      setStock(selectedProductForEdit.stock ?? '');
+      setMinStockAlert(selectedProductForEdit.minStockAlert ?? 5);
       setDescriptionMy(selectedProductForEdit.descriptionMy || '');
     } else {
-      // Auto-generate SKU for new product
+      // Clean blank state for new product - strictly do NOT auto-fill random barcodes!
+      setNameMy('');
       setSku(generateSKU('EMS', 'SKN'));
-      setBarcode(String(Math.floor(8800000000000 + Math.random() * 99999999999)));
+      setBarcode(''); // Kept clean so user can scan the actual barcode on the product
+      setCategory('serum');
+      setSkinType(['all']);
+      setVolume('');
+      setCostPrice('');
+      setSellingPrice('');
+      setStock('');
+      setMinStockAlert(5);
+      setDescriptionMy('');
     }
   }, [selectedProductForEdit]);
 
@@ -85,11 +99,14 @@ export const AddProductPage: React.FC = () => {
       return;
     }
 
+    const finalSku = sku.trim() || generateSKU('EMS', category);
+    const finalBarcode = barcode.trim() || finalSku;
+
     const payload = {
       nameMy: nameMy.trim(),
       nameEn: nameMy.trim(),
-      sku: sku.trim() || generateSKU('EMS', category),
-      barcode: barcode.trim() || String(Date.now()),
+      sku: finalSku,
+      barcode: finalBarcode,
       category,
       brand: 'EI MON SKINCARE',
       skinType: skinType.length > 0 ? skinType : ['all'],
@@ -326,34 +343,74 @@ export const AddProductPage: React.FC = () => {
         </div>
 
         {/* Section 4: Codes & Identifiers */}
-        <div className="space-y-4 pt-2 border-t border-stone-100">
-          <h2 className="text-xs font-black text-rose-600 uppercase tracking-wider">
-            ၃။ ဘားကုဒ် (Barcode)
-          </h2>
-
-          <div className="max-w-md">
+        <div className="space-y-3 pt-3 border-t border-stone-100">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
             <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="text-xs font-bold text-stone-700">
-                  ဘားကုဒ်
-                </label>
-                <button
-                  type="button"
-                  onClick={handleGenerateBarcode}
-                  className="text-[11px] text-rose-600 hover:text-rose-800 font-semibold flex items-center gap-1 cursor-pointer"
-                >
-                  <RefreshCw className="w-3 h-3" />
-                  <span>အလိုအလျောက် ထုတ်မည်</span>
-                </button>
-              </div>
-              <input
-                type="text"
-                value={barcode}
-                onChange={(e) => setBarcode(e.target.value)}
-                placeholder="ဘားကုဒ် ရိုက်ထည့်ပါ သို့မဟုတ် စကင်ဖတ်ပါ"
-                className="w-full text-xs sm:text-sm px-3.5 py-2.5 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-rose-500 bg-stone-50/50 font-mono font-bold"
-              />
+              <h2 className="text-xs font-black text-rose-600 uppercase tracking-wider flex items-center gap-1.5">
+                <Barcode className="w-4 h-4" />
+                <span>၃။ ဘားကုဒ် (Barcode)</span>
+              </h2>
+              <p className="text-[11px] text-stone-500">
+                ပစ္စည်းပေါ်ရှိ ဘားကုဒ်ကို ကင်မရာဖြင့် တိုက်ရိုက် စကင်ဖတ်ပါ သို့မဟုတ် လက်ဖြင့် ရိုက်ထည့်ပါ (အလိုအလျောက် ဖြည့်မထားပါ)
+              </p>
             </div>
+
+            <button
+              type="button"
+              onClick={handleGenerateBarcode}
+              className="text-[11px] text-stone-500 hover:text-rose-600 font-semibold flex items-center gap-1 cursor-pointer self-start sm:self-auto py-1"
+              title="ပစ္စည်းတွင် ဘားကုဒ်မပါရှိပါက ဆိုင်တွင်းသုံး ဘားကုဒ် အလိုအလျောက် ထုတ်နိုင်သည်"
+            >
+              <RefreshCw className="w-3 h-3" />
+              <span>အတွင်းသုံး ဘားကုဒ် ထုတ်မည်</span>
+            </button>
+          </div>
+
+          <div className="space-y-2 max-w-xl">
+            <div className="flex flex-col sm:flex-row gap-2">
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  value={barcode}
+                  onChange={(e) => setBarcode(e.target.value)}
+                  placeholder="ပစ္စည်းပေါ်ရှိ ဘားကုဒ် ရိုက်ထည့်ပါ သို့မဟုတ် စကင်ဖတ်ပါ"
+                  className="w-full text-xs sm:text-sm pl-3.5 pr-9 py-2.5 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-rose-500 bg-stone-50/50 font-mono font-bold"
+                />
+                {barcode && (
+                  <button
+                    type="button"
+                    onClick={() => setBarcode('')}
+                    className="absolute right-2.5 top-2.5 text-stone-400 hover:text-stone-700 p-0.5 cursor-pointer"
+                    title="ဘားကုဒ် ရှင်းလင်းမည်"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+
+              {/* Start Camera Barcode Scan Button */}
+              <button
+                type="button"
+                onClick={() => setIsCameraScannerOpen(true)}
+                className="py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 active:scale-95 text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer whitespace-nowrap"
+              >
+                <Camera className="w-4 h-4" />
+                <span>ကင်မရာဖြင့် စကင်ဖတ်မည်</span>
+              </button>
+            </div>
+
+            {barcode ? (
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-xs font-semibold">
+                <CheckCircle className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                <span className="truncate">
+                  အသုံးပြုမည့် ဘားကုဒ်: <strong className="font-mono">{barcode}</strong>
+                </span>
+              </div>
+            ) : (
+              <p className="text-[11px] text-stone-400 italic">
+                * ဘားကုဒ် မဖြည့်ထားပါက SKU အမှတ်အသားကို ဘားကုဒ်အဖြစ် အသုံးပြုပါမည်
+              </p>
+            )}
           </div>
         </div>
 
@@ -397,6 +454,24 @@ export const AddProductPage: React.FC = () => {
           </button>
         </div>
       </form>
+
+      {/* Camera Barcode Scanner Modal */}
+      <CameraScannerModal
+        isOpen={isCameraScannerOpen}
+        onClose={() => setIsCameraScannerOpen(false)}
+        title="ကုန်ပစ္စည်းပေါ်ရှိ ဘားကုဒ်ကို စကင်ဖတ်ပါ"
+        elementId="add-product-camera-scanner-view"
+        onScan={(code) => {
+          setBarcode(code);
+          setIsCameraScannerOpen(false);
+          setToastMessage(`ဘားကုဒ် [${code}] စကင်ဖတ်ပြီးပါပြီ`);
+          return {
+            success: true,
+            message: 'ဘားကုဒ် စကင်ဖတ်ပြီးပါပြီ',
+            productName: code,
+          };
+        }}
+      />
     </div>
   );
 };

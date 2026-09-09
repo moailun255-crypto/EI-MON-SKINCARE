@@ -293,9 +293,9 @@ export const POSPage: React.FC<POSPageProps> = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 items-start">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-3 sm:gap-4 items-start">
         {/* Left Side: Skincare Products Catalog */}
-        <div className="lg:col-span-8 space-y-2.5">
+        <div className="md:col-span-7 lg:col-span-8 space-y-2.5">
           {/* Top Unified Search & Barcode Bar */}
           <div className="bg-white p-2.5 sm:p-3 rounded-2xl border border-stone-200 shadow-2xs space-y-2">
             <div className="flex items-center gap-2">
@@ -389,7 +389,7 @@ export const POSPage: React.FC<POSPageProps> = ({
           )}
 
           {/* Compact, High-Density Skincare Product Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2.5">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-2.5">
             {filteredProducts.length === 0 ? (
               <div className="col-span-full py-12 text-center bg-white rounded-2xl border border-stone-200 p-6">
                 <Sparkles className="w-8 h-8 text-rose-300 mx-auto mb-2" />
@@ -500,14 +500,14 @@ export const POSPage: React.FC<POSPageProps> = ({
         </div>
 
         {/* Right Side: Sticky Cart Panel */}
-        <div className="hidden lg:block lg:col-span-4 sticky top-16 h-[calc(100vh-4.8rem)]">
+        <div className="hidden md:block md:col-span-5 lg:col-span-4 sticky top-16 md:top-20 h-[calc(100vh-5rem)]">
           <CartPanel onCheckout={() => setIsPaymentModalOpen(true)} />
         </div>
       </div>
 
       {/* Mobile Cart Drawer */}
       {isMobileCartOpen && (
-        <div className="lg:hidden fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs flex justify-end">
+        <div className="md:hidden fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs flex justify-end">
           <div className="bg-white w-full max-w-md h-full flex flex-col shadow-2xl animate-slideLeft">
             <CartPanel
               isMobile={true}
