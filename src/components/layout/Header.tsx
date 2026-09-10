@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { BrandLogo } from '../common/BrandLogo';
+import { PageTab } from '../../types';
 import {
   ShoppingCart,
   CloudOff,
@@ -13,6 +14,12 @@ import {
   UserCheck,
   Languages,
   ArrowLeft,
+  Store,
+  Boxes,
+  Plus,
+  ReceiptText,
+  TrendingUp,
+  ShieldCheck,
 } from 'lucide-react';
 import { getSoundMuted, setSoundMuted } from '../../utils/scannerSound';
 
@@ -22,6 +29,8 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ onOpenMobileCart }) => {
   const {
+    products,
+    orders,
     storeProfile,
     cartItemCount,
     activeTab,
@@ -35,6 +44,53 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileCart }) => {
     toggleMyanmarDigits,
     updateStoreProfile,
   } = useStore();
+
+  const lowStockCount = products.filter((p) => p.stock <= p.minStockAlert).length;
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayOrdersCount = orders.filter((o) => o.createdAt.startsWith(todayStr)).length;
+
+  const navTabs: {
+    id: PageTab;
+    title: string;
+    icon: React.ReactNode;
+    badge?: number;
+    badgeColor?: string;
+  }[] = [
+    {
+      id: 'pos',
+      title: 'POS (အရောင်း)',
+      icon: <Store className="w-4 h-4" />,
+    },
+    {
+      id: 'products',
+      title: 'ကုန်ပစ္စည်း',
+      icon: <Boxes className="w-4 h-4" />,
+      badge: lowStockCount > 0 ? lowStockCount : undefined,
+      badgeColor: 'bg-amber-500 text-stone-900',
+    },
+    {
+      id: 'add-product',
+      title: 'အသစ်ထည့်',
+      icon: <Plus className="w-4 h-4" />,
+    },
+    {
+      id: 'transactions',
+      title: 'အရောင်းမှတ်တမ်း',
+      icon: <ReceiptText className="w-4 h-4" />,
+      badge: todayOrdersCount > 0 ? todayOrdersCount : undefined,
+      badgeColor: 'bg-rose-500 text-white',
+    },
+    {
+      id: 'finance',
+      title: 'ဘဏ္ဍာရေး',
+      icon: <TrendingUp className="w-4 h-4" />,
+    },
+    {
+      id: 'security',
+      title: 'လုံခြုံရေး',
+      icon: <ShieldCheck className="w-4 h-4" />,
+    },
+  ];
 
   const [currentTime, setCurrentTime] = useState<string>('');
   const [currentDate, setCurrentDate] = useState<string>('');
@@ -119,8 +175,39 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileCart }) => {
           <BrandLogo size="md" />
         </div>
 
-        {/* Center Live Clock (Visible on desktop & tablets) */}
-        <div className="hidden lg:flex items-center gap-2 px-3 py-1 rounded-xl bg-stone-50 border border-stone-200/80 text-stone-700">
+        {/* Desktop & Tablet Modern Unified Navigation (Integrated directly in Header - No clunky secondary bar) */}
+        <nav className="hidden sm:flex items-center gap-1 bg-stone-100/90 p-1 rounded-2xl border border-stone-200/90 shadow-2xs">
+          {navTabs.map((item) => {
+            const isActive = activeTab === item.id;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setActiveTab(item.id)}
+                className={`flex items-center gap-1.5 px-2.5 md:px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap min-h-[34px] ${
+                  isActive
+                    ? 'bg-rose-600 text-white shadow-xs'
+                    : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/70'
+                }`}
+              >
+                {item.icon}
+                <span>{item.title}</span>
+                {item.badge !== undefined && (
+                  <span
+                    className={`text-[9px] font-black px-1.5 py-0.2 rounded-full ${
+                      item.badgeColor || 'bg-rose-500 text-white'
+                    }`}
+                  >
+                    {item.badge}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* Center Live Clock (Visible on large screens) */}
+        <div className="hidden xl:flex items-center gap-2 px-3 py-1 rounded-xl bg-stone-50 border border-stone-200/80 text-stone-700">
           <Clock className="w-3.5 h-3.5 text-rose-600" />
           <span className="font-mono text-xs font-bold tracking-tight text-stone-800">
             {currentTime}

@@ -5,6 +5,7 @@ import { formatMMK, formatDateMy } from '../../utils/format';
 import { PAYMENT_LABELS } from '../../utils/translations';
 import { DeleteOrderModal } from './DeleteOrderModal';
 import { ClearAllOrdersModal } from './ClearAllOrdersModal';
+import { RefundOrderModal } from './RefundOrderModal';
 import {
   ReceiptText,
   Search,
@@ -13,6 +14,11 @@ import {
   Trash2,
   CheckCircle,
   ArrowLeft,
+  Camera,
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+  Filter,
 } from 'lucide-react';
 
 export const TransactionsPage: React.FC = () => {
@@ -25,18 +31,31 @@ export const TransactionsPage: React.FC = () => {
   } = useStore();
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [dateFilter, setDateFilter] = useState<'today' | 'week' | 'month' | 'all'>('today');
+  const [dateFilter, setDateFilter] = useState<'today' | 'yesterday' | 'specific' | 'week' | 'month' | 'all'>('today');
+  const [selectedDate, setSelectedDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
   const [paymentFilter, setPaymentFilter] = useState<PaymentMethod | 'all'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'completed' | 'refunded'>('all');
-  const [confirmRefundId, setConfirmRefundId] = useState<string | null>(null);
+  const [refundingOrder, setRefundingOrder] = useState<Order | null>(null);
   const [deletingOrder, setDeletingOrder] = useState<Order | null>(null);
   const [showClearAllModal, setShowClearAllModal] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+
+  // Helper for stepping days
+  const handleStepDay = (delta: number) => {
+    const current = new Date(selectedDate);
+    current.setDate(current.getDate() + delta);
+    const newDateStr = current.toISOString().slice(0, 10);
+    setSelectedDate(newDateStr);
+    setDateFilter('specific');
+  };
 
   // Filter orders
   const filteredOrders = useMemo(() => {
     const now = new Date();
     const todayStr = now.toISOString().slice(0, 10);
+    const yesterdayDate = new Date();
+    yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+    const yesterdayStr = yesterdayDate.toISOString().slice(0, 10);
 
     return orders.filter((order) => {
       const orderDateStr = order.createdAt.slice(0, 10);
@@ -45,6 +64,10 @@ export const TransactionsPage: React.FC = () => {
       let dateMatch = true;
       if (dateFilter === 'today') {
         dateMatch = orderDateStr === todayStr;
+      } else if (dateFilter === 'yesterday') {
+        dateMatch = orderDateStr === yesterdayStr;
+      } else if (dateFilter === 'specific') {
+        dateMatch = orderDateStr === selectedDate;
       } else if (dateFilter === 'week') {
         const orderTime = new Date(order.createdAt).getTime();
         const weekAgo = now.getTime() - 7 * 24 * 60 * 60 * 1000;
@@ -77,7 +100,7 @@ export const TransactionsPage: React.FC = () => {
 
       return dateMatch && matchesSearch && matchesPayment && matchesStatus;
     });
-  }, [orders, dateFilter, searchTerm, paymentFilter, statusFilter]);
+  }, [orders, dateFilter, selectedDate, searchTerm, paymentFilter, statusFilter]);
 
   // Aggregate stats for filtered orders
   const completedOrders = filteredOrders.filter((o) => o.status === 'completed');
@@ -87,11 +110,6 @@ export const TransactionsPage: React.FC = () => {
     .filter((o) => o.paymentMethod === 'cash')
     .reduce((sum, o) => sum + o.grandTotal, 0);
   const digitalTotal = totalRevenue - cashTotal;
-
-  const handleRefund = (orderId: string) => {
-    refundOrder(orderId);
-    setConfirmRefundId(null);
-  };
 
   return (
     <div className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-6 space-y-5">
@@ -107,7 +125,7 @@ export const TransactionsPage: React.FC = () => {
           </p>
         </div>
 
-        {/* Date Filter Tabs and Clear All Button */}
+        {/* Date Filter Tabs, Day Picker, and Clear All Button */}
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
@@ -119,10 +137,13 @@ export const TransactionsPage: React.FC = () => {
             <span>အရောင်းကောင်တာ (POS)</span>
           </button>
 
-          <div className="flex items-center bg-white p-1 rounded-xl border border-stone-200 shadow-xs text-xs">
+          {/* Preset Date Tabs */}
+          <div className="flex items-center bg-white p-1 rounded-xl border border-stone-200 shadow-xs text-xs overflow-x-auto">
             {(
               [
                 { id: 'today', my: 'ယနေ့' },
+                { id: 'yesterday', my: 'မနေ့က' },
+                { id: 'specific', my: 'ရက်စွဲရွေး' },
                 { id: 'week', my: '၇ ရက်' },
                 { id: 'month', my: '၁ လ' },
                 { id: 'all', my: 'အားလုံး' },
@@ -131,7 +152,7 @@ export const TransactionsPage: React.FC = () => {
               <button
                 key={tab.id}
                 onClick={() => setDateFilter(tab.id)}
-                className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
+                className={`px-2.5 sm:px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap ${
                   dateFilter === tab.id
                     ? 'bg-rose-600 text-white shadow-xs'
                     : 'text-stone-600 hover:text-stone-900'
@@ -142,6 +163,42 @@ export const TransactionsPage: React.FC = () => {
             ))}
           </div>
 
+          {/* Interactive Date Picker (Single Day Selector) */}
+          <div className="flex items-center bg-white p-1 rounded-xl border border-stone-200 shadow-xs text-xs gap-1">
+            <button
+              type="button"
+              onClick={() => handleStepDay(-1)}
+              className="p-1.5 rounded-lg hover:bg-stone-100 text-stone-600 transition-colors cursor-pointer"
+              title="ယခင်ရက်သို့ (Previous Day)"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+
+            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-stone-50 border border-stone-200/80">
+              <Calendar className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => {
+                  if (e.target.value) {
+                    setSelectedDate(e.target.value);
+                    setDateFilter('specific');
+                  }
+                }}
+                className="text-xs font-mono font-bold text-stone-800 bg-transparent border-none outline-none cursor-pointer p-0"
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={() => handleStepDay(1)}
+              className="p-1.5 rounded-lg hover:bg-stone-100 text-stone-600 transition-colors cursor-pointer"
+              title="နောက်ရက်သို့ (Next Day)"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+
           {/* Delete all transactions flow button */}
           {orders.length > 0 && (
             <button
@@ -150,11 +207,41 @@ export const TransactionsPage: React.FC = () => {
               title="အရောင်းမှတ်တမ်းများ အားလုံး ရှင်းလင်းမည်"
             >
               <Trash2 className="w-3.5 h-3.5" />
-              <span>မှတ်တမ်းအားလုံးရှင်းမည်</span>
+              <span>မှတ်တမ်းရှင်းမည်</span>
             </button>
           )}
         </div>
       </div>
+
+      {/* Selected Day Status Bar Banner when filtered by specific day or yesterday */}
+      {(dateFilter === 'specific' || dateFilter === 'yesterday') && (
+        <div className="bg-rose-50/80 border border-rose-200 px-4 py-2.5 rounded-2xl flex flex-wrap items-center justify-between gap-2 text-xs">
+          <div className="flex items-center gap-2 text-rose-900 font-bold">
+            <Calendar className="w-4 h-4 text-rose-600" />
+            <span>
+              ရွေးချယ်ထားသော ရက်စွဲ:{' '}
+              <span className="font-mono text-stone-900 bg-white px-2 py-0.5 rounded-md border border-rose-200">
+                {dateFilter === 'yesterday' ? 'မနေ့က' : selectedDate}
+              </span>
+            </span>
+            <span className="text-rose-600">•</span>
+            <span>
+              အရောင်းဘောင်ချာ:{' '}
+              <span className="font-mono font-black text-rose-700">
+                {filteredOrders.length}
+              </span>{' '}
+              စောင်
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setDateFilter('today')}
+            className="text-[11px] font-bold text-rose-700 hover:text-rose-900 underline cursor-pointer"
+          >
+            ယနေ့အရောင်းသို့ ပြန်သွားမည် (Back to Today)
+          </button>
+        </div>
+      )}
 
       {/* Financial Summary Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
@@ -340,18 +427,18 @@ export const TransactionsPage: React.FC = () => {
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => setActiveReceiptOrder(order)}
-                        className="p-2 rounded-xl bg-stone-100 hover:bg-rose-100 hover:text-rose-700 text-stone-700 text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer"
-                        title="ပြေစာထုတ်မည်"
+                        className="px-2.5 py-2 rounded-xl bg-stone-100 hover:bg-rose-100 hover:text-rose-700 text-stone-700 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                        title="ပြေစာထုတ်မည် / ဓာတ်ပုံအဖြစ် ပုံပြခန်း (Album) သို့ သိမ်းမည်"
                       >
-                        <Printer className="w-4 h-4" />
-                        <span className="hidden sm:inline">ပြေစာ</span>
+                        <Camera className="w-4 h-4 text-rose-600" />
+                        <span>ပြေစာ / ပုံ</span>
                       </button>
 
                       {!isRefunded && (
                         <button
-                          onClick={() => setConfirmRefundId(order.id)}
+                          onClick={() => setRefundingOrder(order)}
                           className="p-2 rounded-xl bg-stone-100 hover:bg-amber-100 hover:text-amber-800 text-stone-500 text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer"
-                          title="ငွေပြန်အမ်းမည် (Refund)"
+                          title="ငွေပြန်အမ်းမည် (Refund with Password)"
                         >
                           <RotateCcw className="w-4 h-4" />
                           <span className="hidden sm:inline">ပြန်အမ်း</span>
@@ -395,37 +482,16 @@ export const TransactionsPage: React.FC = () => {
         />
       )}
 
-      {/* Confirm Refund Modal */}
-      {confirmRefundId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl max-w-sm w-full p-5 shadow-2xl border border-stone-200 text-center space-y-4">
-            <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 mx-auto flex items-center justify-center">
-              <RotateCcw className="w-6 h-6" />
-            </div>
-            <div>
-              <h3 className="font-bold text-stone-900 text-base">
-                ဘောင်ချာကို ငွေပြန်အမ်းမည်မှာ သေချာပါသလား?
-              </h3>
-              <p className="text-xs text-stone-500 mt-1">
-                ကုန်ပစ္စည်းများကို လက်ကျန်စာရင်းသို့ အလိုအလျောက် ပြန်လည်ပေါင်းထည့်ပေးပါမည်။
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setConfirmRefundId(null)}
-                className="flex-1 py-2.5 rounded-xl border border-stone-300 text-xs font-bold text-stone-700 hover:bg-stone-100 cursor-pointer"
-              >
-                မလုပ်တော့ပါ
-              </button>
-              <button
-                onClick={() => handleRefund(confirmRefundId)}
-                className="flex-1 py-2.5 rounded-xl bg-red-600 text-white text-xs font-bold hover:bg-red-700 cursor-pointer"
-              >
-                ငွေပြန်အမ်းမည်
-              </button>
-            </div>
-          </div>
-        </div>
+      {/* Refund Order with Password Verification Modal */}
+      {refundingOrder && (
+        <RefundOrderModal
+          order={refundingOrder}
+          onClose={() => setRefundingOrder(null)}
+          onSuccess={() => {
+            setToastMsg('ငွေပြန်အမ်းခြင်း အောင်မြင်ပြီး ကုန်ပစ္စည်းလက်ကျန် ပြန်လည်ဖြည့်တင်းပြီးပါပြီ');
+            setTimeout(() => setToastMsg(null), 3500);
+          }}
+        />
       )}
       {/* Clear All Orders with Password Verification Modal */}
       <ClearAllOrdersModal

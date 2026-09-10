@@ -18,6 +18,8 @@ import {
   ShoppingBag,
   CheckCircle2,
   ArrowLeft,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -41,8 +43,18 @@ export const FinancePage: React.FC = () => {
     setActiveTab,
   } = useStore();
 
-  const [dateRange, setDateRange] = useState<'this-month' | 'today' | 'all'>('this-month');
+  const [dateRange, setDateRange] = useState<'this-month' | 'today' | 'yesterday' | 'specific-day' | 'all'>('this-month');
+  const [selectedSingleDate, setSelectedSingleDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
+
+  // Helper for stepping days
+  const handleStepFinanceDay = (delta: number) => {
+    const current = new Date(selectedSingleDate);
+    current.setDate(current.getDate() + delta);
+    const newDateStr = current.toISOString().slice(0, 10);
+    setSelectedSingleDate(newDateStr);
+    setDateRange('specific-day');
+  };
 
   // New Expense form state
   const [expTitleMy, setExpTitleMy] = useState('');
@@ -54,16 +66,23 @@ export const FinancePage: React.FC = () => {
   const now = new Date();
   const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   const todayStr = now.toISOString().slice(0, 10);
+  const yesterdayDate = new Date();
+  yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+  const yesterdayStr = yesterdayDate.toISOString().slice(0, 10);
 
   const filteredOrders = orders.filter((o) => {
     if (o.status !== 'completed') return false;
     if (dateRange === 'today') return o.createdAt.startsWith(todayStr);
+    if (dateRange === 'yesterday') return o.createdAt.startsWith(yesterdayStr);
+    if (dateRange === 'specific-day') return o.createdAt.startsWith(selectedSingleDate);
     if (dateRange === 'this-month') return o.createdAt.startsWith(currentMonthStr);
     return true;
   });
 
   const filteredExpenses = expenses.filter((e) => {
     if (dateRange === 'today') return e.date === todayStr;
+    if (dateRange === 'yesterday') return e.date === yesterdayStr;
+    if (dateRange === 'specific-day') return e.date === selectedSingleDate;
     if (dateRange === 'this-month') return e.date.startsWith(currentMonthStr);
     return true;
   });
@@ -295,21 +314,11 @@ export const FinancePage: React.FC = () => {
             <span>အရောင်းကောင်တာ (POS)</span>
           </button>
 
-          {/* Time range selector */}
-          <div className="flex items-center bg-white p-1 rounded-xl border border-stone-200 shadow-xs text-xs">
-            <button
-              onClick={() => setDateRange('today')}
-              className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
-                dateRange === 'today'
-                  ? 'bg-rose-600 text-white shadow-xs'
-                  : 'text-stone-600 hover:text-stone-900'
-              }`}
-            >
-              ယနေ့
-            </button>
+          {/* Time range selector tabs */}
+          <div className="flex items-center bg-white p-1 rounded-xl border border-stone-200 shadow-xs text-xs overflow-x-auto">
             <button
               onClick={() => setDateRange('this-month')}
-              className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
+              className={`px-2.5 sm:px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap ${
                 dateRange === 'this-month'
                   ? 'bg-rose-600 text-white shadow-xs'
                   : 'text-stone-600 hover:text-stone-900'
@@ -318,14 +327,80 @@ export const FinancePage: React.FC = () => {
               ယခုလ
             </button>
             <button
+              onClick={() => setDateRange('today')}
+              className={`px-2.5 sm:px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap ${
+                dateRange === 'today'
+                  ? 'bg-rose-600 text-white shadow-xs'
+                  : 'text-stone-600 hover:text-stone-900'
+              }`}
+            >
+              ယနေ့
+            </button>
+            <button
+              onClick={() => setDateRange('yesterday')}
+              className={`px-2.5 sm:px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap ${
+                dateRange === 'yesterday'
+                  ? 'bg-rose-600 text-white shadow-xs'
+                  : 'text-stone-600 hover:text-stone-900'
+              }`}
+            >
+              မနေ့က
+            </button>
+            <button
+              onClick={() => setDateRange('specific-day')}
+              className={`px-2.5 sm:px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap ${
+                dateRange === 'specific-day'
+                  ? 'bg-rose-600 text-white shadow-xs'
+                  : 'text-stone-600 hover:text-stone-900'
+              }`}
+            >
+              ရက်စွဲရွေး
+            </button>
+            <button
               onClick={() => setDateRange('all')}
-              className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
+              className={`px-2.5 sm:px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap ${
                 dateRange === 'all'
                   ? 'bg-rose-600 text-white shadow-xs'
                   : 'text-stone-600 hover:text-stone-900'
               }`}
             >
               အားလုံး
+            </button>
+          </div>
+
+          {/* Single Day Interactive Date Picker with Next/Prev Steppers */}
+          <div className="flex items-center bg-white p-1 rounded-xl border border-stone-200 shadow-xs text-xs gap-1">
+            <button
+              type="button"
+              onClick={() => handleStepFinanceDay(-1)}
+              className="p-1.5 rounded-lg hover:bg-stone-100 text-stone-600 transition-colors cursor-pointer"
+              title="ယခင်ရက်သို့ (Previous Day)"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+
+            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-stone-50 border border-stone-200/80">
+              <Calendar className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+              <input
+                type="date"
+                value={selectedSingleDate}
+                onChange={(e) => {
+                  if (e.target.value) {
+                    setSelectedSingleDate(e.target.value);
+                    setDateRange('specific-day');
+                  }
+                }}
+                className="text-xs font-mono font-bold text-stone-800 bg-transparent border-none outline-none cursor-pointer p-0"
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={() => handleStepFinanceDay(1)}
+              className="p-1.5 rounded-lg hover:bg-stone-100 text-stone-600 transition-colors cursor-pointer"
+              title="နောက်ရက်သို့ (Next Day)"
+            >
+              <ChevronRight className="w-4 h-4" />
             </button>
           </div>
 
@@ -338,6 +413,36 @@ export const FinancePage: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Specific Day Selected Banner */}
+      {(dateRange === 'specific-day' || dateRange === 'yesterday') && (
+        <div className="bg-rose-50/90 border border-rose-200 px-4 py-2.5 rounded-2xl flex flex-wrap items-center justify-between gap-2 text-xs">
+          <div className="flex items-center gap-2 text-rose-900 font-bold">
+            <Calendar className="w-4 h-4 text-rose-600" />
+            <span>
+              စစ်ဆေးနေသော ရက်စွဲ:{' '}
+              <span className="font-mono text-stone-900 bg-white px-2 py-0.5 rounded-md border border-rose-200">
+                {dateRange === 'yesterday' ? 'မနေ့က' : selectedSingleDate}
+              </span>
+            </span>
+            <span className="text-rose-600">•</span>
+            <span>
+              အမှာစာ: <span className="font-mono text-rose-700 font-black">{filteredOrders.length}</span> စောင်
+            </span>
+            <span className="text-rose-600">•</span>
+            <span>
+              ဝင်ငွေ: <span className="font-mono text-stone-900">{formatMMK(totalRevenue, useMyanmarDigits)}</span>
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setDateRange('this-month')}
+            className="text-[11px] font-bold text-rose-700 hover:text-rose-900 underline cursor-pointer"
+          >
+            ယခုလ အပြည့်စုံသို့ ပြန်သွားမည် (Back to This Month)
+          </button>
+        </div>
+      )}
 
       {/* P&L Cards Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
