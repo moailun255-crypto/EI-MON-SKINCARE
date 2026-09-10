@@ -8,8 +8,6 @@ import {
   ExternalLink,
   X,
   Smartphone,
-  Sparkles,
-  ShieldCheck,
   Camera,
 } from 'lucide-react';
 
@@ -30,17 +28,21 @@ export const ReceiptPhotoSaverModal: React.FC<ReceiptPhotoSaverModalProps> = ({
   const [downloadSuccess, setDownloadSuccess] = useState(false);
   const [shareFeedback, setShareFeedback] = useState<string | null>(null);
 
-  const fileName = `EI_MON_Slip_${order.receiptNumber}.png`;
+  const fileName = `EI_MON_Voucher_${order.receiptNumber}.png`;
 
   // 1. Direct Download to device
   const handleDownload = () => {
     try {
+      const urlToUse = imageBlob ? URL.createObjectURL(imageBlob) : imageUrl;
       const link = document.createElement('a');
-      link.href = imageUrl;
+      link.href = urlToUse;
       link.download = fileName;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      if (imageBlob) {
+        setTimeout(() => URL.revokeObjectURL(urlToUse), 4000);
+      }
 
       setDownloadSuccess(true);
       setTimeout(() => setDownloadSuccess(false), 3500);
@@ -166,12 +168,6 @@ export const ReceiptPhotoSaverModal: React.FC<ReceiptPhotoSaverModalProps> = ({
               className="w-full h-auto rounded-xl select-all touch-manipulation cursor-pointer"
               title="ဖိထားပြီး 'Save Image' ဖြင့် သိမ်းနိုင်ပါသည် (Long press to Save Image)"
             />
-
-            {/* Subtle Overlay Badge */}
-            <div className="absolute bottom-4 right-4 bg-stone-900/80 backdrop-blur-xs text-white text-[10px] font-bold px-2 py-1 rounded-lg flex items-center gap-1 opacity-90 pointer-events-none">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-              <span>စစ်မှန်သော ပြေစာ</span>
-            </div>
           </div>
           <p className="text-[10px] text-stone-500 font-medium mt-2 text-center">
             (ပုံကို ဖိ၍သိမ်းနိုင်သလို အောက်ပါခလုတ်များဖြင့်လည်း တိုက်ရိုက်ဒေါင်းလုဒ်ဆွဲနိုင်ပါသည်)
