@@ -110,6 +110,8 @@ interface StoreContextType {
   clearAllOrders: (password: string) => { success: boolean; message: string };
   verifyDeletePassword: (password: string) => boolean;
   updateDeletePassword: (oldPassword: string, newPassword: string) => { success: boolean; message: string };
+  resetDeletePassword: () => { success: boolean; message: string };
+  setDirectDeletePassword: (newPassword: string) => { success: boolean; message: string };
 
   // Settings & Security
   updateStoreProfile: (profile: StoreProfile) => void;
@@ -947,6 +949,37 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return { success: true, message: 'လျှို့ဝှက်စကားဝှက် အသစ် အောင်မြင်စွာ ပြောင်းလဲပြီးပါပြီ' };
   };
 
+  const resetDeletePassword = (): { success: boolean; message: string } => {
+    const updated = {
+      ...storeProfile,
+      orderDeletePassword: '123456',
+    };
+    setStoreProfile(updated);
+    pushProfileToCloud(updated);
+    return {
+      success: true,
+      message: 'စကားဝှက်ကို မူလသတ်မှတ်ချက် (123456) သို့ အောင်မြင်စွာ ပြန်ထားပြီးပါပြီ',
+    };
+  };
+
+  const setDirectDeletePassword = (
+    newPassword: string
+  ): { success: boolean; message: string } => {
+    if (!newPassword || newPassword.trim().length < 4) {
+      return { success: false, message: 'စကားဝှက်အသစ်သည် အနည်းဆုံး ၄ လုံး ရှိရပါမည်' };
+    }
+    const updated = {
+      ...storeProfile,
+      orderDeletePassword: newPassword.trim(),
+    };
+    setStoreProfile(updated);
+    pushProfileToCloud(updated);
+    return {
+      success: true,
+      message: 'လျှို့ဝှက်စကားဝှက် အသစ် အောင်မြင်စွာ သတ်မှတ်ပြီးပါပြီ',
+    };
+  };
+
   // Store Profile update
   const updateStoreProfile = (newProfile: StoreProfile) => {
     setStoreProfile(newProfile);
@@ -1062,6 +1095,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         clearAllOrders,
         verifyDeletePassword,
         updateDeletePassword,
+        resetDeletePassword,
+        setDirectDeletePassword,
 
         updateStoreProfile,
         verifyPin,

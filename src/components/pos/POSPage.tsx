@@ -502,7 +502,7 @@ export const POSPage: React.FC<POSPageProps> = ({
         </div>
 
         {/* Right Side: Sticky Cart Panel */}
-        <div className="hidden md:block md:col-span-5 lg:col-span-4 sticky top-16 md:top-20 h-[calc(100vh-5rem)]">
+        <div className="hidden md:block md:col-span-5 lg:col-span-4 sticky top-[116px] h-[calc(100vh-132px)]">
           <CartPanel onCheckout={() => setIsPaymentModalOpen(true)} />
         </div>
       </div>

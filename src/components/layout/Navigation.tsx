@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { PageTab } from '../../types';
+import { formatMMK } from '../../utils/format';
 import {
   Store,
   Boxes,
@@ -17,6 +18,7 @@ import {
   VolumeX,
   UserCheck,
   CheckCircle2,
+  Sparkles,
 } from 'lucide-react';
 import { getSoundMuted, setSoundMuted } from '../../utils/scannerSound';
 
@@ -44,7 +46,14 @@ export const Navigation: React.FC = () => {
 
   const lowStockCount = products.filter((p) => p.stock <= p.minStockAlert).length;
   const todayStr = new Date().toISOString().slice(0, 10);
-  const todayOrdersCount = orders.filter((o) => o.createdAt.startsWith(todayStr)).length;
+  const todayCompletedOrders = useMemo(
+    () => orders.filter((o) => o.createdAt.startsWith(todayStr) && o.status === 'completed'),
+    [orders, todayStr]
+  );
+  const todayRevenue = useMemo(
+    () => todayCompletedOrders.reduce((sum, o) => sum + o.grandTotal, 0),
+    [todayCompletedOrders]
+  );
 
   const handleToggleSound = () => {
     const next = !isMuted;
@@ -60,11 +69,127 @@ export const Navigation: React.FC = () => {
     }
   };
 
+  const navItems: {
+    id: PageTab;
+    title: string;
+    icon: React.ReactNode;
+    badge?: number;
+    badgeColor?: string;
+  }[] = [
+    {
+      id: 'pos',
+      title: 'အရောင်းကောင်တာ (POS)',
+      icon: <Store className="w-4 h-4" />,
+    },
+    {
+      id: 'products',
+      title: 'ကုန်ပစ္စည်းများ',
+      icon: <Boxes className="w-4 h-4" />,
+      badge: lowStockCount > 0 ? lowStockCount : undefined,
+      badgeColor: 'bg-amber-500 text-stone-900',
+    },
+    {
+      id: 'add-product',
+      title: 'အသစ်ထည့်',
+      icon: <Plus className="w-4 h-4" />,
+    },
+    {
+      id: 'transactions',
+      title: 'အရောင်းမှတ်တမ်း',
+      icon: <ReceiptText className="w-4 h-4" />,
+      badge: todayCompletedOrders.length > 0 ? todayCompletedOrders.length : undefined,
+      badgeColor: 'bg-rose-500 text-white',
+    },
+    {
+      id: 'finance',
+      title: 'ဘဏ္ဍာရေးနှင့် စာရင်း',
+      icon: <TrendingUp className="w-4 h-4" />,
+    },
+    {
+      id: 'security',
+      title: 'လုံခြုံရေးနှင့် Cloud',
+      icon: <ShieldCheck className="w-4 h-4" />,
+    },
+  ];
+
   const isMoreTabActive = activeTab === 'finance' || activeTab === 'security';
 
   return (
     <>
-      {/* Mobile Bottom Navigation Bar (Smart Ergonomic 5-Slot Layout for Phones) */}
+      {/* ========================================================================= */}
+      {/* DESKTOP & TABLET DEDICATED NAVIGATION RIBBON                              */}
+      {/* Clean, high contrast, non-crowded bar sitting directly under header       */}
+      {/* ========================================================================= */}
+      <nav className="hidden sm:block sticky top-14 sm:top-15 z-25 bg-white/95 backdrop-blur-md border-b border-stone-200/90 shadow-2xs">
+        <div className="max-w-7xl mx-auto px-3 sm:px-5 py-2 flex items-center justify-between gap-3">
+          {/* Left: Optional Quick Back to POS button & Primary Navigation Tabs */}
+          <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none py-0.5">
+            {activeTab !== 'pos' && (
+              <button
+                type="button"
+                onClick={() => setActiveTab('pos')}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs sm:text-sm transition-all active:scale-95 cursor-pointer shadow-2xs shrink-0 mr-1"
+                title="အရောင်းကောင်တာသို့ ပြန်သွားမည် (Back to POS)"
+              >
+                <ArrowLeft className="w-4 h-4 text-rose-600" />
+                <span>အရောင်းကောင်တာ</span>
+              </button>
+            )}
+
+            {/* The 6 Primary Navigation Tabs */}
+            {navItems.map((item) => {
+              const isActive = activeTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setActiveTab(item.id)}
+                  className={`flex items-center gap-2 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap min-h-[38px] select-none ${
+                    isActive
+                      ? 'bg-rose-600 text-white shadow-xs shadow-rose-300 font-extrabold scale-[1.02]'
+                      : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100/90'
+                  }`}
+                >
+                  <span className={isActive ? 'text-white' : 'text-stone-500'}>
+                    {item.icon}
+                  </span>
+                  <span>{item.title}</span>
+                  {item.badge !== undefined && (
+                    <span
+                      className={`text-[10px] font-black px-1.5 py-0.2 rounded-full leading-tight ${
+                        isActive
+                          ? 'bg-white text-rose-700'
+                          : item.badgeColor || 'bg-rose-500 text-white'
+                      }`}
+                    >
+                      {item.badge}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Right (Desktop lg+): Realtime Daily POS Pulse */}
+          <div className="hidden lg:flex items-center gap-3 shrink-0 pl-3 border-l border-stone-200">
+            <div className="text-right">
+              <p className="text-[9px] text-stone-400 font-bold uppercase leading-none">
+                ယနေ့ ရောင်းရငွေ
+              </p>
+              <p className="text-xs font-black text-emerald-700 leading-tight">
+                {formatMMK(todayRevenue, useMyanmarDigits)}
+              </p>
+            </div>
+            <div className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-700 shrink-0">
+              <TrendingUp className="w-4 h-4" />
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      {/* ========================================================================= */}
+      {/* MOBILE BOTTOM NAVIGATION BAR (Smart Ergonomic 5-Slot Layout for Phones)   */}
+      {/* ========================================================================= */}
       <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-stone-200 px-2 py-1 flex items-center justify-around shadow-lg">
         {/* 1. POS */}
         <button
@@ -126,9 +251,9 @@ export const Navigation: React.FC = () => {
         >
           <div className="relative">
             <ReceiptText className={`w-5 h-5 ${activeTab === 'transactions' ? 'stroke-[2.5]' : ''}`} />
-            {todayOrdersCount > 0 && (
+            {todayCompletedOrders.length > 0 && (
               <span className="absolute -top-1.5 -right-2 bg-rose-500 text-white text-[9px] font-bold px-1 rounded-full">
-                {todayOrdersCount}
+                {todayCompletedOrders.length}
               </span>
             )}
           </div>

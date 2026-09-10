@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { BrandLogo } from '../common/BrandLogo';
-import { PageTab } from '../../types';
 import {
   ShoppingCart,
   CloudOff,
@@ -13,13 +12,6 @@ import {
   VolumeX,
   UserCheck,
   Languages,
-  ArrowLeft,
-  Store,
-  Boxes,
-  Plus,
-  ReceiptText,
-  TrendingUp,
-  ShieldCheck,
 } from 'lucide-react';
 import { getSoundMuted, setSoundMuted } from '../../utils/scannerSound';
 
@@ -29,68 +21,17 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ onOpenMobileCart }) => {
   const {
-    products,
-    orders,
     storeProfile,
     cartItemCount,
     activeTab,
-    setActiveTab,
-    goBack,
-    canGoBack,
     isCloudConnected,
     cloudSyncStatus,
     syncNowWithCloud,
     useMyanmarDigits,
     toggleMyanmarDigits,
     updateStoreProfile,
+    setActiveTab,
   } = useStore();
-
-  const lowStockCount = products.filter((p) => p.stock <= p.minStockAlert).length;
-  const todayStr = new Date().toISOString().slice(0, 10);
-  const todayOrdersCount = orders.filter((o) => o.createdAt.startsWith(todayStr)).length;
-
-  const navTabs: {
-    id: PageTab;
-    title: string;
-    icon: React.ReactNode;
-    badge?: number;
-    badgeColor?: string;
-  }[] = [
-    {
-      id: 'pos',
-      title: 'POS (အရောင်း)',
-      icon: <Store className="w-4 h-4" />,
-    },
-    {
-      id: 'products',
-      title: 'ကုန်ပစ္စည်း',
-      icon: <Boxes className="w-4 h-4" />,
-      badge: lowStockCount > 0 ? lowStockCount : undefined,
-      badgeColor: 'bg-amber-500 text-stone-900',
-    },
-    {
-      id: 'add-product',
-      title: 'အသစ်ထည့်',
-      icon: <Plus className="w-4 h-4" />,
-    },
-    {
-      id: 'transactions',
-      title: 'အရောင်းမှတ်တမ်း',
-      icon: <ReceiptText className="w-4 h-4" />,
-      badge: todayOrdersCount > 0 ? todayOrdersCount : undefined,
-      badgeColor: 'bg-rose-500 text-white',
-    },
-    {
-      id: 'finance',
-      title: 'ဘဏ္ဍာရေး',
-      icon: <TrendingUp className="w-4 h-4" />,
-    },
-    {
-      id: 'security',
-      title: 'လုံခြုံရေး',
-      icon: <ShieldCheck className="w-4 h-4" />,
-    },
-  ];
 
   const [currentTime, setCurrentTime] = useState<string>('');
   const [currentDate, setCurrentDate] = useState<string>('');
@@ -157,101 +98,32 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileCart }) => {
   };
 
   return (
-    <header className="bg-white border-b border-stone-200 sticky top-0 z-30 shadow-xs">
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2 sm:py-2.5 flex items-center justify-between gap-2">
-        {/* Brand identity & Back Button */}
-        <div className="flex items-center gap-2">
-          {activeTab !== 'pos' && (
-            <button
-              type="button"
-              onClick={goBack}
-              className="flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-stone-100 hover:bg-rose-50 text-stone-800 hover:text-rose-700 border border-stone-200 hover:border-rose-200 font-bold text-xs sm:text-sm transition-all active:scale-95 cursor-pointer shadow-2xs shrink-0"
-              title="နောက်သို့ ပြန်သွားမည် (Go Back)"
-            >
-              <ArrowLeft className="w-4 h-4 text-rose-600 shrink-0" />
-              <span>နောက်သို့ (Back)</span>
-            </button>
-          )}
+    <header className="bg-white border-b border-stone-200 sticky top-0 z-30 shadow-2xs h-14 sm:h-15">
+      <div className="max-w-7xl mx-auto h-full px-3 sm:px-5 flex items-center justify-between gap-2 sm:gap-4">
+        {/* Brand identity & System Tagline */}
+        <div className="flex items-center gap-3 shrink-0">
           <BrandLogo size="md" />
+          <div className="hidden lg:flex flex-col border-l border-stone-200 pl-3">
+            <span className="text-[11px] font-black tracking-tight text-stone-800 leading-tight">
+              အိမွန် အလှကုန် အရောင်းဆိုင်
+            </span>
+            <span className="text-[9px] text-rose-600 font-semibold leading-tight">
+              SMART POS & RETAIL SYSTEM
+            </span>
+          </div>
         </div>
 
-        {/* Desktop & Tablet Modern Unified Navigation (Integrated directly in Header - No clunky secondary bar) */}
-        <nav className="hidden sm:flex items-center gap-1 bg-stone-100/90 p-1 rounded-2xl border border-stone-200/90 shadow-2xs">
-          {navTabs.map((item) => {
-            const isActive = activeTab === item.id;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => setActiveTab(item.id)}
-                className={`flex items-center gap-1.5 px-2.5 md:px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap min-h-[34px] ${
-                  isActive
-                    ? 'bg-rose-600 text-white shadow-xs'
-                    : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/70'
-                }`}
-              >
-                {item.icon}
-                <span>{item.title}</span>
-                {item.badge !== undefined && (
-                  <span
-                    className={`text-[9px] font-black px-1.5 py-0.2 rounded-full ${
-                      item.badgeColor || 'bg-rose-500 text-white'
-                    }`}
-                  >
-                    {item.badge}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </nav>
-
-        {/* Center Live Clock (Visible on large screens) */}
-        <div className="hidden xl:flex items-center gap-2 px-3 py-1 rounded-xl bg-stone-50 border border-stone-200/80 text-stone-700">
-          <Clock className="w-3.5 h-3.5 text-rose-600" />
-          <span className="font-mono text-xs font-bold tracking-tight text-stone-800">
+        {/* Center Live Clock (Visible on md, lg, xl screens) */}
+        <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-xl bg-stone-50 border border-stone-200 text-stone-700 shadow-2xs">
+          <Clock className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+          <span className="font-mono text-xs font-bold tracking-tight text-stone-900">
             {currentTime}
           </span>
           <span className="text-[10px] text-stone-400 font-medium">| {currentDate}</span>
         </div>
 
         {/* Right side controls */}
-        <div className="flex items-center gap-1.5 sm:gap-2.5">
-          {/* Quick Digit Toggle (English 123 vs Myanmar ၁၂၃) */}
-          <button
-            type="button"
-            onClick={toggleMyanmarDigits}
-            title={useMyanmarDigits ? 'Switch to English Numbers (123)' : 'မြန်မာဂဏန်းပြောင်းမည် (၁၂၃)'}
-            className="px-2.5 py-1 rounded-xl text-xs font-bold border border-stone-200 hover:border-stone-300 bg-stone-50 hover:bg-stone-100 text-stone-700 transition-colors cursor-pointer flex items-center gap-1"
-          >
-            <Languages className="w-3.5 h-3.5 text-stone-500" />
-            <span className="text-[11px] font-mono">{useMyanmarDigits ? '၁၂၃' : '123'}</span>
-          </button>
-
-          {/* Sound Mute Toggle */}
-          <button
-            type="button"
-            onClick={handleToggleMute}
-            title={isMuted ? 'အသံဖွင့်မည် (Sound ON)' : 'အသံပိတ်မည် (Mute Sound)'}
-            className={`p-1.5 sm:p-2 rounded-xl border text-xs font-bold transition-colors cursor-pointer ${
-              isMuted
-                ? 'bg-stone-100 border-stone-200 text-stone-400 hover:text-stone-700'
-                : 'bg-rose-50 border-rose-200 text-rose-700 hover:bg-rose-100'
-            }`}
-          >
-            {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-          </button>
-
-          {/* Fullscreen Toggle */}
-          <button
-            type="button"
-            onClick={toggleFullscreen}
-            title={isFullscreen ? 'မျက်နှာပြင် အပြည့်မှ ထွက်မည်' : 'မျက်နှာပြင် အပြည့်သုံးမည် (Fullscreen)'}
-            className="hidden sm:flex p-1.5 sm:p-2 rounded-xl border border-stone-200 bg-stone-50 hover:bg-stone-100 text-stone-600 transition-colors cursor-pointer"
-          >
-            {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-          </button>
-
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {/* Supabase Cloud Live Sync status indicator */}
           <button
             type="button"
@@ -267,7 +139,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileCart }) => {
                 ? 'Supabase Cloud ချိတ်ဆက်ထားသည် (ကလစ်နှိပ်၍ အခုချက်ချင်း Refresh ပြုလုပ်ပါ)'
                 : 'အော့ဖ်လိုင်း (Supabase Cloud ချိတ်ဆက်ရန် နှိပ်ပါ)'
             }
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border shadow-2xs ${
               isCloudConnected
                 ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
                 : 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100'
@@ -283,7 +155,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileCart }) => {
             ) : (
               <CloudOff className="w-3 h-3 text-amber-600" />
             )}
-            <span className="text-[11px] hidden sm:inline">
+            <span className="text-[11px] hidden sm:inline font-bold">
               {cloudSyncStatus === 'syncing'
                 ? 'Syncing...'
                 : isCloudConnected
@@ -300,35 +172,74 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileCart }) => {
               setIsChangingCashier(true);
             }}
             title="ငွေကိုင်အမည် ပြောင်းလဲရန် နှိပ်ပါ"
-            className="flex items-center gap-1.5 p-1 sm:px-2.5 sm:py-1 rounded-xl bg-stone-50 border border-stone-200 hover:border-rose-300 transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 px-2 py-1 sm:px-2.5 sm:py-1 rounded-xl bg-stone-50 border border-stone-200 hover:border-rose-300 transition-colors cursor-pointer shadow-2xs"
           >
-            <div className="w-7 h-7 rounded-lg bg-rose-600 text-white flex items-center justify-center font-bold text-xs shadow-2xs">
-              {storeProfile.activeCashier.charAt(0)}
+            <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-rose-600 text-white flex items-center justify-center font-bold text-xs shadow-2xs shrink-0">
+              {storeProfile.activeCashier.charAt(0) || 'င'}
             </div>
-            <div className="text-left hidden md:block">
-              <p className="text-[9px] text-stone-400 uppercase font-semibold leading-none">
-                ငွေကိုင်
+            <div className="text-left hidden sm:block">
+              <p className="text-[8px] text-stone-400 uppercase font-semibold leading-none">
+                တာဝန်ကျ
               </p>
-              <p className="text-xs font-bold text-stone-800 leading-tight truncate max-w-[80px]">
+              <p className="text-[11px] font-bold text-stone-800 leading-tight truncate max-w-[85px]">
                 {storeProfile.activeCashier}
               </p>
             </div>
           </button>
 
-          {/* Mobile Cart Button */}
-          {activeTab === 'pos' && onOpenMobileCart && (
+          {/* Quick Utility Tools Group */}
+          <div className="flex items-center gap-1 pl-1 border-l border-stone-200">
+            {/* Quick Digit Toggle (English 123 vs Myanmar ၁၂၃) */}
             <button
-              onClick={onOpenMobileCart}
-              className="md:hidden relative p-2 rounded-xl bg-rose-600 text-white hover:bg-rose-700 shadow-xs flex items-center justify-center cursor-pointer"
+              type="button"
+              onClick={toggleMyanmarDigits}
+              title={useMyanmarDigits ? 'Switch to English Numbers (123)' : 'မြန်မာဂဏန်းပြောင်းမည် (၁၂၃)'}
+              className="px-2 py-1.5 rounded-xl text-xs font-bold border border-stone-200 hover:border-stone-300 bg-stone-50 hover:bg-stone-100 text-stone-700 transition-colors cursor-pointer flex items-center gap-1 shadow-2xs"
             >
-              <ShoppingCart className="w-4 h-4" />
-              {cartItemCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 bg-amber-400 text-stone-900 font-extrabold text-[10px] rounded-full w-5 h-5 flex items-center justify-center shadow-xs">
-                  {cartItemCount}
-                </span>
-              )}
+              <Languages className="w-3.5 h-3.5 text-stone-500" />
+              <span className="text-[11px] font-mono font-bold">{useMyanmarDigits ? '၁၂၃' : '123'}</span>
             </button>
-          )}
+
+            {/* Sound Mute Toggle */}
+            <button
+              type="button"
+              onClick={handleToggleMute}
+              title={isMuted ? 'အသံဖွင့်မည် (Sound ON)' : 'အသံပိတ်မည် (Mute Sound)'}
+              className={`p-1.5 sm:p-2 rounded-xl border text-xs font-bold transition-colors cursor-pointer shadow-2xs ${
+                isMuted
+                  ? 'bg-stone-100 border-stone-200 text-stone-400 hover:text-stone-700'
+                  : 'bg-rose-50 border-rose-200 text-rose-700 hover:bg-rose-100'
+              }`}
+            >
+              {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+            </button>
+
+            {/* Fullscreen Toggle (desktop/tablet) */}
+            <button
+              type="button"
+              onClick={toggleFullscreen}
+              title={isFullscreen ? 'မျက်နှာပြင် အပြည့်မှ ထွက်မည်' : 'မျက်နှာပြင် အပြည့်သုံးမည် (Fullscreen)'}
+              className="hidden sm:flex p-1.5 sm:p-2 rounded-xl border border-stone-200 bg-stone-50 hover:bg-stone-100 text-stone-600 transition-colors cursor-pointer shadow-2xs"
+            >
+              {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            </button>
+
+            {/* Mobile Cart Button */}
+            {activeTab === 'pos' && onOpenMobileCart && (
+              <button
+                type="button"
+                onClick={onOpenMobileCart}
+                className="md:hidden relative p-2 rounded-xl bg-rose-600 text-white hover:bg-rose-700 shadow-xs flex items-center justify-center cursor-pointer"
+              >
+                <ShoppingCart className="w-4 h-4" />
+                {cartItemCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 bg-amber-400 text-stone-900 font-extrabold text-[10px] rounded-full w-5 h-5 flex items-center justify-center shadow-xs">
+                    {cartItemCount}
+                  </span>
+                )}
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
