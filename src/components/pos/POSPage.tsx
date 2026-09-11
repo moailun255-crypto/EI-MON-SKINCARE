@@ -107,12 +107,17 @@ export const POSPage: React.FC<POSPageProps> = ({
         return { success: false, message: 'ဘားကုဒ်မရှိပါ' };
       }
 
-      // Find product by exact barcode or SKU
-      const matched = products.find(
-        (p) =>
-          p.barcode === cleanCode ||
+      // Find product by exact barcode, SKU, or normalized digits (handling UPC-A vs EAN-13 leading zeros)
+      const cleanNoLeadingZero = cleanCode.replace(/^0+/, '');
+      const matched = products.find((p) => {
+        const pBarcode = (p.barcode || '').trim();
+        const pBarcodeNoZero = pBarcode.replace(/^0+/, '');
+        return (
+          pBarcode === cleanCode ||
+          (cleanNoLeadingZero && pBarcodeNoZero === cleanNoLeadingZero) ||
           p.sku.toLowerCase() === cleanCode.toLowerCase()
-      );
+        );
+      });
 
       if (!matched) {
         playBarcodeBeep('error');

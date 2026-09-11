@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { toPng } from 'html-to-image';
+import html2canvas from 'html2canvas';
 import { useStore } from '../../context/StoreContext';
 import { Order } from '../../types';
 import { formatMMK, formatDateMy } from '../../utils/format';
@@ -13,9 +14,7 @@ import {
   Download,
   CheckCircle2,
   Image as ImageIcon,
-  Sparkles,
-  Receipt as ReceiptIcon,
-  Crown,
+  Receipt,
 } from 'lucide-react';
 
 interface ReceiptModalProps {
@@ -27,7 +26,6 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ order, onClose }) =>
   const { storeProfile, useMyanmarDigits } = useStore();
   const [isSavingImage, setIsSavingImage] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [slipStyle, setSlipStyle] = useState<'luxury' | 'thermal'>('luxury');
 
   // Photo Album Saver State
   const [savedImageUrl, setSavedImageUrl] = useState<string | null>(null);
@@ -137,35 +135,93 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ order, onClose }) =>
   // High-Resolution 300DPI Capture & Direct Save to Photo Album / Gallery
   const handleSaveToAlbum = async () => {
     const receiptElement = document.getElementById('printable-receipt');
-    if (!receiptElement) return;
+    if (!receiptElement || !order) return;
 
     try {
       setIsSavingImage(true);
 
-      // Scroll container to top so no elements are clipped by scroll position
-      const scrollContainer = receiptElement.closest('.receipt-scroll-container');
-      if (scrollContainer) {
-        scrollContainer.scrollTop = 0;
-      }
+      // Create an off-screen isolated container to render the full receipt completely
+      // This eliminates mobile scroll clipping, modal overflow, and CSS viewport scale issues
+      const tempContainer = document.createElement('div');
+      tempContainer.style.position = 'fixed';
+      tempContainer.style.left = '-9999px';
+      tempContainer.style.top = '0';
+      tempContainer.style.width = '380px';
+      tempContainer.style.zIndex = '-9999';
+      tempContainer.style.opacity = '1';
+      tempContainer.style.pointerEvents = 'none';
+      tempContainer.style.backgroundColor = '#ffffff';
 
-      // Generate ultra-crisp high-resolution image using html-to-image
-      // This natively supports CSS Color Module 4 (oklch, srgb), modern fonts, and flexbox
+      const clone = receiptElement.cloneNode(true) as HTMLElement;
+      clone.id = 'printable-receipt-export-clone';
+      clone.style.width = '380px';
+      clone.style.maxWidth = '380px';
+      clone.style.minWidth = '380px';
+      clone.style.height = 'auto';
+      clone.style.maxHeight = 'none';
+      clone.style.overflow = 'visible';
+      clone.style.margin = '0';
+      clone.style.padding = '24px';
+      clone.style.transform = 'none';
+      clone.style.boxShadow = 'none';
+      clone.style.borderRadius = '0';
+      clone.style.backgroundColor = '#ffffff';
+
+      tempContainer.appendChild(clone);
+      document.body.appendChild(tempContainer);
+
+      // Allow browser layout to accurately measure full natural scroll height
+      await new Promise((resolve) => setTimeout(resolve, 80));
+
+      const captureWidth = 380;
+      const captureHeight = Math.max(clone.scrollHeight, clone.offsetHeight, 400);
+
       let dataUrl = '';
       try {
-        dataUrl = await toPng(receiptElement, {
-          quality: 1,
-          pixelRatio: 2.5,
+        dataUrl = await toPng(clone, {
+          width: captureWidth,
+          height: captureHeight,
+          canvasWidth: captureWidth * 2,
+          canvasHeight: captureHeight * 2,
+          pixelRatio: 2,
           backgroundColor: '#ffffff',
           skipFonts: true,
           cacheBust: false,
+          style: {
+            margin: '0',
+            transform: 'none',
+            width: `${captureWidth}px`,
+            height: `${captureHeight}px`,
+          },
         });
       } catch (firstErr) {
-        console.warn('First toPng capture attempt with skipFonts failed, falling back to standard toPng:', firstErr);
-        dataUrl = await toPng(receiptElement, {
-          quality: 1,
-          pixelRatio: 2,
-          backgroundColor: '#ffffff',
-        });
+        console.warn('toPng failed, falling back to html2canvas:', firstErr);
+        try {
+          const canvas = await html2canvas(clone, {
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: '#ffffff',
+            width: captureWidth,
+            height: captureHeight,
+            windowWidth: captureWidth,
+            windowHeight: captureHeight,
+            scrollX: 0,
+            scrollY: 0,
+          });
+          dataUrl = canvas.toDataURL('image/png');
+        } catch (secondErr) {
+          console.error('html2canvas failed as well:', secondErr);
+          dataUrl = await toPng(clone, {
+            backgroundColor: '#ffffff',
+            width: captureWidth,
+            height: captureHeight,
+          });
+        }
+      } finally {
+        if (tempContainer.parentNode) {
+          tempContainer.parentNode.removeChild(tempContainer);
+        }
       }
 
       if (!dataUrl) {
@@ -231,49 +287,19 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ order, onClose }) =>
           <div className="px-4 sm:px-5 py-3 bg-gradient-to-r from-stone-900 via-stone-850 to-stone-900 text-white flex items-center justify-between no-print border-b border-stone-800">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-xl bg-rose-600 flex items-center justify-center shadow-xs">
-                <Crown className="w-4 h-4 text-white" />
+                <Receipt className="w-4 h-4 text-white" />
               </div>
               <div>
                 <span className="font-extrabold text-sm sm:text-base leading-tight block">
                   အရောင်းပြေစာ (ဘောင်ချာ)
                 </span>
-                <span className="text-[10px] text-stone-400">
+                <span className="text-[10px] text-stone-400 font-mono">
                   EI MON SKINCARE • #{order.receiptNumber}
                 </span>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
-              {/* Slip Style Toggle (Luxury vs Thermal) */}
-              <div className="bg-stone-800 p-0.5 rounded-xl flex items-center border border-stone-700 text-xs">
-                <button
-                  type="button"
-                  onClick={() => setSlipStyle('luxury')}
-                  className={`px-2.5 py-1 rounded-lg font-bold transition-all text-[11px] flex items-center gap-1 cursor-pointer ${
-                    slipStyle === 'luxury'
-                      ? 'bg-rose-600 text-white shadow-xs'
-                      : 'text-stone-300 hover:text-white'
-                  }`}
-                  title="အဆင့်မြင့် ဇိမ်ခံစတိုင် ပြေစာ"
-                >
-                  <Sparkles className="w-3 h-3 text-amber-300" />
-                  <span>ဇိမ်ခံ (Luxury)</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSlipStyle('thermal')}
-                  className={`px-2.5 py-1 rounded-lg font-bold transition-all text-[11px] flex items-center gap-1 cursor-pointer ${
-                    slipStyle === 'thermal'
-                      ? 'bg-rose-600 text-white shadow-xs'
-                      : 'text-stone-300 hover:text-white'
-                  }`}
-                  title="ရိုးရိုး အပူဒဏ်ခံစက္ကူ စတိုင်"
-                >
-                  <ReceiptIcon className="w-3 h-3" />
-                  <span>Thermal</span>
-                </button>
-              </div>
-
               <button
                 type="button"
                 onClick={onClose}
@@ -298,251 +324,117 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ order, onClose }) =>
           {/* Paper Receipt Simulation Scroll Area */}
           <div className="p-3 sm:p-5 bg-stone-100 overflow-y-auto max-h-[60vh] receipt-scroll-container flex justify-center">
             {/* The Actual Printable / Exportable Node */}
+            {/* The Actual Printable / Exportable Node - Authentic Clean Thermal POS Slip */}
             <div
               id="printable-receipt"
-              className={`bg-white rounded-2xl shadow-sm text-stone-900 font-sans mx-auto transition-all ${
-                slipStyle === 'luxury'
-                  ? 'p-6 border border-stone-200 max-w-[360px]'
-                  : 'p-5 border border-stone-200 max-w-[320px]'
-              }`}
+              className="bg-white rounded-2xl shadow-sm text-stone-900 font-mono mx-auto p-5 border border-stone-200 max-w-[340px] text-xs space-y-3"
               style={{ width: '100%' }}
             >
-              {slipStyle === 'luxury' ? (
-                /* =================== CLEAN BOUTIQUE SLIP =================== */
-                <div className="space-y-3.5">
-                  {/* Brand Header */}
-                  <div className="text-center pb-3 border-b border-stone-200">
-                    <h1 className="text-base sm:text-lg font-black tracking-wider text-stone-900 uppercase">
-                      {storeProfile.nameMy || 'EI MON SKINCARE'}
-                    </h1>
-                    <p className="text-[10px] font-bold text-rose-700 tracking-wide mt-0.5 uppercase">
-                      Cosmetics & Skincare Retail
-                    </p>
-                    <p className="text-[10px] text-stone-500 font-semibold mt-0.5">
-                      အရောင်းပြေစာ (Sales Voucher)
-                    </p>
-                    <p className="text-[10px] text-stone-600 mt-1">
-                      {storeProfile.addressMy}
-                    </p>
-                    <p className="text-[10px] text-stone-700 font-medium">
-                      ဖုန်း - {storeProfile.phone}
-                    </p>
-                  </div>
+              {/* Brand Header */}
+              <div className="text-center pb-2 border-b border-dashed border-stone-300">
+                <h1 className="text-base font-black uppercase text-stone-900 tracking-wider">
+                  {storeProfile.nameMy || 'EI MON SKINCARE'}
+                </h1>
+                <p className="text-[10px] text-stone-600 mt-0.5 leading-snug">
+                  {storeProfile.addressMy}
+                </p>
+                <p className="text-[10px] text-stone-700 font-bold">
+                  ဖုန်း - {storeProfile.phone}
+                </p>
+              </div>
 
-                  {/* Voucher Meta Strip */}
-                  <div className="p-2.5 rounded-xl bg-stone-50 border border-stone-200/80 text-[11px] space-y-1">
-                    <div className="flex justify-between items-center">
-                      <span className="text-stone-500">ပြေစာအမှတ် (No):</span>
-                      <span className="font-extrabold font-mono text-rose-700">
-                        {order.receiptNumber}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-stone-500">ရက်စွဲ (Date):</span>
-                      <span className="font-medium text-stone-800">
-                        {formatDateMy(order.createdAt)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-stone-500">ငွေကိုင် (Cashier):</span>
-                      <span className="font-bold text-stone-800">
-                        {order.cashierName}
-                      </span>
-                    </div>
-                    {order.customerName && (
-                      <div className="flex justify-between items-center pt-0.5 border-t border-stone-200/60">
-                        <span className="text-stone-500">ဝယ်ယူသူ (Customer):</span>
-                        <span className="font-bold text-rose-800">
-                          {order.customerName} {order.customerPhone ? `(${order.customerPhone})` : ''}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Items List Table */}
-                  <div className="pt-1 border-b border-dashed border-stone-300 pb-3">
-                    <table className="w-full border-collapse table-fixed">
-                      <thead>
-                        <tr className="border-b border-stone-200 text-[10px] font-bold text-stone-500 uppercase tracking-wider">
-                          <th className="py-1.5 pr-2 font-bold text-stone-600 text-left">
-                            အမည်
-                          </th>
-                          <th className="py-1.5 px-1 font-bold text-stone-600 text-center w-16 whitespace-nowrap">
-                            အရေအတွက်
-                          </th>
-                          <th className="py-1.5 pl-1 font-bold text-stone-600 text-right w-24 whitespace-nowrap">
-                            သင့်ငွေ
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-stone-100 text-[11px]">
-                        {order.items.map((item, idx) => (
-                          <tr key={idx} className="align-top">
-                            <td className="py-2 pr-2 text-left">
-                              <p className="font-bold text-stone-900 leading-snug break-words">
-                                {item.productNameMy}
-                              </p>
-                              <p className="text-[10px] text-stone-500 font-mono mt-0.5">
-                                {formatMMK(item.finalPrice, useMyanmarDigits)} / ခု
-                              </p>
-                            </td>
-                            <td className="py-2 px-1 text-center font-bold text-stone-800 font-mono whitespace-nowrap pt-2.5">
-                              {item.quantity}
-                            </td>
-                            <td className="py-2 pl-1 text-right font-black text-stone-900 font-mono whitespace-nowrap pt-2.5">
-                              {formatMMK(item.lineTotal, useMyanmarDigits)}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {/* Summary Totals */}
-                  <div className="space-y-1.5 text-[11px] border-b border-dashed border-stone-300 pb-3">
-                    <div className="flex justify-between text-stone-600">
-                      <span>ကုန်ပစ္စည်းသင့်ငွေ (Subtotal):</span>
-                      <span className="font-mono font-medium">
-                        {formatMMK(order.subtotal, useMyanmarDigits)}
-                      </span>
-                    </div>
-
-                    {order.discountTotal > 0 && (
-                      <div className="flex justify-between text-rose-600 font-bold">
-                        <span>အထူးလျှော့ငွေ (Discount):</span>
-                        <span className="font-mono">
-                          -{formatMMK(order.discountTotal, useMyanmarDigits)}
-                        </span>
-                      </div>
-                    )}
-
-                    {order.taxAmount > 0 && (
-                      <div className="flex justify-between text-stone-600">
-                        <span>အခွန် ({order.taxPercent}% Tax):</span>
-                        <span className="font-mono">
-                          {formatMMK(order.taxAmount, useMyanmarDigits)}
-                        </span>
-                      </div>
-                    )}
-
-                    <div className="flex justify-between items-center text-sm font-black pt-1.5 border-t-2 border-stone-900 text-stone-900">
-                      <span>စုစုပေါင်း ကျသင့်ငွေ (Total):</span>
-                      <span className="text-base text-rose-700 font-extrabold font-mono">
-                        {formatMMK(order.grandTotal, useMyanmarDigits)}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Payment Details */}
-                  <div className="p-2.5 rounded-xl bg-stone-50 border border-stone-200/80 text-[11px] space-y-1">
-                    <div className="flex justify-between items-center">
-                      <span className="text-stone-500">ပေးချေပုံစံ (Payment):</span>
-                      <span className="font-bold text-stone-900">
-                        {order.paymentMethod === 'cash' ? 'ငွေသား (Cash)' : 'KBZPay / WavePay'}
-                      </span>
-                    </div>
-                    {order.paymentMethod === 'cash' && (
-                      <div className="flex justify-between items-center">
-                        <span className="text-stone-500">ပေးငွေ (Paid):</span>
-                        <span className="font-mono font-bold">
-                          {formatMMK(order.amountReceived, useMyanmarDigits)}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Courtesy Footer - Clean, No QR, No Stamp */}
-                  <div className="text-center pt-3 border-t border-dashed border-stone-300 text-stone-600 space-y-1">
-                    <p className="text-xs font-bold text-stone-800">
-                      ဝယ်ယူအားပေးမှုအတွက် အထူးကျေးဇူးတင်ရှိပါသည်
-                    </p>
-                    <p className="text-[10px] text-stone-400 font-medium tracking-wider">
-                      THANK YOU FOR YOUR PURCHASE
-                    </p>
-                  </div>
+              {/* Order Meta Info */}
+              <div className="space-y-1 text-[11px] border-b border-dashed border-stone-300 pb-2">
+                <div className="flex justify-between">
+                  <span className="text-stone-600">ပြေစာအမှတ်:</span>
+                  <span className="font-bold font-mono text-stone-900">#{order.receiptNumber}</span>
                 </div>
-              ) : (
-                /* =================== CLASSIC THERMAL POS SLIP =================== */
-                <div className="text-stone-900 font-mono text-xs space-y-3">
-                  <div className="text-center pb-2 border-b border-dashed border-stone-300">
-                    <h1 className="text-base font-black uppercase">
-                      EI MON SKINCARE
-                    </h1>
-                    <p className="text-[10px] text-stone-600 mt-0.5">
-                      {storeProfile.addressMy}
-                    </p>
-                    <p className="text-[10px] text-stone-700">
-                      TEL: {storeProfile.phone}
-                    </p>
+                <div className="flex justify-between">
+                  <span className="text-stone-600">နေ့စွဲ:</span>
+                  <span>{formatDateMy(order.createdAt)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-stone-600">အရောင်းဝန်ထမ်း:</span>
+                  <span>{order.cashierName}</span>
+                </div>
+                {order.customerName && order.customerName !== 'အထွေထွေ အဝယ်တော်' && (
+                  <div className="flex justify-between">
+                    <span className="text-stone-600">ဝယ်သူ:</span>
+                    <span>{order.customerName}</span>
                   </div>
+                )}
+              </div>
 
-                  <div className="space-y-1 text-[11px] border-b border-dashed border-stone-300 pb-2">
-                    <div className="flex justify-between">
-                      <span>RC NO:</span>
-                      <span className="font-bold">{order.receiptNumber}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>DATE:</span>
-                      <span>{formatDateMy(order.createdAt)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>CASHIER:</span>
-                      <span>{order.cashierName}</span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5 border-b border-dashed border-stone-300 pb-2">
+              {/* Items Table: Pure Myanmar headers without English */}
+              <div className="border-b border-dashed border-stone-300 pb-2">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="border-b border-stone-300 text-[10px] font-bold text-stone-700">
+                      <th className="py-1 pr-1 font-bold text-left">အမည်</th>
+                      <th className="py-1 px-1 font-bold text-center w-16">အရေအတွက်</th>
+                      <th className="py-1 pl-1 font-bold text-right w-24">သင့်ငွေ</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-dotted divide-stone-200">
                     {order.items.map((item, idx) => (
-                      <div key={idx} className="text-[11px]">
-                        <div className="font-bold">{item.productNameMy}</div>
-                        <div className="flex justify-between text-stone-600 text-[10px]">
-                          <span>
-                            {item.quantity} x {formatMMK(item.finalPrice, useMyanmarDigits)}
-                          </span>
-                          <span className="font-bold text-stone-900">
-                            {formatMMK(item.lineTotal, useMyanmarDigits)}
-                          </span>
-                        </div>
-                      </div>
+                      <tr key={idx} className="text-[11px]">
+                        <td className="py-1.5 pr-1 font-medium leading-tight">
+                          <div className="text-stone-900 font-bold">{item.productNameMy}</div>
+                          <div className="text-[9px] text-stone-500 font-mono">
+                            @{formatMMK(item.finalPrice, useMyanmarDigits)}
+                          </div>
+                        </td>
+                        <td className="py-1.5 px-1 text-center font-bold">
+                          {item.quantity}
+                        </td>
+                        <td className="py-1.5 pl-1 text-right font-bold font-mono">
+                          {formatMMK(item.lineTotal, useMyanmarDigits)}
+                        </td>
+                      </tr>
                     ))}
-                  </div>
+                  </tbody>
+                </table>
+              </div>
 
-                  <div className="space-y-1 text-[11px] border-b border-dashed border-stone-300 pb-2">
-                    <div className="flex justify-between">
-                      <span>SUBTOTAL:</span>
-                      <span>{formatMMK(order.subtotal, useMyanmarDigits)}</span>
-                    </div>
-                    {order.discountTotal > 0 && (
-                      <div className="flex justify-between text-rose-600">
-                        <span>DISCOUNT:</span>
-                        <span>-{formatMMK(order.discountTotal, useMyanmarDigits)}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between font-black text-sm pt-1 border-t border-stone-300">
-                      <span>TOTAL:</span>
-                      <span>{formatMMK(order.grandTotal, useMyanmarDigits)}</span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1 text-[10px]">
-                    <div className="flex justify-between">
-                      <span>PAYMENT:</span>
-                      <span>{order.paymentMethod === 'cash' ? 'CASH' : 'KBZPAY'}</span>
-                    </div>
-                    {order.paymentMethod === 'cash' && (
-                      <div className="flex justify-between">
-                        <span>RECEIVED:</span>
-                        <span>{formatMMK(order.amountReceived, useMyanmarDigits)}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="pt-2 text-center border-t border-dashed border-stone-300 text-stone-600 space-y-0.5">
-                    <p className="text-[11px] font-bold text-stone-800">ဝယ်ယူအားပေးမှုအတွက် ကျေးဇူးတင်ပါသည်</p>
-                    <p className="text-[10px] font-bold">THANK YOU!</p>
-                  </div>
+              {/* Totals & Discounts */}
+              <div className="space-y-1 text-[11px] border-b border-dashed border-stone-300 pb-2">
+                <div className="flex justify-between text-stone-600">
+                  <span>ကုန်ပစ္စည်းသင့်ငွေ:</span>
+                  <span className="font-mono">{formatMMK(order.subtotal, useMyanmarDigits)}</span>
                 </div>
-              )}
+                {order.discountTotal > 0 && (
+                  <div className="flex justify-between text-rose-600 font-semibold">
+                    <span>လျှော့ဈေး:</span>
+                    <span className="font-mono">-{formatMMK(order.discountTotal, useMyanmarDigits)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between font-black text-sm pt-1.5 border-t border-stone-300 text-stone-900">
+                  <span>စုစုပေါင်း ကျသင့်ငွေ:</span>
+                  <span className="font-mono">{formatMMK(order.grandTotal, useMyanmarDigits)}</span>
+                </div>
+              </div>
+
+              {/* Payment Info (Without Change / ပြန်အမ်းငွေ) */}
+              <div className="space-y-1 text-[10px]">
+                <div className="flex justify-between">
+                  <span className="text-stone-600">ငွေပေးချေမှု:</span>
+                  <span className="font-bold uppercase">
+                    {order.paymentMethod === 'cash' ? 'ငွေသား (CASH)' : 'KBZPAY'}
+                  </span>
+                </div>
+                {order.paymentMethod === 'cash' && (
+                  <div className="flex justify-between">
+                    <span className="text-stone-600">ပေးငွေ:</span>
+                    <span className="font-mono font-bold">{formatMMK(order.amountReceived, useMyanmarDigits)}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="pt-2 text-center border-t border-dashed border-stone-300 text-stone-600 space-y-0.5">
+                <p className="text-[11px] font-bold text-stone-800">ဝယ်ယူအားပေးမှုအတွက် ကျေးဇူးတင်ပါသည်</p>
+                <p className="text-[10px] font-bold tracking-widest text-stone-500">THANK YOU!</p>
+              </div>
             </div>
           </div>
 

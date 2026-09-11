@@ -12,9 +12,7 @@ import {
   Phone,
   Printer,
   Tag,
-  CreditCard,
   Smartphone,
-  Building2,
 } from 'lucide-react';
 
 interface PaymentModalProps {
@@ -77,10 +75,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   };
 
   const paymentMethodsList: { id: PaymentMethod; label: string; sub: string; icon: React.ReactNode }[] = [
-    { id: 'cash', label: 'ငွေသား (Cash)', sub: 'ရူဘီငွေစက္ကူ', icon: <Banknote className="w-4 h-4 text-emerald-600" /> },
-    { id: 'kpay', label: 'KBZPay', sub: 'KPay စကင် / ဖုန်း', icon: <Smartphone className="w-4 h-4 text-blue-600" /> },
-    { id: 'wave', label: 'WavePay', sub: 'Wave Money', icon: <Smartphone className="w-4 h-4 text-amber-500" /> },
-    { id: 'bank', label: 'ဘဏ်လွှဲ / AYA / CB', sub: 'Mobile Banking', icon: <Building2 className="w-4 h-4 text-violet-600" /> },
+    { id: 'cash', label: 'ငွေသား (Cash)', sub: 'ကျပ်ငွေစက္ကူ', icon: <Banknote className="w-4 h-4 text-emerald-600" /> },
+    { id: 'kpay', label: 'KBZPay', sub: 'KPay စကင် / အကောင့်', icon: <Smartphone className="w-4 h-4 text-blue-600" /> },
   ];
 
   return (
