@@ -22,6 +22,8 @@ import {
   AlertTriangle,
   Boxes,
   Flame,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 
 interface POSPageProps {
@@ -46,6 +48,7 @@ export const POSPage: React.FC<POSPageProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<ProductCategory | 'popular' | 'low_stock'>('all');
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isCameraScannerOpen, setIsCameraScannerOpen] = useState(false);
+  const [showMobileMetrics, setShowMobileMetrics] = useState(false);
   const [justAddedId, setJustAddedId] = useState<string | null>(null);
 
   // Compact notification toast for scans
@@ -245,57 +248,101 @@ export const POSPage: React.FC<POSPageProps> = ({
 
   return (
     <div className="max-w-7xl mx-auto px-2 sm:px-4 py-2.5 sm:py-3 pb-28 sm:pb-6">
-      {/* Top POS Quick-Metrics Dashboard Strip */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
-        {/* Today's Total Sales */}
-        <div className="p-2.5 sm:p-3 rounded-2xl bg-white border border-stone-200/90 shadow-2xs flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
-            <TrendingUp className="w-4 h-4" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-[10px] text-stone-400 font-semibold truncate">ယနေ့ရောင်းရငွေ</p>
-            <p className="text-xs sm:text-sm font-black text-stone-900 truncate">
+      {/* Top POS Quick-Metrics: Collapsible on Mobile to Save Screen Space, Full on Desktop */}
+      <div className="mb-2 sm:mb-3">
+        {/* Mobile Compact 1-Line Strip */}
+        <div className="sm:hidden flex items-center justify-between p-2 rounded-xl bg-white border border-stone-200/90 shadow-2xs text-xs">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center">
+              <TrendingUp className="w-3.5 h-3.5" />
+            </div>
+            <span className="text-[11px] text-stone-500 font-semibold">ယနေ့:</span>
+            <span className="font-black text-stone-900">
               {formatMMK(todayRevenue, useMyanmarDigits)}
-            </p>
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-bold text-[10px]">
+              {todayOrders.length} စောင်
+            </span>
+            <button
+              type="button"
+              onClick={() => setShowMobileMetrics(!showMobileMetrics)}
+              className="p-1 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-600 cursor-pointer flex items-center gap-0.5 text-[10px] font-bold"
+            >
+              <span>{showMobileMetrics ? 'ဝှက်မည်' : 'အသေးစိတ်'}</span>
+              {showMobileMetrics ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+            </button>
           </div>
         </div>
 
-        {/* Today's Orders Count */}
-        <div className="p-2.5 sm:p-3 rounded-2xl bg-white border border-stone-200/90 shadow-2xs flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-            <Receipt className="w-4 h-4" />
+        {/* The 4 Stat Cards: Displayed on desktop (sm+) or when expanded on mobile */}
+        <div
+          className={`grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2 sm:mt-0 ${
+            showMobileMetrics ? 'grid' : 'hidden sm:grid'
+          }`}
+        >
+          {/* Today's Total Sales */}
+          <div className="p-2.5 sm:p-3 rounded-2xl bg-white border border-stone-200/90 shadow-2xs flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+              <TrendingUp className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] text-stone-400 font-semibold truncate">ယနေ့ရောင်းရငွေ</p>
+              <p className="text-xs sm:text-sm font-black text-stone-900 truncate">
+                {formatMMK(todayRevenue, useMyanmarDigits)}
+              </p>
+            </div>
           </div>
-          <div className="min-w-0">
-            <p className="text-[10px] text-stone-400 font-semibold truncate">ယနေ့ဘောင်ချာ</p>
-            <p className="text-xs sm:text-sm font-black text-stone-900 truncate">
-              {todayOrders.length} <span className="text-[10px] text-stone-500 font-normal">စောင်</span>
-            </p>
-          </div>
-        </div>
 
-        {/* Low Stock Warnings */}
-        <div className="p-2.5 sm:p-3 rounded-2xl bg-white border border-stone-200/90 shadow-2xs flex items-center gap-2.5">
-          <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${lowStockCount > 0 ? 'bg-amber-50 text-amber-600 animate-pulse' : 'bg-stone-50 text-stone-400'}`}>
-            <AlertTriangle className="w-4 h-4" />
+          {/* Today's Orders Count */}
+          <div className="p-2.5 sm:p-3 rounded-2xl bg-white border border-stone-200/90 shadow-2xs flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+              <Receipt className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] text-stone-400 font-semibold truncate">ယနေ့ဘောင်ချာ</p>
+              <p className="text-xs sm:text-sm font-black text-stone-900 truncate">
+                {todayOrders.length} <span className="text-[10px] text-stone-500 font-normal">စောင်</span>
+              </p>
+            </div>
           </div>
-          <div className="min-w-0">
-            <p className="text-[10px] text-stone-400 font-semibold truncate">လက်ကျန်သတိပေးချက်</p>
-            <p className={`text-xs sm:text-sm font-black truncate ${lowStockCount > 0 ? 'text-amber-600' : 'text-stone-900'}`}>
-              {lowStockCount} <span className="text-[10px] text-stone-500 font-normal">မျိုး</span>
-            </p>
-          </div>
-        </div>
 
-        {/* Total Products in Catalog */}
-        <div className="p-2.5 sm:p-3 rounded-2xl bg-white border border-stone-200/90 shadow-2xs flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-stone-100 text-stone-700 flex items-center justify-center shrink-0">
-            <Boxes className="w-4 h-4" />
+          {/* Low Stock Warnings */}
+          <div className="p-2.5 sm:p-3 rounded-2xl bg-white border border-stone-200/90 shadow-2xs flex items-center gap-2.5">
+            <div
+              className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
+                lowStockCount > 0
+                  ? 'bg-amber-50 text-amber-600 animate-pulse'
+                  : 'bg-stone-50 text-stone-400'
+              }`}
+            >
+              <AlertTriangle className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] text-stone-400 font-semibold truncate">လက်ကျန်သတိပေးချက်</p>
+              <p
+                className={`text-xs sm:text-sm font-black truncate ${
+                  lowStockCount > 0 ? 'text-amber-600' : 'text-stone-900'
+                }`}
+              >
+                {lowStockCount} <span className="text-[10px] text-stone-500 font-normal">မျိုး</span>
+              </p>
+            </div>
           </div>
-          <div className="min-w-0">
-            <p className="text-[10px] text-stone-400 font-semibold truncate">ဆိုင်ရှိပစ္စည်းများ</p>
-            <p className="text-xs sm:text-sm font-black text-stone-900 truncate">
-              {products.length} <span className="text-[10px] text-stone-500 font-normal">မျိုး</span>
-            </p>
+
+          {/* Total Products in Catalog */}
+          <div className="p-2.5 sm:p-3 rounded-2xl bg-white border border-stone-200/90 shadow-2xs flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-stone-100 text-stone-700 flex items-center justify-center shrink-0">
+              <Boxes className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] text-stone-400 font-semibold truncate">ဆိုင်ရှိပစ္စည်းများ</p>
+              <p className="text-xs sm:text-sm font-black text-stone-900 truncate">
+                {products.length} <span className="text-[10px] text-stone-500 font-normal">မျိုး</span>
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -304,7 +351,7 @@ export const POSPage: React.FC<POSPageProps> = ({
         {/* Left Side: Skincare Products Catalog */}
         <div className="md:col-span-7 lg:col-span-8 space-y-2.5">
           {/* Top Unified Search & Barcode Bar */}
-          <div className="bg-white p-2.5 sm:p-3 rounded-2xl border border-stone-200 shadow-2xs space-y-2">
+          <div className="bg-white p-2 sm:p-3 rounded-2xl border border-stone-200 shadow-2xs space-y-2">
             <div className="flex items-center gap-2">
               {/* Unified Search & Barcode Input */}
               <form onSubmit={handleSearchSubmit} className="relative flex-1">
@@ -316,8 +363,8 @@ export const POSPage: React.FC<POSPageProps> = ({
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="ပစ္စည်းအမည်၊ အမှတ်တံဆိပ် (Brand)၊ SKU သို့မဟုတ် ဘားကုဒ်ဖြင့် ရှာမည်..."
-                  className="w-full text-xs sm:text-sm pl-9 pr-16 py-2 rounded-xl border border-stone-200 focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-500 bg-stone-50/60"
+                  placeholder="ပစ္စည်းအမည်၊ Brand၊ SKU သို့မဟုတ် ဘားကုဒ်ဖြင့် ရှာမည်..."
+                  className="w-full text-xs sm:text-sm pl-9 pr-8 py-2 rounded-xl border border-stone-200 focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-500 bg-stone-50/60"
                 />
                 {searchQuery && (
                   <button
@@ -330,14 +377,14 @@ export const POSPage: React.FC<POSPageProps> = ({
                 )}
               </form>
 
-              {/* Camera Scanner Button */}
+              {/* Camera Scanner Button - High Visibility on Mobile */}
               <button
                 type="button"
                 onClick={() => setIsCameraScannerOpen(true)}
-                className="px-3 py-2 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-bold text-xs flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer shrink-0"
+                className="px-2.5 sm:px-3 py-2 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-bold text-xs flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer shrink-0"
               >
-                <Camera className="w-3.5 h-3.5 text-rose-400" />
-                <span className="hidden sm:inline">ကင်မရာစကင်</span>
+                <Camera className="w-4 h-4 text-rose-400" />
+                <span className="text-xs font-bold">စကင်</span>
               </button>
             </div>
 
