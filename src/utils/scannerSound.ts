@@ -41,8 +41,13 @@ function getAudioContext(): AudioContext | null {
   return audioCtx;
 }
 
+let lastBeepTime = 0;
+
 export function playBarcodeBeep(type: 'success' | 'error' | 'warning' = 'success'): void {
   if (isMuted) return;
+  const now = Date.now();
+  if (now - lastBeepTime < 120) return;
+  lastBeepTime = now;
   try {
     const ctx = getAudioContext();
     if (!ctx) return;
