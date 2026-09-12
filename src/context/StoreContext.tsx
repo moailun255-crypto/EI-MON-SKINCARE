@@ -72,8 +72,8 @@ interface StoreContextType {
   setActiveReceiptOrder: (order: Order | null) => void;
 
   // Cart operations
-  addToCart: (product: Product, quantity?: number) => void;
-  updateCartQuantity: (productId: string, quantity: number) => void;
+  addToCart: (product: Product, quantity?: number) => { success: boolean; message: string; availableStock?: number };
+  updateCartQuantity: (productId: string, quantity: number) => { success: boolean; message: string; availableStock?: number };
   updateCartItemDiscount: (productId: string, discountPercent: number, discountAmount: number) => void;
   removeFromCart: (productId: string) => void;
   clearCart: () => void;
@@ -547,13 +547,33 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   // Cart operations
-  const addToCart = (product: Product, quantity: number = 1) => {
-    if (product.stock <= 0) return;
+  const addToCart = (product: Product, quantity: number = 1): { success: boolean; message: string; availableStock?: number } => {
+    if (product.stock <= 0) {
+      return {
+        success: false,
+        message: `${product.nameMy} လက်ကျန်ကုန်နေပါသည် (Out of Stock)`,
+        availableStock: 0,
+      };
+    }
+
+    const existing = cart.find((item) => item.product.id === product.id);
+    const currentQtyInCart = existing ? existing.quantity : 0;
+    const requestedTotal = currentQtyInCart + quantity;
+
+    if (currentQtyInCart >= product.stock) {
+      return {
+        success: false,
+        message: `${product.nameMy} လက်ကျန် (${product.stock}) ခုသာရှိ၍ ထပ်မံထည့်၍မရတော့ပါ (Stock Limit Reached)`,
+        availableStock: product.stock,
+      };
+    }
+
+    const finalAddQty = Math.min(quantity, product.stock - currentQtyInCart);
 
     setCart((prev) => {
-      const existing = prev.find((item) => item.product.id === product.id);
-      if (existing) {
-        const newQty = Math.min(existing.quantity + quantity, product.stock);
+      const ex = prev.find((item) => item.product.id === product.id);
+      if (ex) {
+        const newQty = Math.min(ex.quantity + quantity, product.stock);
         return prev.map((item) =>
           item.product.id === product.id
             ? {
@@ -578,26 +598,73 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         ];
       }
     });
+
+    if (requestedTotal > product.stock) {
+      return {
+        success: true,
+        message: `${product.nameMy} လက်ကျန် (${product.stock}) ခုအထိသာ ထည့်သွင်းပေးထားပါသည်`,
+        availableStock: product.stock,
+      };
+    }
+
+    return {
+      success: true,
+      message: `${product.nameMy} ထည့်ပြီး`,
+      availableStock: product.stock,
+    };
   };
 
-  const updateCartQuantity = (productId: string, quantity: number) => {
+  const updateCartQuantity = (productId: string, quantity: number): { success: boolean; message: string; availableStock?: number } => {
     if (quantity <= 0) {
       removeFromCart(productId);
-      return;
+      return { success: true, message: 'ခြင်းတောင်းထဲမှ ဖယ်ထုတ်ပြီးပါပြီ' };
     }
+
+    const targetItem = cart.find((item) => item.product.id === productId);
+    if (!targetItem) {
+      return { success: false, message: 'ပစ္စည်းမတွေ့ရှိပါ' };
+    }
+
+    const maxStock = targetItem.product.stock;
+
+    if (quantity > maxStock) {
+      setCart((prev) =>
+        prev.map((item) => {
+          if (item.product.id === productId) {
+            return {
+              ...item,
+              quantity: maxStock,
+              lineTotal: item.finalPrice * maxStock,
+            };
+          }
+          return item;
+        })
+      );
+      return {
+        success: false,
+        message: `${targetItem.product.nameMy} အများဆုံးလက်ကျန် (${maxStock}) ခုသာရှိပါသည် (Stock Limit Exceeded)`,
+        availableStock: maxStock,
+      };
+    }
+
     setCart((prev) =>
       prev.map((item) => {
         if (item.product.id === productId) {
-          const validQty = Math.min(quantity, item.product.stock);
           return {
             ...item,
-            quantity: validQty,
-            lineTotal: item.finalPrice * validQty,
+            quantity,
+            lineTotal: item.finalPrice * quantity,
           };
         }
         return item;
       })
     );
+
+    return {
+      success: true,
+      message: 'အရေအတွက် ပြောင်းလဲပြီးပါပြီ',
+      availableStock: maxStock,
+    };
   };
 
   const updateCartItemDiscount = (

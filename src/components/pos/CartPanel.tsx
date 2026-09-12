@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { formatMMK } from '../../utils/format';
-import { playBarcodeBeep } from '../../utils/scannerSound';
+import { playBarcodeBeep, playCartAddSound } from '../../utils/scannerSound';
 import {
   Trash2,
   Plus,
@@ -12,6 +12,7 @@ import {
   ArrowRight,
   X,
   Percent,
+  AlertTriangle,
 } from 'lucide-react';
 
 interface CartPanelProps {
@@ -41,9 +42,44 @@ export const CartPanel: React.FC<CartPanelProps> = ({
 
   const [editingDiscountId, setEditingDiscountId] = useState<string | null>(null);
   const [customDiscountAmount, setCustomDiscountAmount] = useState<string>('');
+  const [stockNotice, setStockNotice] = useState<string | null>(null);
 
   const taxAmount = (cartTotal * (storeProfile.taxRate || 0)) / 100;
   const grandTotal = Math.round(cartTotal + taxAmount);
+
+  const showStockWarning = (msg: string) => {
+    setStockNotice(msg);
+    playBarcodeBeep('error');
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+      try {
+        navigator.vibrate([80, 50, 80]);
+      } catch {
+        // ignore
+      }
+    }
+    setTimeout(() => {
+      setStockNotice((curr) => (curr === msg ? null : curr));
+    }, 3000);
+  };
+
+  const handleIncreaseQuantity = (item: (typeof cart)[0]) => {
+    if (item.quantity >= item.product.stock) {
+      showStockWarning(
+        `${item.product.nameMy} အများဆုံးလက်ကျန် (${item.product.stock}) ခုသာရှိပါသည် (Stock Limit Reached)`
+      );
+      return;
+    }
+    const res = updateCartQuantity(item.product.id, item.quantity + 1);
+    if (!res.success) {
+      showStockWarning(res.message);
+    } else {
+      playCartAddSound();
+    }
+  };
+
+  const handleDecreaseQuantity = (item: (typeof cart)[0]) => {
+    updateCartQuantity(item.product.id, item.quantity - 1);
+  };
 
   const handleClearWithSound = () => {
     if (cart.length === 0) return;
@@ -98,6 +134,21 @@ export const CartPanel: React.FC<CartPanelProps> = ({
           )}
         </div>
       </div>
+
+      {/* Stock Notice Alert Banner */}
+      {stockNotice && (
+        <div className="bg-red-600 text-white px-3 py-1.5 text-xs font-bold flex items-center gap-2 animate-in slide-in-from-top duration-150 shadow-sm shrink-0">
+          <AlertTriangle className="w-3.5 h-3.5 shrink-0 animate-bounce" />
+          <span className="flex-1 leading-tight text-[11px] sm:text-xs">{stockNotice}</span>
+          <button
+            type="button"
+            onClick={() => setStockNotice(null)}
+            className="text-white/80 hover:text-white p-0.5"
+          >
+            <X className="w-3 h-3" />
+          </button>
+        </div>
+      )}
 
       {/* Cart Items List */}
       <div className="flex-1 min-h-0 overflow-y-auto pos-scrollbar p-2.5 sm:p-3 space-y-2 divide-y divide-stone-100 overscroll-contain">
@@ -183,10 +234,9 @@ export const CartPanel: React.FC<CartPanelProps> = ({
                   <div className="flex items-center gap-2 bg-stone-100 p-0.5 rounded-xl border border-stone-200">
                     <button
                       type="button"
-                      onClick={() =>
-                        updateCartQuantity(item.product.id, item.quantity - 1)
-                      }
+                      onClick={() => handleDecreaseQuantity(item)}
                       className="w-6 h-6 rounded-lg bg-white text-stone-700 hover:bg-stone-200 flex items-center justify-center transition-colors shadow-2xs cursor-pointer"
+                      title="အရေအတွက် လျှော့မည်"
                     >
                       <Minus className="w-3 h-3" />
                     </button>
@@ -195,11 +245,15 @@ export const CartPanel: React.FC<CartPanelProps> = ({
                     </span>
                     <button
                       type="button"
-                      disabled={item.quantity >= item.product.stock}
-                      onClick={() =>
-                        updateCartQuantity(item.product.id, item.quantity + 1)
+                      onClick={() => handleIncreaseQuantity(item)}
+                      className={`w-6 h-6 rounded-lg bg-white text-stone-700 hover:bg-stone-200 flex items-center justify-center transition-colors shadow-2xs cursor-pointer ${
+                        item.quantity >= item.product.stock ? 'text-stone-400 hover:bg-amber-100' : ''
+                      }`}
+                      title={
+                        item.quantity >= item.product.stock
+                          ? `လက်ကျန်ပြည့်ပါပြီ (အများဆုံး ${item.product.stock})`
+                          : 'အရေအတွက် တိုးမည်'
                       }
-                      className="w-6 h-6 rounded-lg bg-white text-stone-700 hover:bg-stone-200 flex items-center justify-center transition-colors shadow-2xs disabled:opacity-40 cursor-pointer"
                     >
                       <Plus className="w-3 h-3" />
                     </button>

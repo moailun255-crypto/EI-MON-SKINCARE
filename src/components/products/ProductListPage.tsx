@@ -41,6 +41,26 @@ export const ProductListPage: React.FC = () => {
   const [isBatchDeleteModalOpen, setIsBatchDeleteModalOpen] = useState(false);
   const [isClearAllModalOpen, setIsClearAllModalOpen] = useState(false);
   const [deleteNotice, setDeleteNotice] = useState<string | null>(null);
+  const [stockNotice, setStockNotice] = useState<{ type: 'success' | 'warn'; text: string } | null>(null);
+
+  const handleAdjustStockWithFeedback = (product: Product, delta: number) => {
+    if (delta < 0 && product.stock <= 0) {
+      setStockNotice({
+        type: 'warn',
+        text: `[${product.nameMy}] လက်ကျန် (0) ဖြစ်နေသဖြင့် ထပ်မံလျှော့၍မရပါ (Stock already zero)`,
+      });
+      setTimeout(() => setStockNotice(null), 3000);
+      return;
+    }
+
+    adjustStock(product.id, delta);
+    const newStock = Math.max(0, product.stock + delta);
+    setStockNotice({
+      type: 'success',
+      text: `[${product.nameMy}] လက်ကျန် (${product.stock} ➔ ${newStock}) သို့ ပြင်ဆင်ပြီးပါပြီ`,
+    });
+    setTimeout(() => setStockNotice(null), 2500);
+  };
 
   // Filtered product list
   const filteredProducts = useMemo(() => {
@@ -165,6 +185,33 @@ export const ProductListPage: React.FC = () => {
             type="button"
             onClick={() => setDeleteNotice(null)}
             className="text-emerald-700 hover:text-emerald-900 p-1 cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Stock Adjustment Feedback Banner */}
+      {stockNotice && (
+        <div
+          className={`rounded-2xl p-3 px-4 flex items-center justify-between gap-2 shadow-xs animate-fadeIn ${
+            stockNotice.type === 'success'
+              ? 'bg-emerald-50 border border-emerald-200 text-emerald-900'
+              : 'bg-amber-50 border border-amber-300 text-amber-950'
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            {stockNotice.type === 'success' ? (
+              <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+            ) : (
+              <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+            )}
+            <p className="text-xs font-bold">{stockNotice.text}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setStockNotice(null)}
+            className="p-1 cursor-pointer opacity-70 hover:opacity-100"
           >
             <X className="w-4 h-4" />
           </button>
@@ -467,7 +514,7 @@ export const ProductListPage: React.FC = () => {
                         <td className="py-3 px-3 text-center">
                           <div className="flex items-center justify-center gap-1.5">
                             <button
-                              onClick={() => adjustStock(p.id, -1)}
+                              onClick={() => handleAdjustStockWithFeedback(p, -1)}
                               className="w-5 h-5 rounded bg-stone-100 hover:bg-stone-200 text-stone-700 flex items-center justify-center text-xs cursor-pointer"
                               title="-1"
                             >
@@ -485,7 +532,7 @@ export const ProductListPage: React.FC = () => {
                               {p.stock}
                             </span>
                             <button
-                              onClick={() => adjustStock(p.id, 1)}
+                              onClick={() => handleAdjustStockWithFeedback(p, 1)}
                               className="w-5 h-5 rounded bg-stone-100 hover:bg-stone-200 text-stone-700 flex items-center justify-center text-xs cursor-pointer"
                               title="+1"
                             >
@@ -601,14 +648,14 @@ export const ProductListPage: React.FC = () => {
 
                       <div className="flex items-center gap-1.5">
                         <button
-                          onClick={() => adjustStock(p.id, -1)}
+                          onClick={() => handleAdjustStockWithFeedback(p, -1)}
                           className="w-7 h-7 rounded-lg bg-stone-100 flex items-center justify-center font-bold cursor-pointer"
                         >
                           <Minus className="w-3.5 h-3.5" />
                         </button>
                         <span className="font-bold text-xs w-6 text-center">{p.stock}</span>
                         <button
-                          onClick={() => adjustStock(p.id, 1)}
+                          onClick={() => handleAdjustStockWithFeedback(p, 1)}
                           className="w-7 h-7 rounded-lg bg-stone-100 flex items-center justify-center font-bold cursor-pointer"
                         >
                           <Plus className="w-3.5 h-3.5" />

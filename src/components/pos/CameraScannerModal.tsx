@@ -954,9 +954,40 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
                     key={product.id}
                     type="button"
                     onClick={() => {
-                      addToCart(product, 1);
+                      if (product.stock <= 0) {
+                        playBarcodeBeep('error');
+                        if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+                          try {
+                            navigator.vibrate([80, 60, 80]);
+                          } catch {
+                            // ignore
+                          }
+                        }
+                        setScanSuccessText(null);
+                        setScanErrorText(`${product.nameMy} လက်ကျန်ကုန်နေပါသည် (Out of Stock)`);
+                        setTimeout(() => setScanErrorText(null), 3000);
+                        return;
+                      }
+
+                      const res = addToCart(product, 1);
+                      if (!res.success) {
+                        playBarcodeBeep('error');
+                        if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+                          try {
+                            navigator.vibrate([80, 60, 80]);
+                          } catch {
+                            // ignore
+                          }
+                        }
+                        setScanSuccessText(null);
+                        setScanErrorText(res.message);
+                        setTimeout(() => setScanErrorText(null), 3000);
+                        return;
+                      }
+
                       playBarcodeBeep('success');
                       setJustAddedModalId(product.id);
+                      setScanErrorText(null);
                       setScanSuccessText(product.nameMy);
                       setTimeout(() => {
                         setJustAddedModalId(null);

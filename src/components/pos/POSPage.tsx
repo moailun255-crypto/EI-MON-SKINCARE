@@ -162,20 +162,33 @@ export const POSPage: React.FC<POSPageProps> = ({
         return { success: false, message: outMsg };
       }
 
-      // Add to cart
-      addToCart(matched, 1);
-      playBarcodeBeep('success');
+      // Add to cart with full stock limit check
+      const addRes = addToCart(matched, 1);
 
+      if (!addRes.success) {
+        playBarcodeBeep('error');
+        if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+          try {
+            navigator.vibrate([80, 60, 80]);
+          } catch {
+            // ignore
+          }
+        }
+        setScanAlert({ type: 'error', message: addRes.message });
+        setTimeout(() => setScanAlert(null), 3500);
+        return { success: false, message: addRes.message };
+      }
+
+      playBarcodeBeep('success');
       setJustAddedId(matched.id);
       setTimeout(() => setJustAddedId(null), 600);
 
-      const successMsg = `${matched.nameMy} ထည့်ပြီး`;
-      setScanAlert({ type: 'success', message: successMsg });
+      setScanAlert({ type: 'success', message: addRes.message });
       setTimeout(() => setScanAlert(null), 2200);
 
       return {
         success: true,
-        message: successMsg,
+        message: addRes.message,
         productName: matched.nameMy,
       };
     },
@@ -252,12 +265,48 @@ export const POSPage: React.FC<POSPageProps> = ({
   const handleProductClick = (product: Product) => {
     if (product.stock <= 0) {
       playBarcodeBeep('error');
+      if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+        try {
+          navigator.vibrate([80, 60, 80]);
+        } catch {
+          // ignore
+        }
+      }
+      setScanAlert({
+        type: 'error',
+        message: `${product.nameMy} လက်ကျန်ကုန်နေပါသည် (Out of Stock)`,
+      });
+      setTimeout(() => setScanAlert(null), 3500);
       return;
     }
-    addToCart(product, 1);
+
+    const res = addToCart(product, 1);
+    if (!res.success) {
+      playBarcodeBeep('error');
+      if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+        try {
+          navigator.vibrate([80, 60, 80]);
+        } catch {
+          // ignore
+        }
+      }
+      setScanAlert({
+        type: 'error',
+        message: res.message,
+      });
+      setTimeout(() => setScanAlert(null), 3500);
+      return;
+    }
+
     playCartAddSound();
     setJustAddedId(product.id);
     setTimeout(() => setJustAddedId(null), 600);
+
+    setScanAlert({
+      type: 'success',
+      message: res.message,
+    });
+    setTimeout(() => setScanAlert(null), 2000);
   };
 
   const categoriesList: { id: ProductCategory | 'popular' | 'low_stock'; labelMy: string; count?: number; icon?: React.ReactNode }[] = [
