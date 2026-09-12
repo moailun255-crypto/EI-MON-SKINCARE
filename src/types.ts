@@ -99,6 +99,7 @@ export interface Expense {
   date: string;
   recordedBy: string;
   notes?: string;
+  paymentMethod?: PaymentMethod;
 }
 
 export interface StoreProfile {

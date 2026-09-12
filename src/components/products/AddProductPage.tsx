@@ -111,7 +111,7 @@ export const AddProductPage: React.FC = () => {
       category,
       brand: 'EI MON SKINCARE',
       skinType: skinType.length > 0 ? skinType : ['all'],
-      volume: volume.trim() || 'ပုံမှန်အရွယ်အစား',
+      volume: selectedProductForEdit?.volume || '',
       costPrice: Number(costPrice) || 0,
       sellingPrice: Number(sellingPrice) || 0,
       stock: Number(stock) || 0,
@@ -201,7 +201,7 @@ export const AddProductPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4">
             <div>
               <label className="block text-xs font-bold text-stone-700 mb-1">
                 အမျိုးအစား
@@ -219,19 +219,6 @@ export const AddProductPage: React.FC = () => {
                     </option>
                   ))}
               </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-stone-700 mb-1">
-                ပမာဏ / အရွယ်အစား
-              </label>
-              <input
-                type="text"
-                placeholder="ဥပမာ - ၅၀ မီလီလီတာ၊ ၁၅၀ ဂရမ်၊ ၁ ကတ်"
-                value={volume}
-                onChange={(e) => setVolume(e.target.value)}
-                className="w-full text-xs sm:text-sm px-3.5 py-2.5 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-rose-500 bg-stone-50/50"
-              />
             </div>
           </div>
         </div>

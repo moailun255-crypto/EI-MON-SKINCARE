@@ -16,6 +16,8 @@ export const CATEGORY_LABELS: Record<string, { my: string; en: string }> = {
 export const PAYMENT_LABELS: Record<string, { my: string; en: string; color: string }> = {
   cash: { my: 'ငွေသား (Cash)', en: 'Cash', color: 'bg-emerald-600 text-white' },
   kpay: { my: 'KBZPay', en: 'KBZPay', color: 'bg-blue-600 text-white' },
+  wave: { my: 'WavePay', en: 'WavePay', color: 'bg-amber-600 text-white' },
+  bank: { my: 'ဘဏ်လွှဲငွေ (Bank)', en: 'Bank Transfer', color: 'bg-indigo-600 text-white' },
 };
 
 export const EXPENSE_CATEGORY_LABELS: Record<string, { my: string; en: string }> = {

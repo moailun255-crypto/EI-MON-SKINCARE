@@ -699,10 +699,10 @@ export const POSPage: React.FC<POSPageProps> = ({
                               {product.nameMy}
                             </h3>
 
-                            {/* Volume & Barcode Snippet */}
+                            {/* SKU & Barcode Snippet */}
                             <div className="flex items-center justify-between text-[9px] text-stone-400 font-mono mb-1">
-                              <span className="truncate">{product.volume}</span>
-                              <span className="truncate">{product.barcode.slice(-4)}</span>
+                              <span className="truncate">{product.sku}</span>
+                              <span className="truncate">#{product.barcode.slice(-4)}</span>
                             </div>
                           </div>
 

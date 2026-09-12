@@ -183,9 +183,11 @@ export const CartPanel: React.FC<CartPanelProps> = ({
                           {formatMMK(item.product.sellingPrice, useMyanmarDigits)}
                         </span>
                       )}
-                      <span className="text-[10px] px-1.5 py-0.2 bg-stone-100 text-stone-600 rounded font-mono">
-                        {item.product.volume}
-                      </span>
+                      {item.product.volume ? (
+                        <span className="text-[10px] px-1.5 py-0.2 bg-stone-100 text-stone-600 rounded font-mono">
+                          {item.product.volume}
+                        </span>
+                      ) : null}
                     </div>
                   </div>
 

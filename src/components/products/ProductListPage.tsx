@@ -478,9 +478,6 @@ export const ProductListPage: React.FC = () => {
                             <p className="font-bold text-stone-900 truncate max-w-sm">
                               {p.nameMy}
                             </p>
-                            <p className="text-[10px] text-stone-500 truncate mt-0.5">
-                              {p.volume}
-                            </p>
                           </div>
                         </td>
 
@@ -633,7 +630,7 @@ export const ProductListPage: React.FC = () => {
                           {p.nameMy}
                         </h4>
                         <p className="text-[10px] text-stone-400">
-                          ဘားကုဒ်: {p.barcode} • {p.volume}
+                          ဘားကုဒ်: {p.barcode}
                         </p>
                       </div>
                     </div>
