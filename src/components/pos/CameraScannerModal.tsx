@@ -44,6 +44,7 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
   const [activeEngine, setActiveEngine] = useState<ScannerEngine>('quagga');
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [scanSuccessText, setScanSuccessText] = useState<string | null>(null);
+  const [scanErrorText, setScanErrorText] = useState<string | null>(null);
   const [hasTorch, setHasTorch] = useState<boolean>(false);
   const [torchOn, setTorchOn] = useState<boolean>(false);
   const [showTips, setShowTips] = useState<boolean>(false);
@@ -119,10 +120,25 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
         const res = onScan(clean);
         playBarcodeBeep(res.success ? 'success' : 'error');
         if (res.success) {
+          setScanErrorText(null);
           setScanSuccessText(res.productName || clean);
           setTimeout(() => {
             setScanSuccessText(null);
           }, 1500);
+        } else {
+          // Double buzz vibration on error
+          if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+            try {
+              navigator.vibrate([100, 80, 150]);
+            } catch {
+              // ignore
+            }
+          }
+          setScanSuccessText(null);
+          setScanErrorText(res.message || `[${clean}] ပစ္စည်းစာရင်းထဲ မတွေ့ပါ`);
+          setTimeout(() => {
+            setScanErrorText(null);
+          }, 2600);
         }
       }
 
@@ -190,6 +206,7 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
       try {
         setCameraError(null);
         setScanSuccessText(null);
+        setScanErrorText(null);
         setTorchOn(false);
         setHasTorch(false);
         setHasZoom(false);
@@ -319,6 +336,7 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
       try {
         setCameraError(null);
         setScanSuccessText(null);
+        setScanErrorText(null);
         setTorchOn(false);
         setHasTorch(false);
         setHasZoom(false);
@@ -574,6 +592,7 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
     } else {
       stopAllScanners();
       setScanSuccessText(null);
+      setScanErrorText(null);
       setCameraError(null);
       setTorchOn(false);
       setHasTorch(false);
@@ -787,6 +806,8 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
                 className={`w-64 sm:w-72 h-28 relative transition-all duration-150 rounded-2xl overflow-hidden border-2 ${
                   scanSuccessText
                     ? 'border-emerald-400 bg-emerald-500/20 shadow-[0_0_30px_rgba(52,211,153,0.7)] scale-102'
+                    : scanErrorText
+                    ? 'border-red-500 bg-red-500/25 shadow-[0_0_30px_rgba(239,68,68,0.8)] scale-102 animate-shake'
                     : 'border-white/80 bg-black/15 shadow-[0_0_15px_rgba(0,0,0,0.4)]'
                 }`}
               >
@@ -795,6 +816,8 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
                   className={`absolute inset-x-0 top-1/2 -translate-y-1/2 h-0.5 shadow-lg ${
                     scanSuccessText
                       ? 'bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,1)]'
+                      : scanErrorText
+                      ? 'bg-red-500 shadow-[0_0_16px_rgba(239,68,68,1)] h-1'
                       : 'bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,1)] animate-pulse'
                   }`}
                 />
@@ -811,6 +834,11 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
                 <div className="mt-3 px-4 py-1.5 rounded-full bg-emerald-500 text-white text-xs font-extrabold flex items-center gap-1.5 shadow-lg animate-bounce">
                   <CheckCircle className="w-4 h-4" />
                   <span className="truncate max-w-[220px]">{scanSuccessText} ထည့်ပြီး</span>
+                </div>
+              ) : scanErrorText ? (
+                <div className="mt-3 px-4 py-1.5 rounded-full bg-red-600 text-white text-xs font-black flex items-center gap-1.5 shadow-xl border border-red-300 animate-bounce">
+                  <AlertCircle className="w-4 h-4 text-white shrink-0" />
+                  <span className="truncate max-w-[260px]">{scanErrorText}</span>
                 </div>
               ) : (
                 <div className="mt-2.5 text-center space-y-0.5">
@@ -863,9 +891,21 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
                 const res = onScan(val);
                 playBarcodeBeep(res.success ? 'success' : 'error');
                 if (res.success) {
+                  setScanErrorText(null);
                   setScanSuccessText(res.productName || val);
                   setModalSearch('');
                   setTimeout(() => setScanSuccessText(null), 1500);
+                } else {
+                  if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+                    try {
+                      navigator.vibrate([100, 80, 150]);
+                    } catch {
+                      // ignore
+                    }
+                  }
+                  setScanSuccessText(null);
+                  setScanErrorText(res.message || `[${val}] ပစ္စည်းစာရင်းထဲ မတွေ့ပါ`);
+                  setTimeout(() => setScanErrorText(null), 2600);
                 }
               }
             }}

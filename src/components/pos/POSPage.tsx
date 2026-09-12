@@ -134,17 +134,31 @@ export const POSPage: React.FC<POSPageProps> = ({
 
       if (!matched) {
         playBarcodeBeep('error');
-        const failMsg = `[${cleanCode}] ပစ္စည်းစာရင်းထဲ မတွေ့ပါ`;
+        if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+          try {
+            navigator.vibrate([100, 80, 150]);
+          } catch {
+            // ignore
+          }
+        }
+        const failMsg = `[${cleanCode}] ဤဘားကုဒ်ဖြင့် ပစ္စည်းစာရင်းထဲ မတွေ့ပါ (Barcode Not Found)`;
         setScanAlert({ type: 'error', message: failMsg });
-        setTimeout(() => setScanAlert(null), 2800);
+        setTimeout(() => setScanAlert(null), 3500);
         return { success: false, message: failMsg };
       }
 
       if (matched.stock <= 0) {
         playBarcodeBeep('error');
-        const outMsg = `${matched.nameMy} လက်ကျန်ကုန်နေပါသည်`;
+        if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+          try {
+            navigator.vibrate([80, 60, 80]);
+          } catch {
+            // ignore
+          }
+        }
+        const outMsg = `${matched.nameMy} လက်ကျန်ကုန်နေပါသည် (Out of Stock)`;
         setScanAlert({ type: 'error', message: outMsg });
-        setTimeout(() => setScanAlert(null), 2800);
+        setTimeout(() => setScanAlert(null), 3500);
         return { success: false, message: outMsg };
       }
 
@@ -229,6 +243,9 @@ export const POSPage: React.FC<POSPageProps> = ({
       // If single item left from search, add directly on Enter
       handleProductClick(filteredProducts[0]);
       setSearchQuery('');
+    } else if (filteredProducts.length === 0) {
+      // Not found anywhere
+      executeBarcodeScan(query);
     }
   };
 
@@ -258,6 +275,39 @@ export const POSPage: React.FC<POSPageProps> = ({
 
   return (
     <div className="h-full flex flex-col min-h-0 overflow-hidden max-w-[1600px] mx-auto w-full px-2 sm:px-3 py-1 sm:py-2 pb-16 sm:pb-2">
+      {/* ========================================================================= */}
+      {/* FLOATING HIGH-VISIBILITY SCAN ALERT TOAST (Visible across all views)      */}
+      {/* ========================================================================= */}
+      {scanAlert && (
+        <div
+          className={`fixed top-14 sm:top-16 left-1/2 -translate-x-1/2 z-50 px-3.5 py-2.5 w-[92%] sm:w-auto sm:min-w-[360px] max-w-md shadow-2xl rounded-2xl border-2 flex items-center justify-between gap-3 animate-slideDown backdrop-blur-md ${
+            scanAlert.type === 'success'
+              ? 'bg-emerald-50/95 border-emerald-400 text-emerald-950 shadow-emerald-900/20'
+              : 'bg-red-50/95 border-red-500 text-red-950 shadow-red-900/20'
+          }`}
+        >
+          <div className="flex items-center gap-2.5 text-xs sm:text-sm font-black min-w-0">
+            {scanAlert.type === 'success' ? (
+              <div className="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                <CheckCircle2 className="w-4 h-4" />
+              </div>
+            ) : (
+              <div className="w-6 h-6 rounded-full bg-red-600 text-white flex items-center justify-center shrink-0 shadow-xs animate-pulse">
+                <AlertCircle className="w-4 h-4" />
+              </div>
+            )}
+            <span className="truncate">{scanAlert.message}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setScanAlert(null)}
+            className="p-1 rounded-lg hover:bg-black/10 text-stone-600 cursor-pointer shrink-0"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       {/* ========================================================================= */}
       {/* MOBILE TOP SEGMENTED VIEW SWITCHER (< md)                                 */}
       {/* Allows switching instantly between Catalog and Cart without long scrolls  */}

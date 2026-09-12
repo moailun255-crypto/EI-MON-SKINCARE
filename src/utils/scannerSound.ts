@@ -66,18 +66,31 @@ export function playBarcodeBeep(type: 'success' | 'error' | 'warning' = 'success
       osc.start(ctx.currentTime);
       osc.stop(ctx.currentTime + 0.085);
     } else if (type === 'error') {
-      // Double low-pitch error buzz (300Hz)
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(280, ctx.currentTime);
-      gain.gain.setValueAtTime(0.2, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+      // Distinctive double error buzz (low pitch buzz buzz)
+      const t = ctx.currentTime;
+      // First buzz
+      const osc1 = ctx.createOscillator();
+      const gain1 = ctx.createGain();
+      osc1.type = 'sawtooth';
+      osc1.frequency.setValueAtTime(240, t);
+      gain1.gain.setValueAtTime(0.25, t);
+      gain1.gain.exponentialRampToValueAtTime(0.01, t + 0.12);
+      osc1.connect(gain1);
+      gain1.connect(ctx.destination);
+      osc1.start(t);
+      osc1.stop(t + 0.13);
 
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start(ctx.currentTime);
-      osc.stop(ctx.currentTime + 0.22);
+      // Second buzz
+      const osc2 = ctx.createOscillator();
+      const gain2 = ctx.createGain();
+      osc2.type = 'sawtooth';
+      osc2.frequency.setValueAtTime(200, t + 0.15);
+      gain2.gain.setValueAtTime(0.25, t + 0.15);
+      gain2.gain.exponentialRampToValueAtTime(0.01, t + 0.32);
+      osc2.connect(gain2);
+      gain2.connect(ctx.destination);
+      osc2.start(t + 0.15);
+      osc2.stop(t + 0.33);
     } else {
       // Warning double chirp
       const osc = ctx.createOscillator();
