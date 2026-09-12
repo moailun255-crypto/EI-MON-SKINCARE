@@ -28,6 +28,30 @@
   animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+/* SLEEK SCROLLBAR UTILITIES */
+.pos-scrollbar::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.pos-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.pos-scrollbar::-webkit-scrollbar-thumb {
+  background: #d6d3d1;
+  border-radius: 9999px;
+}
+.pos-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #a8a29e;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* REAL THERMAL RECEIPT PRINTING STYLES (58mm / 80mm) */
 @media print {
   html, body {

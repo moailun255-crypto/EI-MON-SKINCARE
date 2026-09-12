@@ -98,7 +98,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileCart }) => {
   };
 
   return (
-    <header className="bg-white border-b border-stone-200 sticky top-0 z-30 shadow-2xs h-14 sm:h-15">
+    <header className="bg-white border-b border-stone-200 sticky top-0 z-30 shadow-2xs h-13 sm:h-14 shrink-0">
       <div className="max-w-7xl mx-auto h-full px-3 sm:px-5 flex items-center justify-between gap-2 sm:gap-4">
         {/* Brand identity & System Tagline */}
         <div className="flex items-center gap-3 shrink-0">

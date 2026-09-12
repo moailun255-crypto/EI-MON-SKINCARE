@@ -100,16 +100,16 @@ export const CartPanel: React.FC<CartPanelProps> = ({
       </div>
 
       {/* Cart Items List */}
-      <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-2.5 divide-y divide-stone-100">
+      <div className="flex-1 min-h-0 overflow-y-auto pos-scrollbar p-2.5 sm:p-3 space-y-2 divide-y divide-stone-100 overscroll-contain">
         {cart.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center text-center p-6 text-stone-400">
-            <div className="w-16 h-16 rounded-2xl bg-stone-100 flex items-center justify-center mb-3 text-stone-300">
-              <ShoppingBag className="w-8 h-8" />
+          <div className="h-full flex flex-col items-center justify-center text-center p-4 text-stone-400">
+            <div className="w-12 h-12 rounded-2xl bg-stone-100 flex items-center justify-center mb-2 text-stone-300">
+              <ShoppingBag className="w-6 h-6" />
             </div>
-            <p className="font-bold text-stone-700 text-sm">
+            <p className="font-bold text-stone-700 text-xs sm:text-sm">
               ခြင်းတောင်းထဲတွင် ပစ္စည်းမရှိသေးပါ
             </p>
-            <p className="text-xs text-stone-400 mt-1 max-w-[220px]">
+            <p className="text-[11px] text-stone-400 mt-0.5 max-w-[200px]">
               အလှကုန်ပစ္စည်းများကို နှိပ်၍ သို့မဟုတ် ဘားကုဒ်စကင်ဖတ်၍ ထည့်ပါ
             </p>
           </div>
@@ -250,8 +250,8 @@ export const CartPanel: React.FC<CartPanelProps> = ({
 
       {/* Cart Footer / Bill Summary */}
       {cart.length > 0 && (
-        <div className="p-3.5 sm:p-4 bg-stone-50 border-t border-stone-200 space-y-2.5">
-          <div className="space-y-1.5 text-xs">
+        <div className="p-2.5 sm:p-3.5 bg-stone-50 border-t border-stone-200 space-y-2 shrink-0">
+          <div className="space-y-1 text-xs">
             <div className="flex justify-between text-stone-600">
               <span>ကုန်ပစ္စည်းသင့်ငွေ</span>
               <span className="font-bold">
@@ -260,14 +260,14 @@ export const CartPanel: React.FC<CartPanelProps> = ({
             </div>
 
             {cartDiscountTotal > 0 && (
-              <div className="flex justify-between text-amber-700 font-medium">
+              <div className="flex justify-between text-amber-700 font-medium text-[11px]">
                 <span>စုစုပေါင်း လျှော့ငွေ</span>
                 <span className="font-bold">-{formatMMK(cartDiscountTotal, useMyanmarDigits)}</span>
               </div>
             )}
 
             {storeProfile.taxRate > 0 && (
-              <div className="flex justify-between text-stone-600">
+              <div className="flex justify-between text-stone-600 text-[11px]">
                 <span>အခွန် ({storeProfile.taxRate}%)</span>
                 <span className="font-semibold">
                   {formatMMK(taxAmount, useMyanmarDigits)}
@@ -275,7 +275,7 @@ export const CartPanel: React.FC<CartPanelProps> = ({
               </div>
             )}
 
-            <div className="flex justify-between text-base sm:text-lg font-black text-stone-900 pt-1.5 border-t border-stone-200">
+            <div className="flex justify-between text-sm sm:text-base font-black text-stone-900 pt-1 border-t border-stone-200">
               <span>ကျသင့်ငွေ စုစုပေါင်း</span>
               <span className="text-rose-700 font-black">
                 {formatMMK(grandTotal, useMyanmarDigits)}
@@ -286,11 +286,11 @@ export const CartPanel: React.FC<CartPanelProps> = ({
           {/* Checkout Button */}
           <button
             onClick={onCheckout}
-            className="w-full py-3 sm:py-3.5 px-4 rounded-xl bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-700 hover:to-rose-800 text-white font-extrabold text-sm sm:text-base flex items-center justify-center gap-2 shadow-sm hover:shadow-md transition-all active:scale-[0.99] cursor-pointer"
+            className="w-full py-2.5 sm:py-3 px-3 rounded-xl bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-700 hover:to-rose-800 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xs hover:shadow-sm transition-all active:scale-[0.99] cursor-pointer"
           >
-            <CreditCard className="w-5 h-5" />
+            <CreditCard className="w-4 h-4" />
             <span>ငွေရှင်းမည် ({formatMMK(grandTotal, useMyanmarDigits)})</span>
-            <ArrowRight className="w-4 h-4 ml-1" />
+            <ArrowRight className="w-3.5 h-3.5 ml-1" />
           </button>
         </div>
       )}

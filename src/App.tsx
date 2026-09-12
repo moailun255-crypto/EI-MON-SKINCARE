@@ -15,8 +15,14 @@ function MainLayout() {
   const { activeTab, activeReceiptOrder, setActiveReceiptOrder } = useStore();
   const [isMobileCartOpen, setIsMobileCartOpen] = useState(false);
 
+  const isPos = activeTab === 'pos';
+
   return (
-    <div className="min-h-screen bg-stone-100 flex flex-col pb-20 sm:pb-8 text-stone-900 font-sans selection:bg-rose-100 selection:text-rose-900">
+    <div
+      className={`bg-stone-100 flex flex-col text-stone-900 font-sans selection:bg-rose-100 selection:text-rose-900 ${
+        isPos ? 'h-screen sm:h-screen overflow-hidden' : 'min-h-screen pb-20 sm:pb-8'
+      }`}
+    >
       {/* Top Header */}
       <Header onOpenMobileCart={() => setIsMobileCartOpen(true)} />
 
@@ -27,7 +33,13 @@ function MainLayout() {
       <Navigation />
 
       {/* Main Content Area */}
-      <main className="flex-1 w-full">
+      <main
+        className={`w-full ${
+          isPos
+            ? 'flex-1 min-h-0 overflow-hidden flex flex-col'
+            : 'flex-1'
+        }`}
+      >
         {activeTab === 'pos' && (
           <POSPage
             isMobileCartOpen={isMobileCartOpen}
