@@ -250,7 +250,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ order, onClose }) =>
         document.body.removeChild(link);
       }
 
-      // 2. Native Mobile Share Sheet with direct "Save to Photos / 相册" capability
+      // 2. Native Mobile Share Sheet with direct "Save to Photos / Gallery" capability
       if (blob && navigator.share && navigator.canShare) {
         try {
           const file = new File([blob], fileName, { type: 'image/png' });

@@ -5,6 +5,7 @@ import { generateSKU } from '../../utils/format';
 import { CATEGORY_LABELS, SKIN_TYPE_LABELS } from '../../utils/translations';
 import { CameraScannerModal } from '../pos/CameraScannerModal';
 import { playBarcodeBeep } from '../../utils/scannerSound';
+import { normalizeBarcode, isBarcodeMatch } from '../../utils/barcodeValidator';
 import {
   Save,
   ArrowLeft,
@@ -50,45 +51,30 @@ export const AddProductPage: React.FC = () => {
 
   // Check if entered barcode already exists on another product
   const duplicateProduct = useMemo(() => {
-    const trimmed = barcode.trim();
+    const trimmed = normalizeBarcode(barcode);
     if (!trimmed) return null;
-    const clean = trimmed.toLowerCase();
-    const cleanNoZero = clean.replace(/^0+/, '');
 
     return products.find((p) => {
       // When editing an existing product, allow keeping its own barcode
       if (isEditing && selectedProductForEdit && p.id === selectedProductForEdit.id) {
         return false;
       }
-      const pBarcode = (p.barcode || '').trim().toLowerCase();
-      const pBarcodeNoZero = pBarcode.replace(/^0+/, '');
-      return (
-        pBarcode === clean ||
-        (cleanNoZero.length >= 3 && pBarcodeNoZero === cleanNoZero)
-      );
+      return isBarcodeMatch(p.barcode, trimmed);
     });
   }, [barcode, products, isEditing, selectedProductForEdit]);
 
   // Handle scanned or typed barcode with duplicate check
   const handleApplyBarcode = useCallback(
     (code: string) => {
-      const trimmed = code.trim();
+      const trimmed = normalizeBarcode(code);
       if (!trimmed) return;
       setBarcode(trimmed);
-
-      const clean = trimmed.toLowerCase();
-      const cleanNoZero = clean.replace(/^0+/, '');
 
       const foundDuplicate = products.find((p) => {
         if (isEditing && selectedProductForEdit && p.id === selectedProductForEdit.id) {
           return false;
         }
-        const pBarcode = (p.barcode || '').trim().toLowerCase();
-        const pBarcodeNoZero = pBarcode.replace(/^0+/, '');
-        return (
-          pBarcode === clean ||
-          (cleanNoZero.length >= 3 && pBarcodeNoZero === cleanNoZero)
-        );
+        return isBarcodeMatch(p.barcode, trimmed);
       });
 
       if (foundDuplicate) {
@@ -111,30 +97,26 @@ export const AddProductPage: React.FC = () => {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      const activeEl = document.activeElement;
-      const isInput = activeEl?.tagName === 'INPUT' || activeEl?.tagName === 'TEXTAREA';
-
       const now = Date.now();
       const diff = now - lastKeyTimeRef.current;
       lastKeyTimeRef.current = now;
 
       if (e.key === 'Enter') {
-        const buffer = barcodeBufferRef.current.trim();
+        const buffer = normalizeBarcode(barcodeBufferRef.current);
+        barcodeBufferRef.current = '';
         if (buffer.length >= 3) {
           e.preventDefault();
           handleApplyBarcode(buffer);
         }
-        barcodeBufferRef.current = '';
         return;
       }
 
       if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
-        if (diff > 80 && !isInput) {
+        // Human typing is usually > 150ms between keys. Barcode scanners are rapid bursts (< 120ms).
+        if (diff > 150) {
           barcodeBufferRef.current = '';
         }
-        if (!isInput || diff < 50) {
-          barcodeBufferRef.current += e.key;
-        }
+        barcodeBufferRef.current += e.key;
       }
     };
 
@@ -210,21 +192,14 @@ export const AddProductPage: React.FC = () => {
     }
 
     const finalSku = sku.trim() || generateSKU('EMS', category);
-    const finalBarcode = barcode.trim() || finalSku;
+    const finalBarcode = normalizeBarcode(barcode) || finalSku;
 
     // Strict validation: Prevent duplicate barcodes from being added!
-    const clean = finalBarcode.toLowerCase();
-    const cleanNoZero = clean.replace(/^0+/, '');
     const foundDuplicate = products.find((p) => {
       if (isEditing && selectedProductForEdit && p.id === selectedProductForEdit.id) {
         return false;
       }
-      const pBarcode = (p.barcode || '').trim().toLowerCase();
-      const pBarcodeNoZero = pBarcode.replace(/^0+/, '');
-      return (
-        pBarcode === clean ||
-        (cleanNoZero.length >= 3 && pBarcodeNoZero === cleanNoZero)
-      );
+      return isBarcodeMatch(p.barcode, finalBarcode);
     });
 
     if (foundDuplicate) {
@@ -539,7 +514,7 @@ export const AddProductPage: React.FC = () => {
                   <AlertTriangle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
                   <div className="space-y-0.5">
                     <p className="text-xs font-black text-red-700">
-                      ⚠️ ဤဘားကုဒ်သည် ရှိပြီးဖြစ်ပါသည်! ထပ်မံထည့်သွင်း၍ မရပါ (条码已存在，不可重复添加)
+                      ⚠️ ဤဘားကုဒ်သည် ရှိပြီးဖြစ်ပါသည်! ထပ်မံထည့်သွင်း၍ မရပါ (Barcode Already Exists)
                     </p>
                     <p className="text-xs text-red-800 leading-relaxed">
                       ဘားကုဒ် <strong className="font-mono bg-red-100 px-1 py-0.5 rounded border border-red-200">[{duplicateProduct.barcode}]</strong> သည် ကုန်ပစ္စည်း <strong className="underline font-bold">"{duplicateProduct.nameMy}"</strong> (SKU: {duplicateProduct.sku} / လက်ကျန်: {duplicateProduct.stock} ခု) တွင် ရှိနှင့်ပြီးဖြစ်ပါသည်။
@@ -603,7 +578,7 @@ export const AddProductPage: React.FC = () => {
           {duplicateProduct ? (
             <div className="flex items-center gap-2 text-xs font-bold text-red-600 bg-red-50 px-3 py-2 rounded-xl border border-red-200">
               <AlertTriangle className="w-4 h-4 shrink-0 text-red-600" />
-              <span>ဘားကုဒ်တူ ရှိနေသဖြင့် ကုန်ပစ္စည်းအသစ် ထည့်သွင်း၍ မရနိုင်ပါ (条码重复无法保存)</span>
+              <span>ဘားကုဒ်တူ ရှိနေသဖြင့် ကုန်ပစ္စည်းအသစ် ထည့်သွင်း၍ မရနိုင်ပါ (Duplicate Barcode Cannot Save)</span>
             </div>
           ) : (
             <div />
@@ -652,10 +627,10 @@ export const AddProductPage: React.FC = () => {
 
             <div className="space-y-1.5">
               <h3 className="text-base sm:text-lg font-black text-stone-900">
-                ဘားကုဒ် ရှိပြီးဖြစ်ပါသည်! (条码已存在)
+                ဘားကုဒ် ရှိပြီးဖြစ်ပါသည်! (Barcode Already Exists)
               </h3>
               <p className="text-xs text-stone-600 leading-relaxed">
-                သင်စကင်ဖတ်/ရိုက်ထည့်ထားသော ဘားကုဒ်သည် စနစ်ထဲတွင် ရှိနှင့်ပြီးဖြစ်ပါသဖြင့် ထပ်မံထည့်သွင်း၍ မရနိုင်ပါ (该条码已存在于系统中，无法重复添加商品)。
+                သင်စကင်ဖတ်/ရိုက်ထည့်ထားသော ဘားကုဒ်သည် စနစ်ထဲတွင် ရှိနှင့်ပြီးဖြစ်ပါသဖြင့် ထပ်မံထည့်သွင်း၍ မရနိုင်ပါ (This barcode is already assigned to an existing product).
               </p>
             </div>
 
@@ -719,20 +694,13 @@ export const AddProductPage: React.FC = () => {
         title="ကုန်ပစ္စည်းပေါ်ရှိ ဘားကုဒ်ကို စကင်ဖတ်ပါ"
         elementId="add-product-camera-scanner-view"
         onScan={(code) => {
-          const trimmed = code.trim();
-          const clean = trimmed.toLowerCase();
-          const cleanNoZero = clean.replace(/^0+/, '');
+          const trimmed = normalizeBarcode(code);
 
           const found = products.find((p) => {
             if (isEditing && selectedProductForEdit && p.id === selectedProductForEdit.id) {
               return false;
             }
-            const pBarcode = (p.barcode || '').trim().toLowerCase();
-            const pBarcodeNoZero = pBarcode.replace(/^0+/, '');
-            return (
-              pBarcode === clean ||
-              (cleanNoZero.length >= 3 && pBarcodeNoZero === cleanNoZero)
-            );
+            return isBarcodeMatch(p.barcode, trimmed);
           });
 
           if (found) {

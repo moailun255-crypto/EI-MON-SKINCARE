@@ -6,6 +6,7 @@ import { CATEGORY_LABELS } from '../../utils/translations';
 import { ClearAllProductsModal } from './ClearAllProductsModal';
 import { CameraScannerModal } from '../pos/CameraScannerModal';
 import { playBarcodeBeep } from '../../utils/scannerSound';
+import { normalizeBarcode, isBarcodeMatch } from '../../utils/barcodeValidator';
 import {
   Boxes,
   PlusCircle,
@@ -51,24 +52,14 @@ export const ProductListPage: React.FC = () => {
   // Barcode search executor (Camera & Barcode Gun)
   const handleBarcodeSearch = useCallback(
     (code: string) => {
-      const clean = code.trim();
+      const clean = normalizeBarcode(code);
       if (!clean) return;
 
       setIsCameraScannerOpen(false);
       setSearchTerm(clean);
 
-      const cleanLower = clean.toLowerCase();
-      const cleanNoZero = cleanLower.replace(/^0+/, '');
-
       const matched = products.find((p) => {
-        const pBarcode = (p.barcode || '').trim().toLowerCase();
-        const pBarcodeNoZero = pBarcode.replace(/^0+/, '');
-        const pSku = (p.sku || '').trim().toLowerCase();
-        return (
-          pBarcode === cleanLower ||
-          (cleanNoZero && pBarcodeNoZero === cleanNoZero) ||
-          pSku === cleanLower
-        );
+        return isBarcodeMatch(p.barcode, clean) || isBarcodeMatch(p.sku, clean);
       });
 
       if (matched) {
@@ -96,30 +87,25 @@ export const ProductListPage: React.FC = () => {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      const activeEl = document.activeElement;
-      const isInput = activeEl?.tagName === 'INPUT' || activeEl?.tagName === 'TEXTAREA';
-
       const now = Date.now();
       const diff = now - lastKeyTimeRef.current;
       lastKeyTimeRef.current = now;
 
       if (e.key === 'Enter') {
-        const buffer = barcodeBufferRef.current.trim();
+        const buffer = normalizeBarcode(barcodeBufferRef.current);
+        barcodeBufferRef.current = '';
         if (buffer.length >= 3) {
           e.preventDefault();
           handleBarcodeSearch(buffer);
         }
-        barcodeBufferRef.current = '';
         return;
       }
 
       if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
-        if (diff > 80 && !isInput) {
+        if (diff > 150) {
           barcodeBufferRef.current = '';
         }
-        if (!isInput || diff < 50) {
-          barcodeBufferRef.current += e.key;
-        }
+        barcodeBufferRef.current += e.key;
       }
     };
 
@@ -155,13 +141,17 @@ export const ProductListPage: React.FC = () => {
       const pBarcodeNoZero = pBarcode.replace(/^0+/, '');
       const pSku = (p.sku || '').trim().toLowerCase();
 
+      const searchNormalized = normalizeBarcode(searchTerm).toLowerCase();
+
       const matchesSearch =
         searchClean === '' ||
         p.nameMy.toLowerCase().includes(searchClean) ||
         (p.nameEn && p.nameEn.toLowerCase().includes(searchClean)) ||
         pSku.includes(searchClean) ||
         pBarcode.includes(searchClean) ||
-        (searchCleanNoZero.length >= 3 && pBarcodeNoZero.includes(searchCleanNoZero));
+        (searchCleanNoZero.length >= 3 && pBarcodeNoZero.includes(searchCleanNoZero)) ||
+        isBarcodeMatch(p.barcode, searchNormalized) ||
+        isBarcodeMatch(p.sku, searchNormalized);
 
       const matchesCat = categoryFilter === 'all' || p.category === categoryFilter;
 

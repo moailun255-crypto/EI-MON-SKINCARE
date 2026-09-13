@@ -7,6 +7,7 @@ import { CartPanel } from './CartPanel';
 import { PaymentModal } from './PaymentModal';
 import { CameraScannerModal } from './CameraScannerModal';
 import { playBarcodeBeep, playCartAddSound } from '../../utils/scannerSound';
+import { normalizeBarcode, isBarcodeMatch } from '../../utils/barcodeValidator';
 import {
   Search,
   Barcode,
@@ -87,6 +88,7 @@ export const POSPage: React.FC<POSPageProps> = ({
   // Filter products by search term & category
   const filteredProducts = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
+    const normalizedQ = normalizeBarcode(searchQuery).toLowerCase();
     return products.filter((item) => {
       const matchesSearch =
         q === '' ||
@@ -94,7 +96,9 @@ export const POSPage: React.FC<POSPageProps> = ({
         item.nameEn.toLowerCase().includes(q) ||
         item.brand.toLowerCase().includes(q) ||
         item.sku.toLowerCase().includes(q) ||
-        item.barcode.includes(q);
+        item.barcode.includes(q) ||
+        isBarcodeMatch(item.barcode, normalizedQ) ||
+        isBarcodeMatch(item.sku, normalizedQ);
 
       let matchesCategory = true;
       if (selectedCategory === 'all') {
@@ -115,19 +119,15 @@ export const POSPage: React.FC<POSPageProps> = ({
   // Core Barcode Processor
   const executeBarcodeScan = useCallback(
     (rawCode: string): { success: boolean; message: string; productName?: string } => {
-      const cleanCode = rawCode.trim();
+      const cleanCode = normalizeBarcode(rawCode);
       if (!cleanCode) {
         return { success: false, message: 'ဘားကုဒ်မရှိပါ' };
       }
 
       // Find product by exact barcode, SKU, or normalized digits (handling UPC-A vs EAN-13 leading zeros)
-      const cleanNoLeadingZero = cleanCode.replace(/^0+/, '');
       const matched = products.find((p) => {
-        const pBarcode = (p.barcode || '').trim();
-        const pBarcodeNoZero = pBarcode.replace(/^0+/, '');
         return (
-          pBarcode === cleanCode ||
-          (cleanNoLeadingZero && pBarcodeNoZero === cleanNoLeadingZero) ||
+          isBarcodeMatch(p.barcode, cleanCode) ||
           p.sku.toLowerCase() === cleanCode.toLowerCase()
         );
       });
@@ -244,13 +244,17 @@ export const POSPage: React.FC<POSPageProps> = ({
     const query = searchQuery.trim();
     if (!query) return;
 
-    // Check if query is an exact barcode match first
+    const normalizedQuery = normalizeBarcode(query);
+
+    // Check if query is a barcode match first
     const matched = products.find(
-      (p) => p.barcode === query || p.sku.toLowerCase() === query.toLowerCase()
+      (p) =>
+        isBarcodeMatch(p.barcode, normalizedQuery) ||
+        p.sku.toLowerCase() === query.toLowerCase()
     );
 
     if (matched) {
-      executeBarcodeScan(query);
+      executeBarcodeScan(normalizedQuery);
       setSearchQuery('');
     } else if (filteredProducts.length === 1) {
       // If single item left from search, add directly on Enter

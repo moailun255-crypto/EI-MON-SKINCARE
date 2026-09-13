@@ -23,6 +23,12 @@ import {
 import { playBarcodeBeep } from '../../utils/scannerSound';
 import { useStore } from '../../context/StoreContext';
 import { formatMMK } from '../../utils/format';
+import {
+  normalizeBarcode,
+  isValidEan13,
+  isValidUpcA,
+  isValidEan8,
+} from '../../utils/barcodeValidator';
 
 interface CameraScannerModalProps {
   isOpen: boolean;
@@ -41,7 +47,8 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
 }) => {
   const { products, addToCart, useMyanmarDigits } = useStore();
 
-  const [activeEngine, setActiveEngine] = useState<ScannerEngine>('quagga');
+  // html5 (ZXing / Native BarcodeDetector) is the default high-accuracy engine
+  const [activeEngine, setActiveEngine] = useState<ScannerEngine>('html5');
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [scanSuccessText, setScanSuccessText] = useState<string | null>(null);
   const [scanErrorText, setScanErrorText] = useState<string | null>(null);
@@ -90,11 +97,49 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
       .slice(0, 5);
   }, [products, modalSearch]);
 
-  // Handle scanned barcode with haptic & sound
+  const candidateRef = useRef<{ code: string; count: number; time: number }>({
+    code: '',
+    count: 0,
+    time: 0,
+  });
+
+  // Handle scanned barcode with haptic, checksum verification & debounce
   const handleScannedCode = useCallback(
     (rawCode: string) => {
-      const clean = rawCode.trim();
-      if (!clean) return;
+      const clean = normalizeBarcode(rawCode);
+      if (!clean || clean.length < 3) return;
+
+      // Mathematical GS1 Checksum Verification:
+      // If code is standard retail barcode length (13, 12, or 8 digits), enforce checksum!
+      // This immediately rejects blurry, tilted, or corrupted camera frames.
+      const isEan13 = /^\d{13}$/.test(clean);
+      const isUpcA = /^\d{12}$/.test(clean);
+      const isEan8 = /^\d{8}$/.test(clean);
+
+      if (isEan13 && !isValidEan13(clean)) {
+        // Discard blurry frame with wrong check digit
+        return;
+      }
+      if (isUpcA && !isValidUpcA(clean)) {
+        return;
+      }
+      if (isEan8 && !isValidEan8(clean)) {
+        return;
+      }
+
+      // For non-checksum codes or when using Quagga engine, require 2 consecutive matching reads
+      if (activeEngine === 'quagga' && !isEan13 && !isUpcA && !isEan8) {
+        const now = Date.now();
+        if (candidateRef.current.code === clean && now - candidateRef.current.time < 600) {
+          candidateRef.current.count += 1;
+        } else {
+          candidateRef.current = { code: clean, count: 1, time: now };
+          return;
+        }
+        if (candidateRef.current.count < 2) {
+          return;
+        }
+      }
 
       const now = Date.now();
       // 800ms debounce
@@ -146,7 +191,7 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
         isScanningCooldownRef.current = false;
       }, 500);
     },
-    [onScan]
+    [onScan, activeEngine]
   );
 
   // Stop Quagga and Html5Qrcode cleanly
@@ -262,7 +307,6 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
                 'code_128_reader',
                 'upc_reader',
                 'upc_e_reader',
-                'code_39_reader',
               ],
               multiple: false,
             },
@@ -351,6 +395,10 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
             Html5QrcodeSupportedFormats.CODE_128,
             Html5QrcodeSupportedFormats.QR_CODE,
             Html5QrcodeSupportedFormats.EAN_8,
+            Html5QrcodeSupportedFormats.UPC_E,
+            Html5QrcodeSupportedFormats.CODE_39,
+            Html5QrcodeSupportedFormats.CODE_93,
+            Html5QrcodeSupportedFormats.ITF,
           ],
           useBarCodeDetectorIfSupported: true,
           verbose: false,
@@ -360,18 +408,19 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
         await qrScanner.start(
           targetDeviceId ? { deviceId: { exact: targetDeviceId } } : { facingMode: 'environment' },
           {
-            fps: 12, // 12 FPS gives optimal responsiveness without locking mobile CPU
+            fps: 15,
             aspectRatio: 1.0,
             qrbox: (viewfinderWidth, viewfinderHeight) => {
-              // Rectangular scanning band focused on barcode
-              const width = Math.floor(viewfinderWidth * 0.85);
-              const height = Math.floor(Math.min(viewfinderHeight * 0.45, 180));
+              // High precision rectangular scanning band focused on barcode
+              const width = Math.min(Math.floor(viewfinderWidth * 0.9), 400);
+              const height = Math.min(Math.floor(viewfinderHeight * 0.55), 220);
               return { width, height };
             },
             videoConstraints: {
-              facingMode: 'environment',
-              width: { min: 640, ideal: 1280 },
-              height: { min: 480, ideal: 720 },
+              facingMode: targetDeviceId ? undefined : { ideal: 'environment' },
+              deviceId: targetDeviceId ? { exact: targetDeviceId } : undefined,
+              width: { min: 1280, ideal: 1920 },
+              height: { min: 720, ideal: 1080 },
               // @ts-expect-error continuous focus
               advanced: [{ focusMode: 'continuous' }],
             },
@@ -519,7 +568,22 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
 
     setIsPhotoScanning(true);
     try {
-      // First try Quagga.decodeSingle
+      // 1. Try Html5Qrcode high-accuracy scanFile first (ZXing / Native BarcodeDetector)
+      try {
+        const tempScanner = new Html5Qrcode('temp-scan-file-div');
+        const decodedText = await tempScanner.scanFile(file, true);
+        tempScanner.clear();
+        if (decodedText) {
+          handleScannedCode(decodedText);
+          setIsPhotoScanning(false);
+          e.target.value = '';
+          return;
+        }
+      } catch {
+        // Continue to Quagga fallback
+      }
+
+      // 2. Fallback to Quagga decodeSingle
       const reader = new FileReader();
       reader.onload = (uploadEvent) => {
         const dataUrl = uploadEvent.target?.result as string;
@@ -542,30 +606,16 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
                 'code_128_reader',
                 'upc_reader',
                 'upc_e_reader',
-                'code_39_reader',
               ],
             },
           },
           (res) => {
             if (res && res.codeResult && res.codeResult.code) {
               handleScannedCode(res.codeResult.code);
-              setIsPhotoScanning(false);
             } else {
-              // Try Html5Qrcode scanFile fallback
-              const tempScanner = new Html5Qrcode('temp-scan-file-div');
-              tempScanner
-                .scanFile(file, false)
-                .then((decodedText) => {
-                  handleScannedCode(decodedText);
-                  tempScanner.clear();
-                })
-                .catch(() => {
-                  alert('ဓာတ်ပုံထဲတွင် ဘားကုဒ် ရှာမတွေ့ပါ။ ဘားကုဒ်နံပါတ်ကို အောက်တွင် တိုက်ရိုက် ရိုက်ထည့်နိုင်ပါသည်။');
-                })
-                .finally(() => {
-                  setIsPhotoScanning(false);
-                });
+              alert('ဓာတ်ပုံထဲတွင် ဘားကုဒ် ရှာမတွေ့ပါ သို့မဟုတ် ရုပ်ပုံဝါးနေပါသည်။ ပိုမိုရှင်းလင်းစွာ ရိုက်ကူးပါ သို့မဟုတ် ဘားကုဒ်နံပါတ်ကို အောက်တွင် တိုက်ရိုက် ရိုက်ထည့်ပါ။');
             }
+            setIsPhotoScanning(false);
           }
         );
       };
@@ -635,7 +685,7 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
                 </h3>
                 <span className="text-[9px] bg-emerald-500/20 text-emerald-400 font-bold px-1.5 py-0.5 rounded border border-emerald-500/30 flex items-center gap-0.5">
                   <Sparkles className="w-2.5 h-2.5" />
-                  {activeEngine === 'quagga' ? '1D TURBO' : 'MULTI-SCAN'}
+                  {activeEngine === 'html5' ? 'PRECISION AI' : '1D COMPAT'}
                 </span>
               </div>
               <span className="text-[10px] text-stone-400">
@@ -699,18 +749,6 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
           <div className="flex items-center gap-1">
             <button
               type="button"
-              onClick={() => handleToggleEngine('quagga')}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-colors cursor-pointer flex items-center gap-1 ${
-                activeEngine === 'quagga'
-                  ? 'bg-rose-600 text-white shadow-xs'
-                  : 'text-stone-400 hover:text-stone-200 hover:bg-stone-800'
-              }`}
-            >
-              <Smartphone className="w-3 h-3" />
-              <span>1D အမြန်စကင် (Quagga)</span>
-            </button>
-            <button
-              type="button"
               onClick={() => handleToggleEngine('html5')}
               className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-colors cursor-pointer flex items-center gap-1 ${
                 activeEngine === 'html5'
@@ -719,7 +757,19 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
               }`}
             >
               <Layers className="w-3 h-3" />
-              <span>စုံစမ်းစကင် (Html5)</span>
+              <span>တိကျမှုမြင့် စကင် (Auto Precision)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleToggleEngine('quagga')}
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-colors cursor-pointer flex items-center gap-1 ${
+                activeEngine === 'quagga'
+                  ? 'bg-rose-600 text-white shadow-xs'
+                  : 'text-stone-400 hover:text-stone-200 hover:bg-stone-800'
+              }`}
+            >
+              <Smartphone className="w-3 h-3" />
+              <span>အရန်စကင် (Legacy 1D)</span>
             </button>
           </div>
 
