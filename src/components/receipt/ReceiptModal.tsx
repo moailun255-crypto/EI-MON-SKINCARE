@@ -333,10 +333,10 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ order, onClose }) =>
               {/* Brand Header */}
               <div className="text-center pb-2 border-b border-dashed border-stone-300">
                 <h1 className="text-base font-black uppercase text-stone-900 tracking-wider">
-                  {storeProfile.nameMy || 'EI MON SKINCARE'}
+                  {storeProfile.name || storeProfile.nameMy || 'EI MON SKINCARE'}
                 </h1>
                 <p className="text-[10px] text-stone-600 mt-0.5 leading-snug">
-                  {storeProfile.addressMy}
+                  {storeProfile.address || storeProfile.addressMy}
                 </p>
                 <p className="text-[10px] text-stone-700 font-bold">
                   ဖုန်း - {storeProfile.phone}

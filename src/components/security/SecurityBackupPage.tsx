@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { StoreProfile } from '../../types';
 import { SupabaseSyncCard } from './SupabaseSyncCard';
@@ -28,6 +28,11 @@ export const SecurityBackupPage: React.FC = () => {
 
   const [profileForm, setProfileForm] = useState<StoreProfile>({ ...storeProfile });
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+
+  // Sync profileForm whenever storeProfile updates
+  useEffect(() => {
+    setProfileForm({ ...storeProfile });
+  }, [storeProfile]);
 
   // Step-by-step password modification state (never reveal current password)
   const [passwordStep, setPasswordStep] = useState<1 | 2>(1);
@@ -98,8 +103,19 @@ export const SecurityBackupPage: React.FC = () => {
 
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
-    updateStoreProfile(profileForm);
-    showToast('ဆိုင်အချက်အလက်နှင့် ဆက်တင်များ သိမ်းဆည်းပြီးပါပြီ');
+    const updated: StoreProfile = {
+      ...profileForm,
+      name: profileForm.name.trim(),
+      nameMy: profileForm.name.trim() || profileForm.nameMy,
+      address: profileForm.addressMy?.trim() || profileForm.address,
+      addressMy: profileForm.addressMy?.trim() || profileForm.addressMy,
+      phone: profileForm.phone.trim(),
+      activeCashier: profileForm.activeCashier.trim() || 'မအိမွန်',
+      kpayNumber: profileForm.kpayNumber?.trim() || '',
+      kpayName: profileForm.kpayName?.trim() || '',
+    };
+    updateStoreProfile(updated);
+    showToast('ဆိုင်အချက်အလက်နှင့် ဆက်တင်များ အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ (Settings Saved)');
   };
 
   const showToast = (msg: string) => {
@@ -260,6 +276,52 @@ export const SecurityBackupPage: React.FC = () => {
                     })
                   }
                   className="w-full text-xs px-3 py-2 rounded-xl border border-stone-200 font-bold"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* KBZPay Digital Payment Settings */}
+          <div className="pt-3 border-t border-stone-100 space-y-3">
+            <h4 className="text-xs font-bold text-stone-900 flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-blue-600 inline-block" />
+              <span>KBZPay ဒစ်ဂျစ်တယ်ငွေပေးချေမှု ဆက်တင်များ</span>
+            </h4>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[11px] font-semibold text-stone-600 mb-1">
+                  KBZPay ဖုန်းနံပါတ်
+                </label>
+                <input
+                  type="text"
+                  placeholder="09..."
+                  value={profileForm.kpayNumber || ''}
+                  onChange={(e) =>
+                    setProfileForm({
+                      ...profileForm,
+                      kpayNumber: e.target.value,
+                    })
+                  }
+                  className="w-full text-xs px-3 py-2 rounded-xl border border-stone-200 font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-stone-600 mb-1">
+                  KBZPay အကောင့်ပိုင်ရှင် အမည်
+                </label>
+                <input
+                  type="text"
+                  placeholder="ဒေါ်အိမွန်..."
+                  value={profileForm.kpayName || ''}
+                  onChange={(e) =>
+                    setProfileForm({
+                      ...profileForm,
+                      kpayName: e.target.value,
+                    })
+                  }
+                  className="w-full text-xs px-3 py-2 rounded-xl border border-stone-200"
                 />
               </div>
             </div>

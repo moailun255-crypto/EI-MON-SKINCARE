@@ -114,7 +114,7 @@ interface StoreContextType {
   setDirectDeletePassword: (newPassword: string) => { success: boolean; message: string };
 
   // Settings & Security
-  updateStoreProfile: (profile: StoreProfile) => void;
+  updateStoreProfile: (profile: Partial<StoreProfile> | StoreProfile) => void;
   verifyPin: (pin: string) => boolean;
   lockSystem: () => void;
   unlockSystem: () => void;
@@ -184,8 +184,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const saved = localStorage.getItem(STORAGE_KEYS.PROFILE);
       if (saved) {
         const parsed = JSON.parse(saved);
-        parsed.name = 'EI MON SKINCARE';
-        if (parsed.nameMy === 'အိမွန် အသားအရေထိန်းသိမ်းမှု' || !parsed.nameMy) {
+        if (!parsed.name && !parsed.nameMy) {
+          parsed.name = 'EI MON SKINCARE';
           parsed.nameMy = 'EI MON SKINCARE';
         }
         if (parsed.activeCashier === 'မအိမွန် (Ei Mon)') {
@@ -194,7 +194,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (!parsed.orderDeletePassword) {
           parsed.orderDeletePassword = '123456';
         }
-        return parsed;
+        return { ...INITIAL_STORE_PROFILE, ...parsed };
       }
       return INITIAL_STORE_PROFILE;
     } catch {
@@ -1048,9 +1048,17 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   // Store Profile update
-  const updateStoreProfile = (newProfile: StoreProfile) => {
-    setStoreProfile(newProfile);
-    pushProfileToCloud(newProfile);
+  const updateStoreProfile = (newProfile: Partial<StoreProfile> | StoreProfile) => {
+    setStoreProfile((prev) => {
+      const updated: StoreProfile = { ...prev, ...newProfile };
+      try {
+        localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(updated));
+      } catch (err) {
+        console.error('Failed to save profile to localStorage:', err);
+      }
+      pushProfileToCloud(updated);
+      return updated;
+    });
   };
 
   // PIN security

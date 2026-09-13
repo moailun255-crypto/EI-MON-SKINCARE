@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useStore } from '../../context/StoreContext';
-import { ProductCategory, SkinType } from '../../types';
+import { Product, ProductCategory, SkinType } from '../../types';
 import { generateSKU } from '../../utils/format';
 import { CATEGORY_LABELS, SKIN_TYPE_LABELS } from '../../utils/translations';
 import { CameraScannerModal } from '../pos/CameraScannerModal';
+import { playBarcodeBeep } from '../../utils/scannerSound';
 import {
   Save,
   ArrowLeft,
@@ -13,10 +14,12 @@ import {
   Camera,
   X,
   Barcode,
+  AlertTriangle,
 } from 'lucide-react';
 
 export const AddProductPage: React.FC = () => {
   const {
+    products,
     addProduct,
     updateProduct,
     selectedProductForEdit,
@@ -40,6 +43,104 @@ export const AddProductPage: React.FC = () => {
   const [descriptionMy, setDescriptionMy] = useState('');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isCameraScannerOpen, setIsCameraScannerOpen] = useState(false);
+  const [duplicateWarningModal, setDuplicateWarningModal] = useState<{
+    barcode: string;
+    product: Product;
+  } | null>(null);
+
+  // Check if entered barcode already exists on another product
+  const duplicateProduct = useMemo(() => {
+    const trimmed = barcode.trim();
+    if (!trimmed) return null;
+    const clean = trimmed.toLowerCase();
+    const cleanNoZero = clean.replace(/^0+/, '');
+
+    return products.find((p) => {
+      // When editing an existing product, allow keeping its own barcode
+      if (isEditing && selectedProductForEdit && p.id === selectedProductForEdit.id) {
+        return false;
+      }
+      const pBarcode = (p.barcode || '').trim().toLowerCase();
+      const pBarcodeNoZero = pBarcode.replace(/^0+/, '');
+      return (
+        pBarcode === clean ||
+        (cleanNoZero.length >= 3 && pBarcodeNoZero === cleanNoZero)
+      );
+    });
+  }, [barcode, products, isEditing, selectedProductForEdit]);
+
+  // Handle scanned or typed barcode with duplicate check
+  const handleApplyBarcode = useCallback(
+    (code: string) => {
+      const trimmed = code.trim();
+      if (!trimmed) return;
+      setBarcode(trimmed);
+
+      const clean = trimmed.toLowerCase();
+      const cleanNoZero = clean.replace(/^0+/, '');
+
+      const foundDuplicate = products.find((p) => {
+        if (isEditing && selectedProductForEdit && p.id === selectedProductForEdit.id) {
+          return false;
+        }
+        const pBarcode = (p.barcode || '').trim().toLowerCase();
+        const pBarcodeNoZero = pBarcode.replace(/^0+/, '');
+        return (
+          pBarcode === clean ||
+          (cleanNoZero.length >= 3 && pBarcodeNoZero === cleanNoZero)
+        );
+      });
+
+      if (foundDuplicate) {
+        playBarcodeBeep('error');
+        setDuplicateWarningModal({
+          barcode: trimmed,
+          product: foundDuplicate,
+        });
+      } else {
+        playBarcodeBeep('success');
+        setToastMessage(`ဘားကုဒ် [${trimmed}] ထည့်သွင်းပြီးပါပြီ`);
+      }
+    },
+    [products, isEditing, selectedProductForEdit]
+  );
+
+  // Physical Barcode Scanner listener (USB / Bluetooth barcode gun)
+  const barcodeBufferRef = useRef('');
+  const lastKeyTimeRef = useRef(0);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const activeEl = document.activeElement;
+      const isInput = activeEl?.tagName === 'INPUT' || activeEl?.tagName === 'TEXTAREA';
+
+      const now = Date.now();
+      const diff = now - lastKeyTimeRef.current;
+      lastKeyTimeRef.current = now;
+
+      if (e.key === 'Enter') {
+        const buffer = barcodeBufferRef.current.trim();
+        if (buffer.length >= 3) {
+          e.preventDefault();
+          handleApplyBarcode(buffer);
+        }
+        barcodeBufferRef.current = '';
+        return;
+      }
+
+      if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        if (diff > 80 && !isInput) {
+          barcodeBufferRef.current = '';
+        }
+        if (!isInput || diff < 50) {
+          barcodeBufferRef.current += e.key;
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleApplyBarcode]);
 
   // Populate form if editing, or initialize clean empty form without auto-filling barcode
   useEffect(() => {
@@ -76,7 +177,15 @@ export const AddProductPage: React.FC = () => {
   };
 
   const handleGenerateBarcode = () => {
-    setBarcode(String(Math.floor(8800000000000 + Math.random() * 99999999999)));
+    let newCode = '';
+    let attempts = 0;
+    do {
+      newCode = String(Math.floor(8800000000000 + Math.random() * 99999999999));
+      attempts++;
+    } while (products.some((p) => p.barcode === newCode) && attempts < 50);
+
+    setBarcode(newCode);
+    setDuplicateWarningModal(null);
   };
 
   const toggleSkinType = (type: SkinType) => {
@@ -102,6 +211,30 @@ export const AddProductPage: React.FC = () => {
 
     const finalSku = sku.trim() || generateSKU('EMS', category);
     const finalBarcode = barcode.trim() || finalSku;
+
+    // Strict validation: Prevent duplicate barcodes from being added!
+    const clean = finalBarcode.toLowerCase();
+    const cleanNoZero = clean.replace(/^0+/, '');
+    const foundDuplicate = products.find((p) => {
+      if (isEditing && selectedProductForEdit && p.id === selectedProductForEdit.id) {
+        return false;
+      }
+      const pBarcode = (p.barcode || '').trim().toLowerCase();
+      const pBarcodeNoZero = pBarcode.replace(/^0+/, '');
+      return (
+        pBarcode === clean ||
+        (cleanNoZero.length >= 3 && pBarcodeNoZero === cleanNoZero)
+      );
+    });
+
+    if (foundDuplicate) {
+      playBarcodeBeep('error');
+      setDuplicateWarningModal({
+        barcode: finalBarcode,
+        product: foundDuplicate,
+      });
+      return;
+    }
 
     const payload = {
       nameMy: nameMy.trim(),
@@ -363,14 +496,23 @@ export const AddProductPage: React.FC = () => {
                 <input
                   type="text"
                   value={barcode}
-                  onChange={(e) => setBarcode(e.target.value)}
+                  onChange={(e) => {
+                    setBarcode(e.target.value);
+                  }}
                   placeholder="ပစ္စည်းပေါ်ရှိ ဘားကုဒ် ရိုက်ထည့်ပါ သို့မဟုတ် စကင်ဖတ်ပါ"
-                  className="w-full text-xs sm:text-sm pl-3.5 pr-9 py-2.5 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-rose-500 bg-stone-50/50 font-mono font-bold"
+                  className={`w-full text-xs sm:text-sm pl-3.5 pr-9 py-2.5 rounded-xl border font-mono font-bold transition-all ${
+                    duplicateProduct
+                      ? 'border-red-500 bg-red-50/50 text-red-900 focus:ring-2 focus:ring-red-500'
+                      : 'border-stone-200 focus:outline-none focus:ring-2 focus:ring-rose-500 bg-stone-50/50'
+                  }`}
                 />
                 {barcode && (
                   <button
                     type="button"
-                    onClick={() => setBarcode('')}
+                    onClick={() => {
+                      setBarcode('');
+                      setDuplicateWarningModal(null);
+                    }}
                     className="absolute right-2.5 top-2.5 text-stone-400 hover:text-stone-700 p-0.5 cursor-pointer"
                     title="ဘားကုဒ် ရှင်းလင်းမည်"
                   >
@@ -390,11 +532,48 @@ export const AddProductPage: React.FC = () => {
               </button>
             </div>
 
-            {barcode ? (
+            {/* Duplicate barcode error card */}
+            {duplicateProduct ? (
+              <div className="p-3.5 rounded-2xl bg-red-50 border-2 border-red-400 text-red-900 space-y-2 animate-fadeIn">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+                  <div className="space-y-0.5">
+                    <p className="text-xs font-black text-red-700">
+                      ⚠️ ဤဘားကုဒ်သည် ရှိပြီးဖြစ်ပါသည်! ထပ်မံထည့်သွင်း၍ မရပါ (条码已存在，不可重复添加)
+                    </p>
+                    <p className="text-xs text-red-800 leading-relaxed">
+                      ဘားကုဒ် <strong className="font-mono bg-red-100 px-1 py-0.5 rounded border border-red-200">[{duplicateProduct.barcode}]</strong> သည် ကုန်ပစ္စည်း <strong className="underline font-bold">"{duplicateProduct.nameMy}"</strong> (SKU: {duplicateProduct.sku} / လက်ကျန်: {duplicateProduct.stock} ခု) တွင် ရှိနှင့်ပြီးဖြစ်ပါသည်။
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 pt-1 border-t border-red-200">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedProductForEdit(duplicateProduct);
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-[11px] font-bold cursor-pointer transition-colors"
+                  >
+                    ရှိပြီးသားပစ္စည်းကို ပြင်ဆင်မည် (Edit Existing)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setBarcode('');
+                      setDuplicateWarningModal(null);
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-white border border-red-300 text-red-700 hover:bg-red-100 text-[11px] font-bold cursor-pointer transition-colors"
+                  >
+                    ဘားကုဒ် ပြန်ရှင်းလင်းမည် (Clear)
+                  </button>
+                </div>
+              </div>
+            ) : barcode ? (
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-xs font-semibold">
                 <CheckCircle className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                 <span className="truncate">
-                  အသုံးပြုမည့် ဘားကုဒ်: <strong className="font-mono">{barcode}</strong>
+                  အသုံးပြုမည့် ဘားကုဒ်: <strong className="font-mono">{barcode}</strong> (ထူးခြားမှုရှိပြီး အသစ်ထည့်သွင်းနိုင်ပါသည်)
                 </span>
               </div>
             ) : (
@@ -420,32 +599,118 @@ export const AddProductPage: React.FC = () => {
         </div>
 
         {/* Submit Actions */}
-        <div className="pt-4 border-t border-stone-200 flex items-center justify-end gap-3">
-          <button
-            type="button"
-            onClick={() => {
-              setSelectedProductForEdit(null);
-              goBack();
-            }}
-            className="py-2.5 px-5 rounded-2xl border border-stone-300 text-stone-700 text-xs sm:text-sm font-bold hover:bg-stone-50 transition-colors cursor-pointer flex items-center gap-1.5 min-h-[44px]"
-          >
-            <ArrowLeft className="w-4 h-4 text-stone-500" />
-            <span>မလုပ်တော့ပါ (နောက်သို့)</span>
-          </button>
+        <div className="pt-4 border-t border-stone-200 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          {duplicateProduct ? (
+            <div className="flex items-center gap-2 text-xs font-bold text-red-600 bg-red-50 px-3 py-2 rounded-xl border border-red-200">
+              <AlertTriangle className="w-4 h-4 shrink-0 text-red-600" />
+              <span>ဘားကုဒ်တူ ရှိနေသဖြင့် ကုန်ပစ္စည်းအသစ် ထည့်သွင်း၍ မရနိုင်ပါ (条码重复无法保存)</span>
+            </div>
+          ) : (
+            <div />
+          )}
 
-          <button
-            type="submit"
-            className="py-2.5 px-6 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs sm:text-sm font-bold flex items-center gap-2 shadow-sm transition-all cursor-pointer"
-          >
-            <Save className="w-4 h-4" />
-            <span>
-              {isEditing
-                ? 'အချက်အလက် သိမ်းဆည်းမည်'
-                : 'ကုန်ပစ္စည်းအသစ် ထည့်သွင်းမည်'}
-            </span>
-          </button>
+          <div className="flex items-center justify-end gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedProductForEdit(null);
+                goBack();
+              }}
+              className="py-2.5 px-5 rounded-2xl border border-stone-300 text-stone-700 text-xs sm:text-sm font-bold hover:bg-stone-50 transition-colors cursor-pointer flex items-center gap-1.5 min-h-[44px]"
+            >
+              <ArrowLeft className="w-4 h-4 text-stone-500" />
+              <span>မလုပ်တော့ပါ (နောက်သို့)</span>
+            </button>
+
+            <button
+              type="submit"
+              disabled={Boolean(duplicateProduct)}
+              className={`py-2.5 px-6 rounded-xl text-white text-xs sm:text-sm font-bold flex items-center gap-2 shadow-sm transition-all cursor-pointer ${
+                duplicateProduct
+                  ? 'bg-stone-300 cursor-not-allowed opacity-60'
+                  : 'bg-rose-600 hover:bg-rose-700'
+              }`}
+            >
+              <Save className="w-4 h-4" />
+              <span>
+                {isEditing
+                  ? 'အချက်အလက် သိမ်းဆည်းမည်'
+                  : 'ကုန်ပစ္စည်းအသစ် ထည့်သွင်းမည်'}
+              </span>
+            </button>
+          </div>
         </div>
       </form>
+
+      {/* Duplicate Barcode Warning Modal */}
+      {duplicateWarningModal && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-xs animate-fadeIn">
+          <div className="bg-white rounded-3xl p-5 sm:p-6 max-w-md w-full shadow-2xl space-y-4 border-2 border-red-500 text-center animate-scaleUp">
+            <div className="w-14 h-14 rounded-2xl bg-red-100 text-red-600 mx-auto flex items-center justify-center">
+              <AlertTriangle className="w-8 h-8 text-red-600" />
+            </div>
+
+            <div className="space-y-1.5">
+              <h3 className="text-base sm:text-lg font-black text-stone-900">
+                ဘားကုဒ် ရှိပြီးဖြစ်ပါသည်! (条码已存在)
+              </h3>
+              <p className="text-xs text-stone-600 leading-relaxed">
+                သင်စကင်ဖတ်/ရိုက်ထည့်ထားသော ဘားကုဒ်သည် စနစ်ထဲတွင် ရှိနှင့်ပြီးဖြစ်ပါသဖြင့် ထပ်မံထည့်သွင်း၍ မရနိုင်ပါ (该条码已存在于系统中，无法重复添加商品)。
+              </p>
+            </div>
+
+            <div className="bg-stone-50 border border-stone-200 rounded-2xl p-3.5 text-left space-y-2 text-xs">
+              <div className="flex justify-between items-center text-stone-500">
+                <span>ဘားကုဒ် (Barcode):</span>
+                <span className="font-mono font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded border border-red-200">
+                  {duplicateWarningModal.barcode}
+                </span>
+              </div>
+              <div className="flex justify-between items-center text-stone-700">
+                <span>လက်ရှိ ကုန်ပစ္စည်း (Existing):</span>
+                <span className="font-bold text-stone-900 truncate max-w-[180px]">
+                  {duplicateWarningModal.product.nameMy}
+                </span>
+              </div>
+              <div className="flex justify-between items-center text-stone-500">
+                <span>SKU ကုဒ်:</span>
+                <span className="font-mono text-stone-700 font-bold">
+                  {duplicateWarningModal.product.sku}
+                </span>
+              </div>
+              <div className="flex justify-between items-center text-stone-500">
+                <span>လက်ရှိ လက်ကျန်စတော့:</span>
+                <span className="font-bold text-emerald-600 font-mono">
+                  {duplicateWarningModal.product.stock} ခု
+                </span>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedProductForEdit(duplicateWarningModal.product);
+                  setDuplicateWarningModal(null);
+                }}
+                className="flex-1 py-2.5 px-3 rounded-xl bg-stone-900 hover:bg-black text-white text-xs font-bold cursor-pointer transition-colors"
+              >
+                ရှိပြီးသားပစ္စည်းကို ပြင်မည် (Edit)
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setBarcode('');
+                  setDuplicateWarningModal(null);
+                }}
+                className="flex-1 py-2.5 px-3 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold cursor-pointer transition-colors"
+              >
+                ဘားကုဒ် ပြန်ဖျက်မည် (Clear)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Camera Barcode Scanner Modal */}
       <CameraScannerModal
@@ -454,13 +719,44 @@ export const AddProductPage: React.FC = () => {
         title="ကုန်ပစ္စည်းပေါ်ရှိ ဘားကုဒ်ကို စကင်ဖတ်ပါ"
         elementId="add-product-camera-scanner-view"
         onScan={(code) => {
-          setBarcode(code);
+          const trimmed = code.trim();
+          const clean = trimmed.toLowerCase();
+          const cleanNoZero = clean.replace(/^0+/, '');
+
+          const found = products.find((p) => {
+            if (isEditing && selectedProductForEdit && p.id === selectedProductForEdit.id) {
+              return false;
+            }
+            const pBarcode = (p.barcode || '').trim().toLowerCase();
+            const pBarcodeNoZero = pBarcode.replace(/^0+/, '');
+            return (
+              pBarcode === clean ||
+              (cleanNoZero.length >= 3 && pBarcodeNoZero === cleanNoZero)
+            );
+          });
+
+          if (found) {
+            playBarcodeBeep('error');
+            setBarcode(trimmed);
+            setIsCameraScannerOpen(false);
+            setDuplicateWarningModal({
+              barcode: trimmed,
+              product: found,
+            });
+            return {
+              success: false,
+              message: `သတိပေးချက်: ဘားကုဒ်သည် '${found.nameMy}' တွင် ရှိပြီးဖြစ်ပါသည်! ထပ်မံထည့်သွင်း၍ မရပါ`,
+            };
+          }
+
+          playBarcodeBeep('success');
+          setBarcode(trimmed);
           setIsCameraScannerOpen(false);
-          setToastMessage(`ဘားကုဒ် [${code}] စကင်ဖတ်ပြီးပါပြီ`);
+          setToastMessage(`ဘားကုဒ် [${trimmed}] စကင်ဖတ်ပြီးပါပြီ`);
           return {
             success: true,
-            message: 'ဘားကုဒ် စကင်ဖတ်ပြီးပါပြီ',
-            productName: code,
+            message: 'ဘားကုဒ် အောင်မြင်စွာ ဖတ်ရှုပြီးပါပြီ',
+            productName: trimmed,
           };
         }}
       />

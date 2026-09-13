@@ -1,9 +1,11 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { Product, ProductCategory } from '../../types';
 import { formatMMK } from '../../utils/format';
 import { CATEGORY_LABELS } from '../../utils/translations';
 import { ClearAllProductsModal } from './ClearAllProductsModal';
+import { CameraScannerModal } from '../pos/CameraScannerModal';
+import { playBarcodeBeep } from '../../utils/scannerSound';
 import {
   Boxes,
   PlusCircle,
@@ -20,6 +22,8 @@ import {
   X,
   CheckCircle,
   ArrowLeft,
+  Camera,
+  Barcode,
 } from 'lucide-react';
 
 export const ProductListPage: React.FC = () => {
@@ -40,8 +44,88 @@ export const ProductListPage: React.FC = () => {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isBatchDeleteModalOpen, setIsBatchDeleteModalOpen] = useState(false);
   const [isClearAllModalOpen, setIsClearAllModalOpen] = useState(false);
+  const [isCameraScannerOpen, setIsCameraScannerOpen] = useState(false);
   const [deleteNotice, setDeleteNotice] = useState<string | null>(null);
   const [stockNotice, setStockNotice] = useState<{ type: 'success' | 'warn'; text: string } | null>(null);
+
+  // Barcode search executor (Camera & Barcode Gun)
+  const handleBarcodeSearch = useCallback(
+    (code: string) => {
+      const clean = code.trim();
+      if (!clean) return;
+
+      setIsCameraScannerOpen(false);
+      setSearchTerm(clean);
+
+      const cleanLower = clean.toLowerCase();
+      const cleanNoZero = cleanLower.replace(/^0+/, '');
+
+      const matched = products.find((p) => {
+        const pBarcode = (p.barcode || '').trim().toLowerCase();
+        const pBarcodeNoZero = pBarcode.replace(/^0+/, '');
+        const pSku = (p.sku || '').trim().toLowerCase();
+        return (
+          pBarcode === cleanLower ||
+          (cleanNoZero && pBarcodeNoZero === cleanNoZero) ||
+          pSku === cleanLower
+        );
+      });
+
+      if (matched) {
+        playBarcodeBeep('success');
+        setCategoryFilter('all');
+        setStockFilter('all');
+        setStockNotice({
+          type: 'success',
+          text: `🔍 ဘားကုဒ် [${clean}] ဖြင့် '${matched.nameMy}' ကို ရှာဖွေတွေ့ရှိပြီး စာရင်းတွင် ရွေးချယ်ပြသထားပါသည်`,
+        });
+      } else {
+        playBarcodeBeep('warning');
+        setStockNotice({
+          type: 'warn',
+          text: `⚠️ ဘားကုဒ် [${clean}] နှင့် ကိုက်ညီသော ကုန်ပစ္စည်း စာရင်းထဲ မတွေ့ရှိပါ (Barcode Not Found)`,
+        });
+      }
+    },
+    [products]
+  );
+
+  // Physical Barcode Scanner listener (USB / Bluetooth barcode gun)
+  const barcodeBufferRef = useRef('');
+  const lastKeyTimeRef = useRef(0);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const activeEl = document.activeElement;
+      const isInput = activeEl?.tagName === 'INPUT' || activeEl?.tagName === 'TEXTAREA';
+
+      const now = Date.now();
+      const diff = now - lastKeyTimeRef.current;
+      lastKeyTimeRef.current = now;
+
+      if (e.key === 'Enter') {
+        const buffer = barcodeBufferRef.current.trim();
+        if (buffer.length >= 3) {
+          e.preventDefault();
+          handleBarcodeSearch(buffer);
+        }
+        barcodeBufferRef.current = '';
+        return;
+      }
+
+      if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        if (diff > 80 && !isInput) {
+          barcodeBufferRef.current = '';
+        }
+        if (!isInput || diff < 50) {
+          barcodeBufferRef.current += e.key;
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleBarcodeSearch]);
 
   const handleAdjustStockWithFeedback = (product: Product, delta: number) => {
     if (delta < 0 && product.stock <= 0) {
@@ -65,11 +149,19 @@ export const ProductListPage: React.FC = () => {
   // Filtered product list
   const filteredProducts = useMemo(() => {
     return products.filter((p) => {
+      const searchClean = searchTerm.trim().toLowerCase();
+      const searchCleanNoZero = searchClean.replace(/^0+/, '');
+      const pBarcode = (p.barcode || '').trim().toLowerCase();
+      const pBarcodeNoZero = pBarcode.replace(/^0+/, '');
+      const pSku = (p.sku || '').trim().toLowerCase();
+
       const matchesSearch =
-        searchTerm === '' ||
-        p.nameMy.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.barcode.includes(searchTerm);
+        searchClean === '' ||
+        p.nameMy.toLowerCase().includes(searchClean) ||
+        (p.nameEn && p.nameEn.toLowerCase().includes(searchClean)) ||
+        pSku.includes(searchClean) ||
+        pBarcode.includes(searchClean) ||
+        (searchCleanNoZero.length >= 3 && pBarcodeNoZero.includes(searchCleanNoZero));
 
       const matchesCat = categoryFilter === 'all' || p.category === categoryFilter;
 
@@ -272,15 +364,43 @@ export const ProductListPage: React.FC = () => {
 
       {/* Filter and Search Controls */}
       <div className="bg-white p-3 sm:p-4 rounded-2xl border border-stone-200 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-        <div className="relative flex-1">
-          <Search className="w-4 h-4 text-stone-400 absolute left-3 top-3" />
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="ပစ္စည်းအမည် သို့မဟုတ် ဘားကုဒ် ရှာဖွေပါ..."
-            className="w-full text-xs sm:text-sm pl-9 pr-4 py-2 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-rose-500 bg-stone-50/50"
-          />
+        <div className="flex flex-col sm:flex-row items-stretch gap-2 flex-1">
+          <div className="relative flex-1">
+            <Search className="w-4 h-4 text-stone-400 absolute left-3 top-3" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && searchTerm.trim()) {
+                  handleBarcodeSearch(searchTerm);
+                }
+              }}
+              placeholder="ပစ္စည်းအမည်၊ SKU သို့မဟုတ် ဘားကုဒ် ရှာဖွေပါ..."
+              className="w-full text-xs sm:text-sm pl-9 pr-8 py-2 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-rose-500 bg-stone-50/50 font-medium"
+            />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => setSearchTerm('')}
+                className="absolute right-2.5 top-2.5 text-stone-400 hover:text-stone-700 p-0.5 cursor-pointer"
+                title="ရှာဖွေမှု ရှင်းလင်းမည်"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setIsCameraScannerOpen(true)}
+            className="px-3 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 active:scale-95 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-all cursor-pointer shrink-0"
+            title="ဘားကုဒ် ကင်မရာဖြင့် စကင်ဖတ် ရှာဖွေမည် (Scan Barcode to Find Product)"
+          >
+            <Camera className="w-4 h-4" />
+            <Barcode className="w-4 h-4" />
+            <span>ဘားကုဒ် စကင်ဖတ်ရှာမည်</span>
+          </button>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -751,6 +871,15 @@ export const ProductListPage: React.FC = () => {
         <ClearAllProductsModal
           onClose={() => setIsClearAllModalOpen(false)}
           onSuccess={() => setSelectedIds([])}
+        />
+      )}
+
+      {/* Camera Barcode Scanner Modal for searching products */}
+      {isCameraScannerOpen && (
+        <CameraScannerModal
+          isOpen={isCameraScannerOpen}
+          onClose={() => setIsCameraScannerOpen(false)}
+          onScan={handleBarcodeSearch}
         />
       )}
     </div>

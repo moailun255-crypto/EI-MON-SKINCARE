@@ -52,20 +52,12 @@ export const CashReconciliation: React.FC<CashReconciliationProps> = ({
   // Expected Cash In Drawer
   const expectedCashInDrawer = Math.max(0, cashSales - cashRefunds - cashExpenses);
 
-  // Digital payments breakdown
+  // Digital payments breakdown (KBZPay)
   const kpayTotal = completedOrders
     .filter((o) => o.paymentMethod === 'kpay')
     .reduce((sum, o) => sum + o.grandTotal, 0);
 
-  const waveTotal = completedOrders
-    .filter((o) => o.paymentMethod === 'wave')
-    .reduce((sum, o) => sum + o.grandTotal, 0);
-
-  const bankTotal = completedOrders
-    .filter((o) => o.paymentMethod === 'bank')
-    .reduce((sum, o) => sum + o.grandTotal, 0);
-
-  const totalDigitalPayments = kpayTotal + waveTotal + bankTotal;
+  const totalDigitalPayments = kpayTotal;
   const grandTotalCollected = cashSales + totalDigitalPayments;
 
   // Drawer Physical Count State (Cashier denomination counter)
@@ -174,10 +166,10 @@ export const CashReconciliation: React.FC<CashReconciliationProps> = ({
           <div className="flex items-center justify-between text-stone-500">
             <span className="text-xs font-bold uppercase tracking-wider text-blue-600 flex items-center gap-1.5">
               <Smartphone className="w-4 h-4" />
-              ဒစ်ဂျစ်တယ် / ဘဏ်အကောင့် ရငွေစုစုပေါင်း
+              KBZPay အကောင့် ရငွေစုစုပေါင်း
             </span>
             <span className="text-[10px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-bold">
-              Digital Wallets
+              KBZPay Wallet
             </span>
           </div>
 
@@ -186,7 +178,7 @@ export const CashReconciliation: React.FC<CashReconciliationProps> = ({
               {formatMMK(totalDigitalPayments, useMyanmarDigits)}
             </h3>
             <p className="text-[11px] text-stone-400 mt-1">
-              KBZPay, WavePay နှင့် ဘဏ်လွှဲငွေများ
+              KBZPay အကောင့်သို့ တိုက်ရိုက်ဝင်ငွေ
             </p>
           </div>
 
@@ -194,23 +186,15 @@ export const CashReconciliation: React.FC<CashReconciliationProps> = ({
             <div className="flex justify-between items-center text-stone-700">
               <span className="flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-blue-600 inline-block" />
-                KBZPay:
+                KBZPay Total:
               </span>
               <span className="font-mono font-bold">{formatMMK(kpayTotal, useMyanmarDigits)}</span>
             </div>
-            <div className="flex justify-between items-center text-stone-700">
-              <span className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-amber-500 inline-block" />
-                WavePay:
+            <div className="flex justify-between items-center text-stone-500 text-[11px]">
+              <span>KPay ဘောင်ချာစောင်ရေ:</span>
+              <span className="font-mono font-bold text-stone-800">
+                {completedOrders.filter((o) => o.paymentMethod === 'kpay').length} စောင်
               </span>
-              <span className="font-mono font-bold">{formatMMK(waveTotal, useMyanmarDigits)}</span>
-            </div>
-            <div className="flex justify-between items-center text-stone-700">
-              <span className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-indigo-600 inline-block" />
-                ဘဏ်လွှဲငွေ (Bank Transfer):
-              </span>
-              <span className="font-mono font-bold">{formatMMK(bankTotal, useMyanmarDigits)}</span>
             </div>
           </div>
         </div>

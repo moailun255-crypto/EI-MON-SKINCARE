@@ -1338,8 +1338,6 @@ export const FinancePage: React.FC = () => {
                   >
                     <option value="cash">ငွေသား (Cash)</option>
                     <option value="kpay">KBZPay</option>
-                    <option value="wave">WavePay</option>
-                    <option value="bank">ဘဏ်လွှဲငွေ (Bank)</option>
                   </select>
                 </div>
 
