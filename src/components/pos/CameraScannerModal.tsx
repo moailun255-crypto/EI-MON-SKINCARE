@@ -9,16 +9,12 @@ import {
   CheckCircle,
   Zap,
   ZapOff,
-  Info,
   SwitchCamera,
   ZoomIn,
-  Sparkles,
   Upload,
   Search,
   Plus,
   Check,
-  Smartphone,
-  Layers,
 } from 'lucide-react';
 import { playBarcodeBeep } from '../../utils/scannerSound';
 import { useStore } from '../../context/StoreContext';
@@ -54,7 +50,6 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
   const [scanErrorText, setScanErrorText] = useState<string | null>(null);
   const [hasTorch, setHasTorch] = useState<boolean>(false);
   const [torchOn, setTorchOn] = useState<boolean>(false);
-  const [showTips, setShowTips] = useState<boolean>(false);
   const [isPhotoScanning, setIsPhotoScanning] = useState<boolean>(false);
 
   // Multi-camera and Zoom controls
@@ -410,12 +405,6 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
           {
             fps: 15,
             aspectRatio: 1.0,
-            qrbox: (viewfinderWidth, viewfinderHeight) => {
-              // High precision rectangular scanning band focused on barcode
-              const width = Math.min(Math.floor(viewfinderWidth * 0.9), 400);
-              const height = Math.min(Math.floor(viewfinderHeight * 0.55), 220);
-              return { width, height };
-            },
             videoConstraints: {
               facingMode: targetDeviceId ? undefined : { ideal: 'environment' },
               deviceId: targetDeviceId ? { exact: targetDeviceId } : undefined,
@@ -473,16 +462,6 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
     },
     [handleScannedCode, stopAllScanners, queryCameras]
   );
-
-  // Switch between Quagga and Html5Qrcode
-  const handleToggleEngine = (newEngine: ScannerEngine) => {
-    setActiveEngine(newEngine);
-    if (newEngine === 'quagga') {
-      startQuagga(selectedCameraId);
-    } else {
-      startHtml5Qrcode(selectedCameraId);
-    }
-  };
 
   // Switch Camera Lens (e.g. tablet wide angle vs main rear lens)
   const handleSwitchCamera = async () => {
@@ -672,36 +651,25 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
       {/* Full screen on mobile (<640px), rounded modal on tablet/desktop */}
       <div className="bg-stone-900 w-full h-full sm:h-auto sm:max-w-md sm:rounded-3xl shadow-2xl border-0 sm:border sm:border-stone-700 overflow-hidden flex flex-col animate-fadeIn text-white">
         
-        {/* Modal Top Bar */}
+        {/* Modal Top Bar - Clean & Minimalist */}
         <div className="px-4 py-3 border-b border-stone-800 flex items-center justify-between bg-stone-950">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-rose-600 text-white flex items-center justify-center shadow-xs">
-              <Camera className="w-4 h-4" />
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-rose-600/90 text-white flex items-center justify-center shadow-xs">
+              <Camera className="w-3.5 h-3.5" />
             </div>
-            <div>
-              <div className="flex items-center gap-1.5">
-                <h3 className="text-sm font-bold leading-tight">
-                  {title || 'ဘားကုဒ် စကင်ဖတ်ရန်'}
-                </h3>
-                <span className="text-[9px] bg-emerald-500/20 text-emerald-400 font-bold px-1.5 py-0.5 rounded border border-emerald-500/30 flex items-center gap-0.5">
-                  <Sparkles className="w-2.5 h-2.5" />
-                  {activeEngine === 'html5' ? 'PRECISION AI' : '1D COMPAT'}
-                </span>
-              </div>
-              <span className="text-[10px] text-stone-400">
-                EAN-13 • UPC • Code 128
-              </span>
-            </div>
+            <h3 className="text-sm font-bold text-white tracking-tight">
+              {title || 'ဘားကုဒ် စကင်ဖတ်ရန်'}
+            </h3>
           </div>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5">
             {/* Multi-camera switch button */}
             {availableCameras.length > 1 && (
               <button
                 type="button"
                 onClick={handleSwitchCamera}
-                className="p-2 rounded-xl text-stone-300 hover:text-white hover:bg-stone-800 transition-colors cursor-pointer"
-                title="ကင်မရာမှန်ဘီလူးပြောင်းမည် (Switch Camera)"
+                className="p-1.5 rounded-lg text-stone-300 hover:text-white hover:bg-stone-800 transition-colors cursor-pointer"
+                title="ကင်မရာ ပြောင်းမည်"
               >
                 <SwitchCamera className="w-4 h-4" />
               </button>
@@ -712,7 +680,7 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
               <button
                 type="button"
                 onClick={toggleTorch}
-                className={`p-2 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1 ${
+                className={`p-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center gap-1 ${
                   torchOn
                     ? 'bg-amber-400 text-stone-900 shadow-xs'
                     : 'text-stone-300 hover:text-white hover:bg-stone-800'
@@ -723,90 +691,20 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
               </button>
             )}
 
-            {/* Tips Toggle */}
-            <button
-              type="button"
-              onClick={() => setShowTips(!showTips)}
-              className="p-2 rounded-xl text-stone-300 hover:text-white hover:bg-stone-800 transition-colors cursor-pointer"
-              title="အကြံပြုချက်"
-            >
-              <Info className="w-4 h-4" />
-            </button>
-
             {/* Close Button */}
             <button
               type="button"
               onClick={onClose}
-              className="p-2 rounded-xl text-stone-400 hover:text-white hover:bg-stone-800 transition-colors cursor-pointer"
+              className="p-1.5 rounded-lg text-stone-400 hover:text-white hover:bg-stone-800 transition-colors cursor-pointer ml-1"
+              title="ပိတ်မည်"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </button>
           </div>
         </div>
-
-        {/* Engine Switcher Bar */}
-        <div className="px-3 py-1.5 bg-stone-900 border-b border-stone-800 flex items-center justify-between text-xs">
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={() => handleToggleEngine('html5')}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-colors cursor-pointer flex items-center gap-1 ${
-                activeEngine === 'html5'
-                  ? 'bg-rose-600 text-white shadow-xs'
-                  : 'text-stone-400 hover:text-stone-200 hover:bg-stone-800'
-              }`}
-            >
-              <Layers className="w-3 h-3" />
-              <span>တိကျမှုမြင့် စကင် (Auto Precision)</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleToggleEngine('quagga')}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-colors cursor-pointer flex items-center gap-1 ${
-                activeEngine === 'quagga'
-                  ? 'bg-rose-600 text-white shadow-xs'
-                  : 'text-stone-400 hover:text-stone-200 hover:bg-stone-800'
-              }`}
-            >
-              <Smartphone className="w-3 h-3" />
-              <span>အရန်စကင် (Legacy 1D)</span>
-            </button>
-          </div>
-
-          {/* Photo Snap Button */}
-          <button
-            type="button"
-            disabled={isPhotoScanning}
-            onClick={() => photoInputRef.current?.click()}
-            className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-stone-800 hover:bg-stone-700 text-amber-300 border border-amber-500/30 transition-colors cursor-pointer flex items-center gap-1 shrink-0"
-            title="ဖုန်းကင်မရာဖြင့် ဓာတ်ပုံရိုက်၍ စကင်ဖတ်မည်"
-          >
-            {isPhotoScanning ? (
-              <RefreshCw className="w-3 h-3 animate-spin text-amber-400" />
-            ) : (
-              <Upload className="w-3 h-3 text-amber-400" />
-            )}
-            <span>{isPhotoScanning ? 'ဖတ်နေသည်...' : 'ဓာတ်ပုံရိုက်မည်'}</span>
-          </button>
-        </div>
-
-        {/* Tip Banner (Collapsible) */}
-        {showTips && (
-          <div className="bg-amber-950/70 px-4 py-2 border-b border-amber-800/80 text-amber-200 text-xs space-y-1">
-            <p className="font-bold flex items-center gap-1">
-              <Info className="w-3.5 h-3.5 text-amber-400" />
-              <span>ဖုန်းနှင့် တက်ဘလက်များအတွက် အကြံပြုချက်:</span>
-            </p>
-            <ul className="list-disc pl-4 text-[11px] space-y-0.5 text-amber-300/90">
-              <li>ဖုန်းကို ဘားကုဒ်နှင့် <strong>၁၂ ~ ၂၀ စင်တီမီတာ (လက်တစ်ဝါးခန့်)</strong> ခွာထားပါ (နီးလွန်းပါက ဝါးသွားတတ်သည်)။</li>
-              <li>ဗူးခုံး သို့မဟုတ် အရောင်ပြန်ပါက အပေါ်ရှိ <strong>"ဓာတ်ပုံရိုက်မည်"</strong> ခလုတ်ကို နှိပ်၍ ကြည်လင်ပြတ်သားစွာ ဖတ်နိုင်ပါသည်။</li>
-              <li>သေးငယ်သော ဘားကုဒ်များအတွက် အောက်ရှိ <strong>1.5x / 2x Zoom</strong> ကို အသုံးပြုပါ။</li>
-            </ul>
-          </div>
-        )}
 
         {/* Camera Viewport Area */}
-        <div className="relative flex-1 sm:flex-none sm:aspect-square bg-black flex items-center justify-center overflow-hidden min-h-[260px] sm:min-h-[320px]">
+        <div className="relative flex-1 sm:flex-none sm:aspect-square bg-black flex items-center justify-center overflow-hidden min-h-[280px] sm:min-h-[320px]">
           
           {/* Quagga Scanner Viewport Container */}
           <div
@@ -826,7 +724,7 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
 
           {/* Quick Hardware Zoom Control Bar */}
           {hasZoom && (
-            <div className="absolute top-3 left-3 z-20 flex items-center gap-1 bg-black/70 backdrop-blur-xs p-1 rounded-xl border border-white/20">
+            <div className="absolute top-3 left-3 z-20 flex items-center gap-1 bg-black/60 backdrop-blur-xs p-1 rounded-xl border border-white/10">
               <ZoomIn className="w-3 h-3 text-stone-300 ml-1" />
               {[1, 1.5, 2].map((z) => {
                 if (z > zoomRange.max && z !== 1) return null;
@@ -848,56 +746,85 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
             </div>
           )}
 
-          {/* Laser Reticle & Guidance Overlay */}
+          {/* Single, Sleek Minimalist Scanner Reticle (WeChat / iOS style) */}
           {!cameraError && (
             <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center p-4">
-              {/* Wide Horizontal Rectangular Reticle suited for 1D barcodes */}
+              {/* Single Viewfinder Frame */}
               <div
-                className={`w-64 sm:w-72 h-28 relative transition-all duration-150 rounded-2xl overflow-hidden border-2 ${
+                className={`w-64 sm:w-72 h-32 relative transition-all duration-200 rounded-2xl ${
                   scanSuccessText
-                    ? 'border-emerald-400 bg-emerald-500/20 shadow-[0_0_30px_rgba(52,211,153,0.7)] scale-102'
+                    ? 'scale-102 bg-emerald-500/10'
                     : scanErrorText
-                    ? 'border-red-500 bg-red-500/25 shadow-[0_0_30px_rgba(239,68,68,0.8)] scale-102 animate-shake'
-                    : 'border-white/80 bg-black/15 shadow-[0_0_15px_rgba(0,0,0,0.4)]'
+                    ? 'scale-102 bg-red-500/15 animate-shake'
+                    : 'bg-black/10'
                 }`}
               >
-                {/* Horizontal High-Speed Scanning Laser */}
+                {/* 4 Crisp Corner Angles */}
                 <div
-                  className={`absolute inset-x-0 top-1/2 -translate-y-1/2 h-0.5 shadow-lg ${
+                  className={`absolute top-0 left-0 w-6 h-6 border-t-3 border-l-3 rounded-tl-xl transition-colors ${
                     scanSuccessText
-                      ? 'bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,1)]'
+                      ? 'border-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.8)]'
                       : scanErrorText
-                      ? 'bg-red-500 shadow-[0_0_16px_rgba(239,68,68,1)] h-1'
-                      : 'bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,1)] animate-pulse'
+                      ? 'border-red-500 shadow-[0_0_12px_rgba(239,68,68,0.8)]'
+                      : 'border-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]'
+                  }`}
+                />
+                <div
+                  className={`absolute top-0 right-0 w-6 h-6 border-t-3 border-r-3 rounded-tr-xl transition-colors ${
+                    scanSuccessText
+                      ? 'border-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.8)]'
+                      : scanErrorText
+                      ? 'border-red-500 shadow-[0_0_12px_rgba(239,68,68,0.8)]'
+                      : 'border-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]'
+                  }`}
+                />
+                <div
+                  className={`absolute bottom-0 left-0 w-6 h-6 border-b-3 border-l-3 rounded-bl-xl transition-colors ${
+                    scanSuccessText
+                      ? 'border-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.8)]'
+                      : scanErrorText
+                      ? 'border-red-500 shadow-[0_0_12px_rgba(239,68,68,0.8)]'
+                      : 'border-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]'
+                  }`}
+                />
+                <div
+                  className={`absolute bottom-0 right-0 w-6 h-6 border-b-3 border-r-3 rounded-br-xl transition-colors ${
+                    scanSuccessText
+                      ? 'border-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.8)]'
+                      : scanErrorText
+                      ? 'border-red-500 shadow-[0_0_12px_rgba(239,68,68,0.8)]'
+                      : 'border-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]'
                   }`}
                 />
 
-                {/* Corner Crosshairs */}
-                <div className="absolute top-1.5 left-1.5 w-3.5 h-3.5 border-t-2 border-l-2 border-white" />
-                <div className="absolute top-1.5 right-1.5 w-3.5 h-3.5 border-t-2 border-r-2 border-white" />
-                <div className="absolute bottom-1.5 left-1.5 w-3.5 h-3.5 border-b-2 border-l-2 border-white" />
-                <div className="absolute bottom-1.5 right-1.5 w-3.5 h-3.5 border-b-2 border-r-2 border-white" />
+                {/* Laser Scanning Beam */}
+                <div
+                  className={`absolute inset-x-2 top-1/2 -translate-y-1/2 h-0.5 rounded-full ${
+                    scanSuccessText
+                      ? 'bg-emerald-400 shadow-[0_0_14px_rgba(52,211,153,1)]'
+                      : scanErrorText
+                      ? 'bg-red-500 shadow-[0_0_14px_rgba(239,68,68,1)]'
+                      : 'bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.9)] animate-pulse'
+                  }`}
+                />
               </div>
 
-              {/* Status Badge */}
+              {/* Single Clean Guidance & Feedback Message */}
               {scanSuccessText ? (
-                <div className="mt-3 px-4 py-1.5 rounded-full bg-emerald-500 text-white text-xs font-extrabold flex items-center gap-1.5 shadow-lg animate-bounce">
-                  <CheckCircle className="w-4 h-4" />
-                  <span className="truncate max-w-[220px]">{scanSuccessText} ထည့်ပြီး</span>
+                <div className="mt-4 px-4 py-1.5 rounded-full bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-lg animate-bounce">
+                  <CheckCircle className="w-4 h-4 shrink-0" />
+                  <span className="truncate max-w-[240px]">{scanSuccessText} ထည့်ပြီး</span>
                 </div>
               ) : scanErrorText ? (
-                <div className="mt-3 px-4 py-1.5 rounded-full bg-red-600 text-white text-xs font-black flex items-center gap-1.5 shadow-xl border border-red-300 animate-bounce">
-                  <AlertCircle className="w-4 h-4 text-white shrink-0" />
+                <div className="mt-4 px-4 py-1.5 rounded-full bg-red-600 text-white text-xs font-bold flex items-center gap-1.5 shadow-lg animate-shake">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
                   <span className="truncate max-w-[260px]">{scanErrorText}</span>
                 </div>
               ) : (
-                <div className="mt-2.5 text-center space-y-0.5">
-                  <span className="px-3 py-1 rounded-full bg-black/75 text-white text-[11px] font-medium backdrop-blur-xs inline-block shadow-sm">
-                    ဘားကုဒ်ကို မျဉ်းနီတန်းအလယ် တည့်တည့်ချိန်ပါ
+                <div className="mt-4">
+                  <span className="px-3.5 py-1.5 rounded-full bg-black/60 text-white/90 text-[11px] font-medium backdrop-blur-md shadow-md inline-block">
+                    ဘားကုဒ်ကို ဘောင်အတွင်း ချိန်ပါ
                   </span>
-                  <p className="text-[10px] text-stone-400">
-                    လက်တစ်ဝါးခန့် (10-15cm) ခွာ၍ ချိန်ပေးပါ
-                  </p>
                 </div>
               )}
             </div>
@@ -962,7 +889,7 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
             className="flex items-center gap-1.5"
           >
             <div className="relative flex-1">
-              <div className="absolute left-2.5 top-2 text-stone-400 pointer-events-none">
+              <div className="absolute left-2.5 top-2.5 text-stone-400 pointer-events-none">
                 <Search className="w-3.5 h-3.5" />
               </div>
               <input
@@ -982,6 +909,22 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
                 </button>
               )}
             </div>
+
+            {/* Quick Photo Snapshot Button */}
+            <button
+              type="button"
+              disabled={isPhotoScanning}
+              onClick={() => photoInputRef.current?.click()}
+              className="px-2.5 py-2 rounded-xl text-xs font-medium bg-stone-800 hover:bg-stone-700 text-amber-300 border border-stone-700 transition-colors cursor-pointer flex items-center gap-1 shrink-0"
+              title="ဓာတ်ပုံရိုက်၍ စကင်ဖတ်မည်"
+            >
+              {isPhotoScanning ? (
+                <RefreshCw className="w-3.5 h-3.5 animate-spin text-amber-400" />
+              ) : (
+                <Upload className="w-3.5 h-3.5 text-amber-400" />
+              )}
+              <span className="text-[11px]">ဓာတ်ပုံ</span>
+            </button>
 
             <button
               type="submit"

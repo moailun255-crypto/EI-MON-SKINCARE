@@ -156,11 +156,15 @@
   }
 }
 
-/* CLEAN CAMERA SCANNER STYLING */
-#minimal-pos-camera-view #qr-shaded-region {
+/* CLEAN CAMERA SCANNER STYLING - Suppress html5-qrcode default ugly shaded double-boxes */
+#minimal-pos-camera-view #qr-shaded-region,
+#pos-html5-camera-box #qr-shaded-region,
+[id^="pos-html5-"] #qr-shaded-region,
+div[id*="camera"] #qr-shaded-region {
   display: none !important;
 }
 
+#pos-html5-camera-box video,
 #minimal-pos-camera-view video {
   object-fit: cover !important;
   width: 100% !important;
