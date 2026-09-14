@@ -101,21 +101,23 @@ export const SecurityBackupPage: React.FC = () => {
     setPassError(null);
   };
 
-  const handleSaveProfile = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSaveProfile = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const cleanAddr = (profileForm.addressMy || profileForm.address || '').trim();
+    const cleanName = (profileForm.name || profileForm.nameMy || '').trim();
     const updated: StoreProfile = {
       ...profileForm,
-      name: profileForm.name.trim(),
-      nameMy: profileForm.name.trim() || profileForm.nameMy,
-      address: profileForm.addressMy?.trim() || profileForm.address,
-      addressMy: profileForm.addressMy?.trim() || profileForm.addressMy,
+      name: cleanName,
+      nameMy: cleanName,
+      address: cleanAddr,
+      addressMy: cleanAddr,
       phone: profileForm.phone.trim(),
       activeCashier: profileForm.activeCashier.trim() || 'မအိမွန်',
       kpayNumber: profileForm.kpayNumber?.trim() || '',
       kpayName: profileForm.kpayName?.trim() || '',
     };
     updateStoreProfile(updated);
-    showToast('ဆိုင်အချက်အလက်နှင့် ဆက်တင်များ အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ (Settings Saved)');
+    showToast('ဆိုင်လိပ်စာနှင့် ဆက်တင်များ အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ (ဘောင်ချာတွင် ချက်ချင်းပြောင်းလဲပါမည်)');
   };
 
   const showToast = (msg: string) => {
@@ -157,18 +159,28 @@ export const SecurityBackupPage: React.FC = () => {
           onSubmit={handleSaveProfile}
           className="bg-white p-5 sm:p-6 rounded-3xl border border-stone-200 shadow-xs space-y-4"
         >
-          <div className="flex items-center gap-2 pb-2 border-b border-stone-100">
-            <div className="p-2 rounded-xl bg-rose-50 text-rose-700">
-              <Store className="w-5 h-5" />
+          <div className="flex items-center justify-between pb-2 border-b border-stone-100">
+            <div className="flex items-center gap-2">
+              <div className="p-2 rounded-xl bg-rose-50 text-rose-700">
+                <Store className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-extrabold text-stone-900 text-sm sm:text-base">
+                  ဆိုင်အချက်အလက်နှင့် ပြေစာပုံစံ
+                </h3>
+                <p className="text-[11px] text-stone-400">
+                  ဘောင်ချာပေါ်တွင် ဖော်ပြမည့် အချက်အလက်များ
+                </p>
+              </div>
             </div>
-            <div>
-              <h3 className="font-extrabold text-stone-900 text-sm sm:text-base">
-                ဆိုင်အချက်အလက်နှင့် ပြေစာပုံစံ
-              </h3>
-              <p className="text-[11px] text-stone-400">
-                ဘောင်ချာပေါ်တွင် ဖော်ပြမည့် အချက်အလက်များ
-              </p>
-            </div>
+
+            <button
+              type="submit"
+              className="py-1.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+            >
+              <Save className="w-3.5 h-3.5" />
+              <span>ဆက်တင်သိမ်းမည်</span>
+            </button>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
@@ -188,16 +200,27 @@ export const SecurityBackupPage: React.FC = () => {
             </div>
 
             <div className="sm:col-span-2">
-              <label className="block text-xs font-bold text-stone-700 mb-1">
-                ဆိုင်လိပ်စာ
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-bold text-stone-700">
+                  ဆိုင်လိပ်စာ (ဘောင်ချာပေါ်တွင် ပေါ်မည့်လိပ်စာ)
+                </label>
+                <span className="text-[10px] text-rose-600 font-medium">
+                  ပြောင်းလဲပြီးပါက 'ဆက်တင်သိမ်းမည်' ကို နှိပ်ပါ
+                </span>
+              </div>
               <input
                 type="text"
-                value={profileForm.addressMy}
-                onChange={(e) =>
-                  setProfileForm({ ...profileForm, addressMy: e.target.value })
-                }
-                className="w-full text-xs sm:text-sm px-3 py-2 rounded-xl border border-stone-200"
+                value={profileForm.addressMy || profileForm.address || ''}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setProfileForm((prev) => ({
+                    ...prev,
+                    addressMy: val,
+                    address: val,
+                  }));
+                }}
+                placeholder="အမှတ်၊ လမ်း၊ မြို့နယ်၊ မြို့..."
+                className="w-full text-xs sm:text-sm px-3 py-2 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-rose-500"
               />
             </div>
 
@@ -230,6 +253,24 @@ export const SecurityBackupPage: React.FC = () => {
                 }
                 className="w-full text-xs sm:text-sm px-3 py-2 rounded-xl border border-stone-200"
               />
+            </div>
+
+            {/* Live Receipt Header Preview */}
+            <div className="sm:col-span-2 bg-stone-50 border border-dashed border-stone-300 rounded-2xl p-3.5 text-center">
+              <span className="text-[10px] uppercase font-bold text-stone-400 tracking-wider block mb-1">
+                ဘောင်ချာ/ပြေစာ ထိပ်စီးတွင် ပေါ်မည့်ပုံစံ အစမ်းကြည့် (Voucher Header Preview)
+              </span>
+              <div className="max-w-[280px] mx-auto bg-white p-3 rounded-xl border border-stone-200 shadow-2xs font-mono text-xs space-y-1">
+                <div className="font-black text-stone-900 text-sm uppercase">
+                  {profileForm.name || 'EI MON SKINCARE'}
+                </div>
+                <div className="text-[10px] text-stone-600 leading-snug">
+                  {profileForm.addressMy || profileForm.address || 'ဆိုင်လိပ်စာ မထည့်ရသေးပါ'}
+                </div>
+                <div className="text-[10px] text-stone-700 font-bold">
+                  ဖုန်း - {profileForm.phone || '09-...'}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -276,52 +317,6 @@ export const SecurityBackupPage: React.FC = () => {
                     })
                   }
                   className="w-full text-xs px-3 py-2 rounded-xl border border-stone-200 font-bold"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* KBZPay Digital Payment Settings */}
-          <div className="pt-3 border-t border-stone-100 space-y-3">
-            <h4 className="text-xs font-bold text-stone-900 flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-blue-600 inline-block" />
-              <span>KBZPay ဒစ်ဂျစ်တယ်ငွေပေးချေမှု ဆက်တင်များ</span>
-            </h4>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-[11px] font-semibold text-stone-600 mb-1">
-                  KBZPay ဖုန်းနံပါတ်
-                </label>
-                <input
-                  type="text"
-                  placeholder="09..."
-                  value={profileForm.kpayNumber || ''}
-                  onChange={(e) =>
-                    setProfileForm({
-                      ...profileForm,
-                      kpayNumber: e.target.value,
-                    })
-                  }
-                  className="w-full text-xs px-3 py-2 rounded-xl border border-stone-200 font-mono"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-semibold text-stone-600 mb-1">
-                  KBZPay အကောင့်ပိုင်ရှင် အမည်
-                </label>
-                <input
-                  type="text"
-                  placeholder="ဒေါ်အိမွန်..."
-                  value={profileForm.kpayName || ''}
-                  onChange={(e) =>
-                    setProfileForm({
-                      ...profileForm,
-                      kpayName: e.target.value,
-                    })
-                  }
-                  className="w-full text-xs px-3 py-2 rounded-xl border border-stone-200"
                 />
               </div>
             </div>

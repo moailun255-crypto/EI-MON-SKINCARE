@@ -15,6 +15,9 @@ import {
   CheckCircle2,
   Image as ImageIcon,
   Receipt,
+  Edit3,
+  Save,
+  Store,
 } from 'lucide-react';
 
 interface ReceiptModalProps {
@@ -23,9 +26,18 @@ interface ReceiptModalProps {
 }
 
 export const ReceiptModal: React.FC<ReceiptModalProps> = ({ order, onClose }) => {
-  const { storeProfile, useMyanmarDigits } = useStore();
+  const { storeProfile, useMyanmarDigits, updateStoreProfile } = useStore();
   const [isSavingImage, setIsSavingImage] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+  // Quick Shop Profile / Address Edit State
+  const [showEditShopModal, setShowEditShopModal] = useState(false);
+  const [editShopForm, setEditShopForm] = useState({
+    name: '',
+    address: '',
+    phone: '',
+  });
+  const [shopUpdatedToast, setShopUpdatedToast] = useState(false);
 
   // Photo Album Saver State
   const [savedImageUrl, setSavedImageUrl] = useState<string | null>(null);
@@ -34,6 +46,38 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ order, onClose }) =>
   const [downloadToast, setDownloadToast] = useState(false);
 
   if (!order) return null;
+
+  const handleOpenEditShop = () => {
+    setEditShopForm({
+      name: storeProfile.name || storeProfile.nameMy || 'EI MON SKINCARE',
+      address: storeProfile.addressMy || storeProfile.address || '',
+      phone: storeProfile.phone || '',
+    });
+    setShowEditShopModal(true);
+  };
+
+  const handleSaveShopInfo = (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleanAddr = editShopForm.address.trim();
+    const cleanName = editShopForm.name.trim();
+    const cleanPhone = editShopForm.phone.trim();
+
+    updateStoreProfile({
+      name: cleanName,
+      nameMy: cleanName,
+      address: cleanAddr,
+      addressMy: cleanAddr,
+      phone: cleanPhone,
+    });
+
+    // Invalidate cached preview image if any
+    setSavedImageUrl(null);
+    setSavedImageBlob(null);
+
+    setShowEditShopModal(false);
+    setShopUpdatedToast(true);
+    setTimeout(() => setShopUpdatedToast(false), 3000);
+  };
 
   // Print voucher in dedicated window
   const handlePrint = () => {
@@ -310,7 +354,16 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ order, onClose }) =>
             </div>
           </div>
 
-          {/* Quick Notice Banner */}
+          {/* Quick Notice Banner & Address Change Notification */}
+          {shopUpdatedToast && (
+            <div className="bg-emerald-500 text-white px-4 py-2 flex items-center justify-between text-xs font-bold animate-fadeIn">
+              <span className="flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4" />
+                <span>ဆိုင်လိပ်စာနှင့် အချက်အလက်များ အောင်မြင်စွာ ပြောင်းလဲပြီးပါပြီ</span>
+              </span>
+            </div>
+          )}
+
           <div className="bg-rose-50/80 px-4 py-2 border-b border-rose-100 flex items-center justify-between text-xs text-rose-900">
             <span className="flex items-center gap-1.5 font-bold">
               <Camera className="w-4 h-4 text-rose-600 shrink-0" />
@@ -331,12 +384,22 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ order, onClose }) =>
               style={{ width: '100%' }}
             >
               {/* Brand Header */}
-              <div className="text-center pb-2 border-b border-dashed border-stone-300">
-                <h1 className="text-base font-black uppercase text-stone-900 tracking-wider">
-                  {storeProfile.name || storeProfile.nameMy || 'EI MON SKINCARE'}
-                </h1>
+              <div className="text-center pb-2 border-b border-dashed border-stone-300 relative group">
+                <div className="flex items-center justify-center gap-1.5">
+                  <h1 className="text-base font-black uppercase text-stone-900 tracking-wider">
+                    {storeProfile.name || storeProfile.nameMy || 'EI MON SKINCARE'}
+                  </h1>
+                  <button
+                    type="button"
+                    onClick={handleOpenEditShop}
+                    className="no-print p-1 rounded-lg text-stone-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                    title="ဆိုင်လိပ်စာနှင့် အချက်အလက်များ ချက်ချင်းပြင်ဆင်မည်"
+                  >
+                    <Edit3 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
                 <p className="text-[10px] text-stone-600 mt-0.5 leading-snug">
-                  {storeProfile.address || storeProfile.addressMy}
+                  {storeProfile.addressMy || storeProfile.address || 'အမှတ် (၄၂)၊ အင်းစိန်လမ်းမကြီး၊ လှည်းတန်း၊ ကမာရွတ်မြို့နယ်၊ ရန်ကုန်မြို့။'}
                 </p>
                 <p className="text-[10px] text-stone-700 font-bold">
                   ဖုန်း - {storeProfile.phone}
@@ -496,8 +559,18 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ order, onClose }) =>
             </div>
 
             {/* Sub-actions */}
-            <div className="flex items-center justify-between gap-2 pt-1.5 border-t border-stone-100">
-              <div className="flex items-center gap-1.5">
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-1.5 border-t border-stone-100">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={handleOpenEditShop}
+                  className="py-2 px-3 rounded-xl border border-rose-200 bg-rose-50/50 hover:bg-rose-100 text-rose-700 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer min-h-[38px]"
+                  title="ဘောင်ချာပေါ်ရှိ ဆိုင်လိပ်စာနှင့် ဖုန်းနံပါတ် ချက်ချင်းပြင်ဆင်မည်"
+                >
+                  <Edit3 className="w-3.5 h-3.5 text-rose-600" />
+                  <span>ဆိုင်လိပ်စာပြင်မည်</span>
+                </button>
+
                 <button
                   type="button"
                   onClick={() => {
@@ -546,6 +619,101 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ order, onClose }) =>
               onClose();
             }}
           />
+        )}
+
+        {/* Quick Edit Shop Info & Address Modal */}
+        {showEditShopModal && (
+          <div className="fixed inset-0 z-60 flex items-center justify-center p-3 bg-stone-950/80 backdrop-blur-xs animate-fadeIn">
+            <div className="bg-white rounded-3xl max-w-sm w-full p-5 shadow-2xl border border-stone-100 space-y-4">
+              <div className="flex items-center justify-between pb-2 border-b border-stone-100">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
+                    <Store className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="font-extrabold text-stone-900 text-sm">
+                      ဆိုင်လိပ်စာနှင့် အချက်အလက် ပြင်ဆင်ရန်
+                    </h3>
+                    <p className="text-[10px] text-stone-400">
+                      ဘောင်ချာပေါ်တွင် ချက်ချင်းပြောင်းလဲသွားပါမည်
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowEditShopModal(false)}
+                  className="p-1.5 rounded-xl text-stone-400 hover:text-stone-700 hover:bg-stone-100 cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveShopInfo} className="space-y-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                    ဆိုင်အမည်
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editShopForm.name}
+                    onChange={(e) =>
+                      setEditShopForm({ ...editShopForm, name: e.target.value })
+                    }
+                    className="w-full text-xs px-3 py-2 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-rose-500 font-bold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                    ဆိုင်လိပ်စာ (ဘောင်ချာတွင် ပေါ်မည့်လိပ်စာ)
+                  </label>
+                  <textarea
+                    rows={2}
+                    required
+                    value={editShopForm.address}
+                    onChange={(e) =>
+                      setEditShopForm({ ...editShopForm, address: e.target.value })
+                    }
+                    placeholder="ဆိုင်လိပ်စာ ထည့်ပါ..."
+                    className="w-full text-xs px-3 py-2 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-rose-500 leading-relaxed"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                    ဆိုင်ဖုန်းနံပါတ်
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editShopForm.phone}
+                    onChange={(e) =>
+                      setEditShopForm({ ...editShopForm, phone: e.target.value })
+                    }
+                    className="w-full text-xs px-3 py-2 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-rose-500 font-mono"
+                  />
+                </div>
+
+                <div className="pt-2 flex items-center justify-end gap-2 border-t border-stone-100">
+                  <button
+                    type="button"
+                    onClick={() => setShowEditShopModal(false)}
+                    className="py-2 px-3 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-bold transition-colors cursor-pointer"
+                  >
+                    မလုပ်တော့ပါ
+                  </button>
+                  <button
+                    type="submit"
+                    className="py-2 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                  >
+                    <Save className="w-3.5 h-3.5" />
+                    <span>ချက်ချင်းသိမ်းမည်</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
         )}
       </div>
 

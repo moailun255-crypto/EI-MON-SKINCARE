@@ -55,6 +55,7 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
   const [hasTorch, setHasTorch] = useState<boolean>(false);
   const [torchOn, setTorchOn] = useState<boolean>(false);
   const [isMutedState, setIsMutedState] = useState<boolean>(getSoundMuted());
+  const [isCameraLoading, setIsCameraLoading] = useState<boolean>(true);
 
   // Multi-camera and Zoom controls
   const [availableCameras, setAvailableCameras] = useState<MediaDeviceInfo[]>([]);
@@ -71,6 +72,7 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const zxingReaderRef = useRef<BrowserMultiFormatReader | null>(null);
+  const animFrameRef = useRef<number | null>(null);
   const isDetectingRef = useRef<boolean>(false);
   const isCooldownRef = useRef<boolean>(false);
   const lastScannedCodeRef = useRef<string>('');
@@ -157,6 +159,11 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
   const stopCamera = useCallback(() => {
     isDetectingRef.current = false;
 
+    if (animFrameRef.current !== null) {
+      cancelAnimationFrame(animFrameRef.current);
+      animFrameRef.current = null;
+    }
+
     if (zxingReaderRef.current) {
       try {
         zxingReaderRef.current.stopContinuousDecode();
@@ -181,6 +188,7 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
     if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
+    setIsCameraLoading(false);
   }, []);
 
   // Enumerate cameras
@@ -195,7 +203,7 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
     }
   }, []);
 
-  // Launch the camera and initiate the ultra-fast dual-engine scanning loop
+  // Launch camera smoothly with optimal resolution and single-engine detection (0% CPU lag)
   const startCamera = useCallback(
     async (deviceId?: string) => {
       try {
@@ -206,8 +214,10 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
         setHasTorch(false);
         setHasHardwareZoom(false);
         setCurrentZoom(1);
+        setIsCameraLoading(true);
 
         if (!navigator?.mediaDevices?.getUserMedia) {
+          setIsCameraLoading(false);
           setCameraError(
             'ဤဘရောက်ဇာတွင် ကင်မရာစနစ် မထောက်ပံ့သေးပါ သို့မဟုတ် HTTPS လုံခြုံရေးလိုင်း လိုအပ်ပါသည်။'
           );
@@ -216,68 +226,54 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
 
         stopCamera();
 
-        // 1. Request High-Definition stream (1080p ideal) with continuous autofocus & exposure
-        let stream: MediaStream;
-        try {
-          const constraints: MediaStreamConstraints = {
-            video: {
-              deviceId: deviceId ? { exact: deviceId } : undefined,
-              facingMode: deviceId ? undefined : { ideal: 'environment' },
-              width: { ideal: 1920, min: 640 },
-              height: { ideal: 1080, min: 480 },
-              advanced: [
-                { focusMode: 'continuous' } as any,
-                { exposureMode: 'continuous' } as any,
-                { whiteBalanceMode: 'continuous' } as any,
-              ],
-            } as any,
-            audio: false,
-          };
-          stream = await navigator.mediaDevices.getUserMedia(constraints);
-        } catch {
-          // Resilient fallback: standard video constraints if advanced constraints fail
-          stream = await navigator.mediaDevices.getUserMedia({
-            video: deviceId
-              ? { deviceId: { exact: deviceId } }
-              : { facingMode: { ideal: 'environment' } },
-            audio: false,
-          });
-        }
+        // 1. Optimal 720p HD constraints: Fast hardware lock without mode renegotiation or black screen
+        const constraints: MediaStreamConstraints = {
+          video: deviceId
+            ? { deviceId: { exact: deviceId } }
+            : {
+                facingMode: { ideal: 'environment' },
+                width: { ideal: 1280, max: 1920 },
+                height: { ideal: 720, max: 1080 },
+              },
+          audio: false,
+        };
 
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
         mediaStreamRef.current = stream;
 
         const video = videoRef.current;
-        if (!video) return;
+        if (!video) {
+          setIsCameraLoading(false);
+          return;
+        }
 
         video.srcObject = stream;
         video.setAttribute('playsinline', 'true');
         video.setAttribute('autoplay', 'true');
         video.muted = true;
 
-        await video.play();
+        try {
+          await video.play();
+        } catch (playErr) {
+          console.warn('Video play interrupted:', playErr);
+        }
 
-        // Check camera hardware capabilities (Torch, Hardware Zoom, Autofocus)
+        // Camera is now streaming smoothly
+        setIsCameraLoading(false);
+
+        // Check camera hardware capabilities safely
         const track = stream.getVideoTracks()[0];
         if (track) {
-          const caps = (track.getCapabilities ? track.getCapabilities() : {}) as any;
-          if (caps?.torch) setHasTorch(true);
-          if (caps?.zoom && caps.zoom.max > 1) {
-            setHasHardwareZoom(true);
-          }
-
-          // Apply continuous autofocus if supported
           try {
-            if ('applyConstraints' in track) {
-              const advancedConstraints: Record<string, unknown>[] = [];
-              if (caps?.focusMode?.includes('continuous')) {
-                advancedConstraints.push({ focusMode: 'continuous' });
-              }
-              if (caps?.exposureMode?.includes('continuous')) {
-                advancedConstraints.push({ exposureMode: 'continuous' });
-              }
-              if (advancedConstraints.length > 0) {
-                await track.applyConstraints({ advanced: advancedConstraints as any });
-              }
+            const caps = (track.getCapabilities ? track.getCapabilities() : {}) as any;
+            if (caps?.torch) setHasTorch(true);
+            if (caps?.zoom && caps.zoom.max > 1) {
+              setHasHardwareZoom(true);
+            }
+            if ('applyConstraints' in track && caps?.focusMode?.includes('continuous')) {
+              await track.applyConstraints({
+                advanced: [{ focusMode: 'continuous' } as any],
+              });
             }
           } catch {
             // ignore
@@ -286,20 +282,18 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
 
         await queryCameras();
 
-        // 2. Start Ultra-Fast Scanning Pipeline
+        // 2. Ultra-Fast Scanning Pipeline with ZERO UI Thread Blocking
         isDetectingRef.current = true;
 
-        // Tier 1: Hardware-accelerated native BarcodeDetector (Chrome, Edge, Android Webview)
-        let nativeDetectorSupported = false;
+        // Check for native GPU-accelerated BarcodeDetector (Chrome, Edge, Android)
+        let nativeDetector: any = null;
         if ('BarcodeDetector' in window) {
           try {
             const BarcodeDetectorClass = (window as unknown as {
-              BarcodeDetector: new (opts: { formats: string[] }) => {
-                detect: (src: HTMLVideoElement) => Promise<Array<{ rawValue: string }>>;
-              };
+              BarcodeDetector: new (opts: { formats: string[] }) => any;
             }).BarcodeDetector;
 
-            const nativeDetector = new BarcodeDetectorClass({
+            nativeDetector = new BarcodeDetectorClass({
               formats: [
                 'ean_13',
                 'ean_8',
@@ -308,81 +302,76 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
                 'code_128',
                 'code_39',
                 'code_93',
-                'itf',
-                'codabar',
                 'qr_code',
               ],
             });
-
-            nativeDetectorSupported = true;
-
-            const runNativeFrameDetection = async () => {
-              if (!isDetectingRef.current) return;
-              if (video && video.readyState >= 2 && !isCooldownRef.current) {
-                try {
-                  const barcodes = await nativeDetector.detect(video);
-                  if (barcodes && barcodes.length > 0 && barcodes[0].rawValue) {
-                    handleScannedCode(barcodes[0].rawValue);
-                  }
-                } catch {
-                  // silent frame miss
-                }
-              }
-
-              if (isDetectingRef.current) {
-                if ('requestVideoFrameCallback' in video) {
-                  // Sync directly with camera hardware refresh (30-60 FPS)
-                  (video as any).requestVideoFrameCallback(runNativeFrameDetection);
-                } else {
-                  requestAnimationFrame(runNativeFrameDetection);
-                }
-              }
-            };
-
-            if ('requestVideoFrameCallback' in video) {
-              (video as any).requestVideoFrameCallback(runNativeFrameDetection);
-            } else {
-              requestAnimationFrame(runNativeFrameDetection);
-            }
-          } catch (e) {
-            console.warn('Native BarcodeDetector init failed, using ZXing:', e);
-            nativeDetectorSupported = false;
+          } catch {
+            nativeDetector = null;
           }
         }
 
-        // Tier 2: ZXing MultiFormatReader with TRY_HARDER = true (Runs in parallel or as primary)
-        // This ensures 100% scanning coverage across iOS Safari, desktop browsers, and all 1D formats
-        try {
-          const hints = new Map<DecodeHintType, any>();
-          hints.set(DecodeHintType.POSSIBLE_FORMATS, [
-            BarcodeFormat.EAN_13,
-            BarcodeFormat.UPC_A,
-            BarcodeFormat.CODE_128,
-            BarcodeFormat.EAN_8,
-            BarcodeFormat.UPC_E,
-            BarcodeFormat.CODE_39,
-            BarcodeFormat.CODE_93,
-            BarcodeFormat.ITF,
-            BarcodeFormat.CODABAR,
-            BarcodeFormat.QR_CODE,
-          ]);
-          hints.set(DecodeHintType.TRY_HARDER, true);
+        if (nativeDetector) {
+          // Hardware-accelerated native detector: Runs off-thread, frame-skipping guard prevents pileup
+          let isProcessingFrame = false;
 
-          // Fast decode cycle: 80ms interval if no native detector, or 180ms background
-          const decodeDelay = nativeDetectorSupported ? 180 : 80;
-          const reader = new BrowserMultiFormatReader(hints, decodeDelay);
-          zxingReaderRef.current = reader;
-
-          reader.decodeFromVideoElementContinuously(video, (result, err) => {
+          const runNativeFrameDetection = async () => {
             if (!isDetectingRef.current) return;
-            if (result && result.getText()) {
-              handleScannedCode(result.getText());
+            const curVid = videoRef.current;
+            if (
+              curVid &&
+              curVid.readyState >= 2 &&
+              !isCooldownRef.current &&
+              !isProcessingFrame
+            ) {
+              isProcessingFrame = true;
+              try {
+                const barcodes = await nativeDetector.detect(curVid);
+                if (barcodes && barcodes.length > 0 && barcodes[0].rawValue) {
+                  handleScannedCode(barcodes[0].rawValue);
+                }
+              } catch {
+                // silent frame miss
+              } finally {
+                isProcessingFrame = false;
+              }
             }
-          });
-        } catch (e) {
-          console.warn('ZXing reader start failed:', e);
+
+            if (isDetectingRef.current) {
+              animFrameRef.current = requestAnimationFrame(runNativeFrameDetection);
+            }
+          };
+
+          animFrameRef.current = requestAnimationFrame(runNativeFrameDetection);
+        } else {
+          // Resilient fallback for older Safari/Firefox browsers without BarcodeDetector
+          // Standard decode cycle without TRY_HARDER to prevent CPU freeze
+          try {
+            const hints = new Map<DecodeHintType, any>();
+            hints.set(DecodeHintType.POSSIBLE_FORMATS, [
+              BarcodeFormat.EAN_13,
+              BarcodeFormat.UPC_A,
+              BarcodeFormat.CODE_128,
+              BarcodeFormat.EAN_8,
+              BarcodeFormat.UPC_E,
+              BarcodeFormat.CODE_39,
+              BarcodeFormat.QR_CODE,
+            ]);
+
+            const reader = new BrowserMultiFormatReader(hints, 160);
+            zxingReaderRef.current = reader;
+
+            reader.decodeFromVideoElementContinuously(video, (result) => {
+              if (!isDetectingRef.current) return;
+              if (result && result.getText()) {
+                handleScannedCode(result.getText());
+              }
+            });
+          } catch (e) {
+            console.warn('ZXing reader start failed:', e);
+          }
         }
       } catch (err: unknown) {
+        setIsCameraLoading(false);
         const errName = err instanceof Error ? err.name : '';
         const errMsg = err instanceof Error ? err.message : String(err);
         const isPermissionDenied =
@@ -528,7 +517,7 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
               </h3>
               <p className="text-[10px] text-emerald-400 font-medium mt-0.5 flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-                <span>全屏极速感应 • 任意一维码/大条码均可秒扫</span>
+                <span>ဘားကုဒ် သို့မဟုတ် QR ကုဒ်အား ကင်မရာရှေ့တွင် ပြပါ</span>
               </p>
             </div>
           </div>
@@ -589,8 +578,17 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
         {/* Camera Viewport Area */}
         <div
           onClick={handleTapToFocus}
-          className="relative flex-1 sm:flex-none sm:aspect-square bg-black flex items-center justify-center overflow-hidden min-h-[320px] sm:min-h-[350px] cursor-crosshair select-none"
+          className="relative flex-1 sm:flex-none sm:aspect-square bg-stone-950 flex items-center justify-center overflow-hidden min-h-[320px] sm:min-h-[350px] cursor-crosshair select-none"
         >
+          {/* Smooth Loading Indicator (Zero Black Screen) */}
+          {isCameraLoading && !cameraError && (
+            <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-stone-950/95 backdrop-blur-xs text-center p-4 select-none">
+              <div className="w-10 h-10 border-3 border-emerald-500 border-t-transparent rounded-full animate-spin mb-3" />
+              <p className="text-xs font-bold text-white">ကင်မရာ ဖွင့်နေပါသည်...</p>
+              <p className="text-[10px] text-stone-400 mt-1">ခေတ္တစောင့်ဆိုင်းပေးပါ</p>
+            </div>
+          )}
+
           {/* Direct Hardware-Accelerated Video Stream Element */}
           <video
             ref={videoRef}
@@ -715,7 +713,7 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
                     <span>မျက်နှာပြင်တစ်ခုလုံး အလိုအလျောက် ဖတ်ရှုနေပါသည်</span>
                   </div>
                   <p className="text-[10px] text-stone-400">
-                    无需对准红线 • 全屏任意距离/角度均可秒扫 • 点击屏幕可快速对焦
+                    ဘားကုဒ်အား ကင်မရာရှေ့တွင် တည့်တည့်ပြပါ • မျက်နှာပြင်ကိုနှိပ်၍ Focus ချိန်နိုင်ပါသည်
                   </p>
                 </div>
               )}

@@ -220,6 +220,12 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (!parsed.orderDeletePassword) {
           parsed.orderDeletePassword = '123456';
         }
+        // Ensure address and addressMy are always strictly synchronized
+        if (parsed.addressMy) {
+          parsed.address = parsed.addressMy;
+        } else if (parsed.address) {
+          parsed.addressMy = parsed.address;
+        }
         return { ...INITIAL_STORE_PROFILE, ...parsed };
       }
       return INITIAL_STORE_PROFILE;
@@ -1158,6 +1164,16 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const updateStoreProfile = (newProfile: Partial<StoreProfile> | StoreProfile) => {
     setStoreProfile((prev) => {
       const updated: StoreProfile = { ...prev, ...newProfile };
+      // Keep address and addressMy tightly synchronized
+      if (newProfile.addressMy !== undefined || newProfile.address !== undefined) {
+        const unifiedAddr = (newProfile.addressMy ?? newProfile.address ?? '').trim();
+        updated.address = unifiedAddr;
+        updated.addressMy = unifiedAddr;
+      }
+      // Keep name and nameMy synchronized if provided
+      if (newProfile.name !== undefined && !newProfile.nameMy) {
+        updated.nameMy = newProfile.name;
+      }
       try {
         localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(updated));
       } catch (err) {
