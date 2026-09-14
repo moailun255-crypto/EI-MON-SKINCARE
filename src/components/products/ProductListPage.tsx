@@ -1,10 +1,11 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useStore } from '../../context/StoreContext';
-import { Product, ProductCategory } from '../../types';
+import { Product, ProductCategory, CategoryItem } from '../../types';
 import { formatMMK } from '../../utils/format';
 import { CATEGORY_LABELS } from '../../utils/translations';
 import { ClearAllProductsModal } from './ClearAllProductsModal';
 import { CameraScannerModal } from '../pos/CameraScannerModal';
+import { CategoryManagerModal } from './CategoryManagerModal';
 import { playBarcodeBeep } from '../../utils/scannerSound';
 import { normalizeBarcode, isBarcodeMatch } from '../../utils/barcodeValidator';
 import {
@@ -25,6 +26,7 @@ import {
   ArrowLeft,
   Camera,
   Barcode,
+  FolderPlus,
 } from 'lucide-react';
 
 export const ProductListPage: React.FC = () => {
@@ -36,19 +38,31 @@ export const ProductListPage: React.FC = () => {
     setActiveTab,
     setSelectedProductForEdit,
     useMyanmarDigits,
-    customCategories,
+    categories,
   } = useStore();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<ProductCategory>('all');
+  const [showCategoryManager, setShowCategoryManager] = useState(false);
+
+  // Group active categories dynamically by group name
+  const groupedCategories = useMemo(() => {
+    const groups: Record<string, CategoryItem[]> = {};
+    categories.forEach((cat) => {
+      const grp = cat.group || 'အခြား';
+      if (!groups[grp]) groups[grp] = [];
+      groups[grp].push(cat);
+    });
+    return groups;
+  }, [categories]);
 
   const getCategoryName = useCallback(
     (catId: string) => {
-      const custom = customCategories.find((c) => c.id === catId);
-      if (custom) return custom.nameMy;
+      const found = categories.find((c) => c.id === catId);
+      if (found) return found.nameMy;
       return CATEGORY_LABELS[catId]?.my || catId;
     },
-    [customCategories]
+    [categories]
   );
   const [stockFilter, setStockFilter] = useState<'all' | 'low' | 'out'>('all');
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -405,63 +419,43 @@ export const ProductListPage: React.FC = () => {
 
         <div className="flex flex-wrap items-center gap-2">
           {/* Category dropdown */}
-          <select
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value as ProductCategory)}
-            className="text-xs font-medium px-3 py-2 rounded-xl border border-stone-200 bg-white focus:outline-none focus:ring-1 focus:ring-rose-500 cursor-pointer"
-          >
-            <option value="all">အမျိုးအစားအားလုံး ({products.length})</option>
-            
-            <optgroup label="မျက်နှာနှင့် အသားအရေထိန်း (Skincare)">
-              {['cleanser', 'toner', 'serum', 'moisturizer', 'sunscreen', 'mask', 'treatment', 'eye_care', 'lip_care', 'exfoliator', 'mist'].map((cat) => (
-                <option key={cat} value={cat}>
-                  {CATEGORY_LABELS[cat]?.my}
-                </option>
+          <div className="flex items-center gap-1.5">
+            <select
+              value={categoryFilter}
+              onChange={(e) => {
+                if (e.target.value === '__manage__') {
+                  setShowCategoryManager(true);
+                } else {
+                  setCategoryFilter(e.target.value as ProductCategory);
+                }
+              }}
+              className="text-xs font-medium px-3 py-2 rounded-xl border border-stone-200 bg-white focus:outline-none focus:ring-1 focus:ring-rose-500 cursor-pointer"
+            >
+              <option value="all">အမျိုးအစားအားလုံး ({products.length})</option>
+              {(Object.entries(groupedCategories) as [string, CategoryItem[]][]).map(([grpName, catList]) => (
+                <optgroup key={grpName} label={grpName}>
+                  {catList.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.nameMy}
+                    </option>
+                  ))}
+                </optgroup>
               ))}
-            </optgroup>
+              <option value="__manage__" className="text-rose-600 font-bold">
+                ⚙️ အမျိုးအစား စီမံမည် / ဖျက်မည်...
+              </option>
+            </select>
 
-            <optgroup label="မိတ်ကပ်နှင့် အလှပြင် (Makeup & Cosmetics)">
-              {['makeup', 'lipstick', 'powder', 'eye_makeup'].map((cat) => (
-                <option key={cat} value={cat}>
-                  {CATEGORY_LABELS[cat]?.my}
-                </option>
-              ))}
-            </optgroup>
-
-            <optgroup label="ခန္ဓာကိုယ်နှင့် ဆံကေသာ (Body & Hair)">
-              {['body', 'bath', 'hair', 'hand_foot'].map((cat) => (
-                <option key={cat} value={cat}>
-                  {CATEGORY_LABELS[cat]?.my}
-                </option>
-              ))}
-            </optgroup>
-
-            <optgroup label="ရေမွှေးနှင့် တစ်ကိုယ်ရေသုံး (Fragrance & Grooming)">
-              {['perfume', 'oral_care', 'men', 'baby_mom'].map((cat) => (
-                <option key={cat} value={cat}>
-                  {CATEGORY_LABELS[cat]?.my}
-                </option>
-              ))}
-            </optgroup>
-
-            <optgroup label="ကိရိယာနှင့် ဖြည့်စွက်စာ (Tools & Wellness)">
-              {['tools', 'supplement', 'set', 'other'].map((cat) => (
-                <option key={cat} value={cat}>
-                  {CATEGORY_LABELS[cat]?.my}
-                </option>
-              ))}
-            </optgroup>
-
-            {customCategories.length > 0 && (
-              <optgroup label="စိတ်ကြိုက် အမျိုးအစားများ (Custom Categories)">
-                {customCategories.map((cc) => (
-                  <option key={cc.id} value={cc.id}>
-                    {cc.nameMy} {cc.nameEn ? `(${cc.nameEn})` : ''}
-                  </option>
-                ))}
-              </optgroup>
-            )}
-          </select>
+            <button
+              type="button"
+              onClick={() => setShowCategoryManager(true)}
+              className="px-2.5 py-2 rounded-xl border border-stone-200 bg-white hover:bg-stone-50 text-stone-700 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+              title="အမျိုးအစားများ စီမံခန့်ခွဲခြင်းနှင့် မလိုအပ်သည်များ ဖျက်ခြင်း"
+            >
+              <FolderPlus className="w-3.5 h-3.5 text-rose-600" />
+              <span className="hidden sm:inline">အမျိုးအစား စီမံမည်</span>
+            </button>
+          </div>
 
           {/* Stock status filter */}
           <div className="flex items-center bg-stone-100 p-0.5 rounded-xl border border-stone-200 text-xs">
@@ -927,6 +921,12 @@ export const ProductListPage: React.FC = () => {
           onScan={handleBarcodeSearch}
         />
       )}
+
+      {/* Category Manager & Deletion Modal */}
+      <CategoryManagerModal
+        isOpen={showCategoryManager}
+        onClose={() => setShowCategoryManager(false)}
+      />
     </div>
   );
 };

@@ -8,13 +8,16 @@ import {
   StoreProfile,
   PageTab,
   PaymentMethod,
+  CategoryItem,
   CustomCategory,
 } from '../types';
 import {
+  INITIAL_PRODUCTS,
   INITIAL_ORDERS,
   INITIAL_EXPENSES,
   INITIAL_STORE_PROFILE,
 } from '../data/initialData';
+import { DEFAULT_STORE_CATEGORIES } from '../data/categories';
 import { generateReceiptNumber } from '../utils/format';
 import { LanguageMode } from '../utils/translations';
 import {
@@ -103,7 +106,13 @@ interface StoreContextType {
   clearAllProducts: (password: string) => { success: boolean; message: string };
   adjustStock: (productId: string, delta: number) => void;
 
-  // Custom Categories
+  // Categories Management (All categories can be deleted, added, or managed)
+  categories: CategoryItem[];
+  addCategory: (nameMy: string, group?: string) => string;
+  deleteCategory: (id: string) => void;
+  resetCategoriesToDefault: () => void;
+
+  // Custom Categories (Backward compatibility)
   customCategories: CustomCategory[];
   addCustomCategory: (nameMy: string, nameEn?: string) => string;
   deleteCustomCategory: (id: string) => void;
@@ -140,6 +149,7 @@ const STORAGE_KEYS = {
   LANG: 'ei_mon_lang_mode',
   DIGITS: 'ei_mon_myanmar_digits',
   CUSTOM_CATEGORIES: 'ei_mon_custom_categories_v1',
+  CATEGORIES: 'ei_mon_active_categories_v2',
 };
 
 export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -149,13 +159,20 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const saved = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
       if (saved !== null) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          // If 6923700966701 (L'Oreal Paris Revitalift) is not in existing saved products, append it
+          if (!parsed.some((p: Product) => p.barcode === '6923700966701')) {
+            const lorealProd = INITIAL_PRODUCTS.find((p) => p.barcode === '6923700966701');
+            if (lorealProd) {
+              return [lorealProd, ...parsed];
+            }
+          }
           return parsed;
         }
       }
-      return [];
+      return INITIAL_PRODUCTS;
     } catch {
-      return [];
+      return INITIAL_PRODUCTS;
     }
   });
 
@@ -215,46 +232,83 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [activeTab, setActiveTabState] = useState<PageTab>('pos');
   const [tabHistory, setTabHistory] = useState<PageTab[]>(['pos']);
 
-  // Custom Categories state (persistent)
-  const [customCategories, setCustomCategories] = useState<CustomCategory[]>(() => {
+  // All Categories state (fully persistent, customizable, and deletable)
+  const [categories, setCategories] = useState<CategoryItem[]>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEYS.CUSTOM_CATEGORIES);
-      return saved ? JSON.parse(saved) : [];
+      const saved = localStorage.getItem(STORAGE_KEYS.CATEGORIES);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+      // Migrate from old custom categories if any exist
+      const savedCustom = localStorage.getItem(STORAGE_KEYS.CUSTOM_CATEGORIES);
+      const customList = savedCustom ? JSON.parse(savedCustom) : [];
+      if (Array.isArray(customList) && customList.length > 0) {
+        const map = new Map<string, CategoryItem>();
+        DEFAULT_STORE_CATEGORIES.forEach((c) => map.set(c.id, c));
+        customList.forEach((c: CategoryItem) =>
+          map.set(c.id, { ...c, group: c.group || 'စိတ်ကြိုက် အမျိုးအစားများ' })
+        );
+        return Array.from(map.values());
+      }
+      return DEFAULT_STORE_CATEGORIES;
     } catch {
-      return [];
+      return DEFAULT_STORE_CATEGORIES;
     }
   });
 
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEYS.CUSTOM_CATEGORIES, JSON.stringify(customCategories));
+      localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(categories));
     } catch (e) {
-      console.error('Failed to save custom categories', e);
+      console.error('Failed to save categories', e);
     }
-  }, [customCategories]);
+  }, [categories]);
 
-  const addCustomCategory = (nameMy: string, nameEn?: string): string => {
+  const addCategory = (nameMy: string, group = 'စိတ်ကြိုက် အမျိုးအစားများ'): string => {
     const cleanMy = nameMy.trim();
     if (!cleanMy) return 'other';
-    const cleanEn = (nameEn || '').trim();
-    const idSlug = (cleanEn ? cleanEn.toLowerCase().replace(/[^a-z0-9]/g, '_') : 'cat_' + Date.now()).slice(0, 30);
-    const existing = customCategories.find(
-      (c) => c.id === idSlug || c.nameMy.toLowerCase() === cleanMy.toLowerCase()
+    const idSlug =
+      'cat_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    const existing = categories.find(
+      (c) => c.nameMy.toLowerCase() === cleanMy.toLowerCase()
     );
     if (existing) {
       return existing.id;
     }
-    const newCat: CustomCategory = {
+    const newCat: CategoryItem = {
       id: idSlug,
       nameMy: cleanMy,
-      nameEn: cleanEn || cleanMy,
+      group: group || 'စိတ်ကြိုက် အမျိုးအစားများ',
+      isDefault: false,
     };
-    setCustomCategories((prev) => [...prev, newCat]);
+    setCategories((prev) => [...prev, newCat]);
     return idSlug;
   };
 
+  const deleteCategory = (id: string) => {
+    setCategories((prev) => prev.filter((c) => c.id !== id));
+    // Safely reassign any products that were using the deleted category to 'other'
+    setProducts((prev) =>
+      prev.map((p) => (p.category === id ? { ...p, category: 'other' } : p))
+    );
+  };
+
+  const resetCategoriesToDefault = () => {
+    setCategories(DEFAULT_STORE_CATEGORIES);
+  };
+
+  // Custom Categories state (backward compatibility for any older component)
+  const customCategories = categories.filter((c) => !c.isDefault);
+
+  const addCustomCategory = (nameMy: string, _nameEn?: string): string => {
+    return addCategory(nameMy);
+  };
+
   const deleteCustomCategory = (id: string) => {
-    setCustomCategories((prev) => prev.filter((c) => c.id !== id));
+    deleteCategory(id);
   };
 
   const setActiveTab = (tab: PageTab) => {
@@ -1218,7 +1272,13 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         clearAllProducts,
         adjustStock,
 
-        // Custom Categories
+        // Categories Management
+        categories,
+        addCategory,
+        deleteCategory,
+        resetCategoriesToDefault,
+
+        // Custom Categories (Backward compatibility)
         customCategories,
         addCustomCategory,
         deleteCustomCategory,

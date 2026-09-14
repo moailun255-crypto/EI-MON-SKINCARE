@@ -45,7 +45,7 @@ export const CATEGORY_LABELS: Record<string, { my: string; en: string }> = {
  */
 export const CATEGORY_GROUPS = [
   {
-    groupMy: 'မျက်နှာအသားအရေ ထိန်းသိမ်းမှု (Skincare)',
+    groupMy: 'မျက်နှာအသားအရေ ထိန်းသိမ်းမှု',
     groupEn: 'Skincare',
     keys: [
       'cleanser',
@@ -62,22 +62,22 @@ export const CATEGORY_GROUPS = [
     ],
   },
   {
-    groupMy: 'မိတ်ကပ်နှင့် အလှကုန် (Makeup & Cosmetics)',
+    groupMy: 'မိတ်ကပ်နှင့် အလှကုန်',
     groupEn: 'Makeup',
     keys: ['makeup', 'lipstick', 'powder', 'eye_makeup'],
   },
   {
-    groupMy: 'ခန္ဓာကိုယ်နှင့် ဆံကေသာ (Body & Hair Care)',
+    groupMy: 'ခန္ဓာကိုယ်နှင့် ဆံကေသာ',
     groupEn: 'Body & Hair',
     keys: ['body', 'bath', 'hair', 'hand_foot'],
   },
   {
-    groupMy: 'ရေမွှေးနှင့် တစ်ကိုယ်ရေသုံး (Fragrance & Personal)',
+    groupMy: 'ရေမွှေးနှင့် တစ်ကိုယ်ရေသုံး',
     groupEn: 'Fragrance & Personal',
     keys: ['perfume', 'oral_care', 'men', 'baby_mom'],
   },
   {
-    groupMy: 'ကိရိယာနှင့် ဖြည့်စွက်စာ (Tools & Wellness)',
+    groupMy: 'ကိရိယာနှင့် ဖြည့်စွက်စာ',
     groupEn: 'Tools & Wellness',
     keys: ['tools', 'supplement', 'set', 'other'],
   },
@@ -94,7 +94,7 @@ export function getCategoryDisplayName(category: string, lang: 'my' | 'en' = 'my
 }
 
 export const PAYMENT_LABELS: Record<string, { my: string; en: string; color: string }> = {
-  cash: { my: 'ငွေသား (Cash)', en: 'Cash', color: 'bg-emerald-600 text-white' },
+  cash: { my: 'ငွေသား', en: 'Cash', color: 'bg-emerald-600 text-white' },
   kpay: { my: 'KBZPay', en: 'KBZPay', color: 'bg-blue-600 text-white' },
 };
 
@@ -104,7 +104,7 @@ export const EXPENSE_CATEGORY_LABELS: Record<string, { my: string; en: string }>
   utilities: { my: 'လျှပ်စစ်မီတာ/ရေ/အင်တာနက်', en: 'Utilities & Internet' },
   packaging: { my: 'စက္ကူအိတ်နှင့် ထုပ်ပိုးပစ္စည်း', en: 'Bags & Packaging' },
   marketing: { my: 'ကြော်ငြာနှင့် ပရိုမိုးရှင်း', en: 'Marketing & Ads' },
-  logistics: { my: 'ပို့ဆောင်ခ (Delivery)', en: 'Logistics & Delivery' },
+  logistics: { my: 'ပို့ဆောင်ခ', en: 'Logistics & Delivery' },
   maintenance: { my: 'ဆိုင်ပြင်ဆင်ထိန်းသိမ်းစရိတ်', en: 'Maintenance' },
   other: { my: 'အထွေထွေစရိတ်', en: 'Other Expense' },
 };

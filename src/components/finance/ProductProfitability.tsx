@@ -310,10 +310,10 @@ export const ProductProfitability: React.FC<ProductProfitabilityProps> = ({
                 <th className="py-3 px-4">စဉ်</th>
                 <th className="py-3 px-4">ကုန်ပစ္စည်းအမည်</th>
                 <th className="py-3 px-3">အမျိုးအစား</th>
-                <th className="py-3 px-3 text-right">ရောင်းရမှု (Qty)</th>
-                <th className="py-3 px-3 text-right">ရောင်းရငွေ (Revenue)</th>
-                <th className="py-3 px-3 text-right">ဝယ်ရင်းစရိတ် (COGS)</th>
-                <th className="py-3 px-4 text-right">အမြတ်ငွေ (Gross Profit)</th>
+                <th className="py-3 px-3 text-right">ရောင်းရမှု</th>
+                <th className="py-3 px-3 text-right">ရောင်းရငွေ</th>
+                <th className="py-3 px-3 text-right">ဝယ်ရင်းစရိတ်</th>
+                <th className="py-3 px-4 text-right">အကြမ်းဖျင်း အမြတ်ငွေ</th>
                 <th className="py-3 px-4 text-right">အမြတ်နှုန်း %</th>
                 <th className="py-3 px-3 text-center">လက်ကျန်</th>
               </tr>

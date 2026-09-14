@@ -45,7 +45,7 @@ export const POSPage: React.FC<POSPageProps> = ({
     orders,
     cartItemCount,
     cartTotal,
-    customCategories,
+    categories,
   } = useStore();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -55,6 +55,15 @@ export const POSPage: React.FC<POSPageProps> = ({
   const [showMobileMetrics, setShowMobileMetrics] = useState(false);
   const [justAddedId, setJustAddedId] = useState<string | null>(null);
   const [mobileView, setMobileView] = useState<'catalog' | 'cart'>('catalog');
+
+  const getCategoryName = useCallback(
+    (catId: string) => {
+      const found = categories.find((c) => c.id === catId);
+      if (found) return found.nameMy;
+      return getCategoryDisplayName(catId, 'my');
+    },
+    [categories]
+  );
 
   // Sync external mobile cart drawer state
   useEffect(() => {
@@ -332,65 +341,20 @@ export const POSPage: React.FC<POSPageProps> = ({
       { id: 'low_stock', labelMy: 'လက်ကျန်နည်း', count: lowStockCount, icon: <AlertTriangle className="w-3 h-3 text-amber-500" /> },
     ];
 
-    // Priority ordering of key cosmetic & retail categories
-    const priorityCategories: ProductCategory[] = [
-      'serum',
-      'toner',
-      'sunscreen',
-      'moisturizer',
-      'cleanser',
-      'mask',
-      'treatment',
-      'eye_care',
-      'lip_care',
-      'exfoliator',
-      'mist',
-      'makeup',
-      'lipstick',
-      'powder',
-      'eye_makeup',
-      'body',
-      'bath',
-      'hair',
-      'hand_foot',
-      'perfume',
-      'oral_care',
-      'men',
-      'baby_mom',
-      'tools',
-      'supplement',
-      'set',
-      'other',
-    ];
-
-    // Add all standard categories with short label and item counts
-    priorityCategories.forEach((catKey) => {
-      const labelObj = CATEGORY_LABELS[catKey];
-      if (!labelObj) return;
-      const count = products.filter((p) => p.category === catKey).length;
+    // Add all active categories (respecting deletions and custom additions)
+    categories.forEach((cat) => {
+      const count = products.filter((p) => p.category === cat.id).length;
       // Short label: split on '/' to keep compact chips on mobile/POS
-      const shortLabel = labelObj.my.split('/')[0].trim();
+      const shortLabel = cat.nameMy.split('/')[0].trim();
       list.push({
-        id: catKey,
+        id: cat.id,
         labelMy: shortLabel,
         count: count > 0 ? count : undefined,
       });
     });
 
-    // Add custom categories
-    customCategories.forEach((cc) => {
-      if (!list.some((item) => item.id === cc.id)) {
-        const count = products.filter((p) => p.category === cc.id).length;
-        list.push({
-          id: cc.id,
-          labelMy: cc.nameMy,
-          count: count > 0 ? count : undefined,
-        });
-      }
-    });
-
     return list;
-  }, [products, lowStockCount, customCategories]);
+  }, [products, lowStockCount, categories]);
 
   return (
     <div className="h-full flex flex-col min-h-0 overflow-hidden max-w-[1600px] mx-auto w-full px-2 sm:px-3 py-1 sm:py-2 pb-16 sm:pb-2">
@@ -748,7 +712,7 @@ export const POSPage: React.FC<POSPageProps> = ({
                             {/* Brand & Stock Header */}
                             <div className="flex items-center justify-between gap-1 mb-1">
                               <span className="text-[9px] text-rose-700 bg-rose-50 border border-rose-100 px-1.5 py-0.2 rounded font-bold truncate max-w-[70%]">
-                                {product.brand || getCategoryDisplayName(product.category, customCategories)}
+                                {product.brand || getCategoryName(product.category)}
                               </span>
 
                               <span

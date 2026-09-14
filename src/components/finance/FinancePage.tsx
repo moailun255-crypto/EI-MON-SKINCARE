@@ -464,10 +464,10 @@ export const FinancePage: React.FC = () => {
         <div>
           <h1 className="text-xl sm:text-2xl font-black text-stone-900 tracking-tight flex items-center gap-2">
             <TrendingUp className="w-6 h-6 sm:w-7 sm:h-7 text-rose-600" />
-            <span>ဘဏ္ဍာရေးနှင့် စာရင်းကိုင် စီမံခန့်ခွဲမှု (Financial Management)</span>
+            <span>ဘဏ္ဍာရေးနှင့် စာရင်းကိုင် စီမံခန့်ခွဲမှု</span>
           </h1>
           <p className="text-xs sm:text-sm text-stone-500 mt-0.5">
-            EI MON SKINCARE • အရောင်းဝင်ငွေ၊ အရှုံးအမြတ်ရှင်းတမ်း (P&L)၊ ကုန်ကျစရိတ်နှင့် ငွေသိမ်းသေတ္တာ စစ်ဆေးချက်
+            EI MON SKINCARE • အရောင်းဝင်ငွေ၊ အရှုံးအမြတ်ရှင်းတမ်း၊ ကုန်ကျစရိတ်နှင့် ငွေသိမ်းသေတ္တာ စစ်ဆေးချက်
           </p>
         </div>
 
@@ -495,7 +495,7 @@ export const FinancePage: React.FC = () => {
           }`}
         >
           <BarChart3 className="w-4 h-4" />
-          <span>၁။ ခြုံငုံသုံးသပ်ချက် (Executive Overview)</span>
+          <span>၁။ ခြုံငုံသုံးသပ်ချက်</span>
         </button>
 
         <button
@@ -508,7 +508,7 @@ export const FinancePage: React.FC = () => {
           }`}
         >
           <FileSpreadsheet className="w-4 h-4" />
-          <span>၂။ အရှုံးအမြတ် ရှင်းတမ်း (Income Statement)</span>
+          <span>၂။ အရှုံးအမြတ် ရှင်းတမ်း</span>
         </button>
 
         <button
@@ -521,7 +521,7 @@ export const FinancePage: React.FC = () => {
           }`}
         >
           <Coins className="w-4 h-4" />
-          <span>၃။ ငွေသိမ်းသေတ္တာ စစ်ဆေးချက် (Cash Drawer)</span>
+          <span>၃။ ငွေသိမ်းသေတ္တာ စစ်ဆေးချက်</span>
         </button>
 
         <button
@@ -534,7 +534,7 @@ export const FinancePage: React.FC = () => {
           }`}
         >
           <Sparkles className="w-4 h-4" />
-          <span>၄။ ပစ္စည်းအလိုက် အမြတ်နှုန်း (Profitability)</span>
+          <span>၄။ ပစ္စည်းအလိုက် အမြတ်နှုန်း</span>
         </button>
 
         <button
@@ -547,7 +547,7 @@ export const FinancePage: React.FC = () => {
           }`}
         >
           <Receipt className="w-4 h-4" />
-          <span>၅။ ဆိုင်စရိတ် မှတ်တမ်းများ (Expenses)</span>
+          <span>၅။ ဆိုင်စရိတ် မှတ်တမ်းများ</span>
         </button>
       </div>
 

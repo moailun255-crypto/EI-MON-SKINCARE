@@ -22,6 +22,25 @@ export const INITIAL_STORE_PROFILE: StoreProfile = {
 
 export const INITIAL_PRODUCTS: Product[] = [
   {
+    id: 'prod-loreal-001',
+    nameMy: "L'Oréal Paris ဟိုက်လူရိုနစ်အက်ဆစ် တင်းရင်းဆာရမ် (Revitalift)",
+    nameEn: "L'Oréal Paris Revitalift 1.5% Hyaluronic Acid Serum",
+    sku: 'LOR-REVIT-30',
+    barcode: '6923700966701',
+    category: 'serum',
+    brand: "L'Oréal Paris",
+    skinType: ['all', 'dry', 'sensitive'],
+    volume: '30ml',
+    costPrice: 38000,
+    sellingPrice: 52000,
+    stock: 20,
+    minStockAlert: 5,
+    imageUrl: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=500&auto=format&fit=crop&q=80',
+    descriptionMy: 'အရေးအကြောင်း လျော့ပါးစေပြီး အသားအရေ စိုပြေတင်းရင်းစေသော ပြင်သစ်နာမည်ကြီး ဟိုက်လူရိုနစ် ဆာရမ်',
+    createdAt: '2026-08-10T10:00:00Z',
+    updatedAt: '2026-09-14T10:00:00Z',
+  },
+  {
     id: 'prod-001',
     nameMy: 'Anua နှလုံးရွက် ချွေးပေါက်ကျဉ်း တိုနာ',
     nameEn: 'Anua Heartleaf 77% Soothing Toner',

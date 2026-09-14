@@ -29,11 +29,15 @@ export type ProductCategory =
   | 'other'
   | (string & {});
 
-export interface CustomCategory {
+export interface CategoryItem {
   id: string;
   nameMy: string;
-  nameEn: string;
+  nameEn?: string;
+  group?: string;
+  isDefault?: boolean;
 }
+
+export type CustomCategory = CategoryItem;
 
 export type SkinType = 'all' | 'oily' | 'dry' | 'sensitive' | 'combination' | 'acne';
 

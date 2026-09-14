@@ -106,10 +106,10 @@ export const CashReconciliation: React.FC<CashReconciliationProps> = ({
         <div>
           <h2 className="text-base sm:text-lg font-black text-stone-900 flex items-center gap-2">
             <Wallet className="w-5 h-5 text-emerald-600" />
-            <span>ငွေသိမ်းသေတ္တာနှင့် ငွေလက်ကျန် စစ်ဆေးမှု (Cash Drawer Audit)</span>
+            <span>ငွေသိမ်းသေတ္တာနှင့် ငွေလက်ကျန် စစ်ဆေးမှု</span>
           </h2>
           <p className="text-xs text-stone-500 mt-0.5">
-            ကာလ: <span className="font-bold text-stone-800">{dateLabel}</span> • ငွေသားစီးဆင်းမှု၊ သေတ္တာတွင်း ရှိရမည့်ငွေနှင့် KBZPay/WavePay ချိန်ညှိမှု
+            ကာလ: <span className="font-bold text-stone-800">{dateLabel}</span> • ငွေသားစီးဆင်းမှု၊ သေတ္တာတွင်း ရှိရမည့်ငွေနှင့် KBZPay ချိန်ညှိမှု
           </p>
         </div>
 
@@ -128,9 +128,6 @@ export const CashReconciliation: React.FC<CashReconciliationProps> = ({
             <span className="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
               <Coins className="w-4 h-4" />
               စာရင်းအရ သေတ္တာတွင်း ရှိရမည့် ငွေသား
-            </span>
-            <span className="text-[10px] bg-white/10 px-2 py-0.5 rounded text-stone-300">
-              Theoretical Cash
             </span>
           </div>
 
@@ -168,9 +165,6 @@ export const CashReconciliation: React.FC<CashReconciliationProps> = ({
               <Smartphone className="w-4 h-4" />
               KBZPay အကောင့် ရငွေစုစုပေါင်း
             </span>
-            <span className="text-[10px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-bold">
-              KBZPay Wallet
-            </span>
           </div>
 
           <div>
@@ -206,9 +200,6 @@ export const CashReconciliation: React.FC<CashReconciliationProps> = ({
               <CreditCard className="w-4 h-4" />
               စုစုပေါင်း ငွေလက်ခံရရှိမှု
             </span>
-            <span className="text-[10px] bg-rose-50 text-rose-700 px-2 py-0.5 rounded font-bold">
-              Gross Receipts
-            </span>
           </div>
 
           <div>
@@ -222,7 +213,7 @@ export const CashReconciliation: React.FC<CashReconciliationProps> = ({
 
           <div className="pt-2 border-t border-stone-100 space-y-1.5 text-xs">
             <div className="flex justify-between text-stone-600">
-              <span>ငွေသား အချိုး (Cash Share):</span>
+              <span>ငွေသား အချိုး:</span>
               <span className="font-bold text-stone-900">
                 {grandTotalCollected > 0
                   ? Math.round((cashSales / grandTotalCollected) * 100)
@@ -231,7 +222,7 @@ export const CashReconciliation: React.FC<CashReconciliationProps> = ({
               </span>
             </div>
             <div className="flex justify-between text-stone-600">
-              <span>ဒစ်ဂျစ်တယ် အချိုး (Digital Share):</span>
+              <span>ဒစ်ဂျစ်တယ် အချိုး:</span>
               <span className="font-bold text-stone-900">
                 {grandTotalCollected > 0
                   ? Math.round((totalDigitalPayments / grandTotalCollected) * 100)
@@ -253,7 +244,7 @@ export const CashReconciliation: React.FC<CashReconciliationProps> = ({
           <div>
             <h3 className="text-sm sm:text-base font-black text-stone-900 flex items-center gap-2">
               <Calculator className="w-5 h-5 text-rose-600" />
-              <span>သေတ္တာတွင်း လက်တွေ့ငွေသား ရေတွက်စစ်ဆေးခြင်း (Physical Drawer Count)</span>
+              <span>သေတ္တာတွင်း လက်တွေ့ငွေသား ရေတွက်စစ်ဆေးခြင်း</span>
             </h3>
             <p className="text-xs text-stone-500 mt-0.5">
               ကောင်တာသိမ်းချိန် သို့မဟုတ် အလှည့်ကျချိန်တွင် သေတ္တာတွင်းရှိ ငွေသားများကို စစ်ဆေးရေတွက်ပါ
