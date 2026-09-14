@@ -2,7 +2,7 @@ import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 import { useStore } from '../../context/StoreContext';
 import { Product, ProductCategory } from '../../types';
 import { formatMMK } from '../../utils/format';
-import { CATEGORY_LABELS } from '../../utils/translations';
+import { CATEGORY_LABELS, getCategoryDisplayName } from '../../utils/translations';
 import { CartPanel } from './CartPanel';
 import { PaymentModal } from './PaymentModal';
 import { CameraScannerModal } from './CameraScannerModal';
@@ -45,10 +45,11 @@ export const POSPage: React.FC<POSPageProps> = ({
     orders,
     cartItemCount,
     cartTotal,
+    customCategories,
   } = useStore();
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<ProductCategory | 'popular' | 'low_stock'>('all');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isCameraScannerOpen, setIsCameraScannerOpen] = useState(false);
   const [showMobileMetrics, setShowMobileMetrics] = useState(false);
@@ -313,18 +314,83 @@ export const POSPage: React.FC<POSPageProps> = ({
     setTimeout(() => setScanAlert(null), 2000);
   };
 
-  const categoriesList: { id: ProductCategory | 'popular' | 'low_stock'; labelMy: string; count?: number; icon?: React.ReactNode }[] = [
-    { id: 'all', labelMy: 'အားလုံး', count: products.length },
-    { id: 'popular', labelMy: 'လူကြိုက်များ', icon: <Flame className="w-3 h-3 text-rose-500" /> },
-    { id: 'low_stock', labelMy: 'လက်ကျန်နည်း', count: lowStockCount, icon: <AlertTriangle className="w-3 h-3 text-amber-500" /> },
-    { id: 'serum', labelMy: 'ဆာရမ်' },
-    { id: 'toner', labelMy: 'တိုနာ' },
-    { id: 'sunscreen', labelMy: 'နေလောင်ကာ' },
-    { id: 'moisturizer', labelMy: 'ခရင်မ်' },
-    { id: 'cleanser', labelMy: 'မျက်နှာသစ်' },
-    { id: 'mask', labelMy: 'Mask ကပ်ခွာ' },
-    { id: 'treatment', labelMy: 'ကုထုံးဆေး' },
-  ];
+  const categoriesList = useMemo<{
+    id: string;
+    labelMy: string;
+    count?: number;
+    icon?: React.ReactNode;
+  }[]>(() => {
+    // Fixed quick-access tabs
+    const list: {
+      id: string;
+      labelMy: string;
+      count?: number;
+      icon?: React.ReactNode;
+    }[] = [
+      { id: 'all', labelMy: 'အားလုံး', count: products.length },
+      { id: 'popular', labelMy: 'လူကြိုက်များ', icon: <Flame className="w-3 h-3 text-rose-500" /> },
+      { id: 'low_stock', labelMy: 'လက်ကျန်နည်း', count: lowStockCount, icon: <AlertTriangle className="w-3 h-3 text-amber-500" /> },
+    ];
+
+    // Priority ordering of key cosmetic & retail categories
+    const priorityCategories: ProductCategory[] = [
+      'serum',
+      'toner',
+      'sunscreen',
+      'moisturizer',
+      'cleanser',
+      'mask',
+      'treatment',
+      'eye_care',
+      'lip_care',
+      'exfoliator',
+      'mist',
+      'makeup',
+      'lipstick',
+      'powder',
+      'eye_makeup',
+      'body',
+      'bath',
+      'hair',
+      'hand_foot',
+      'perfume',
+      'oral_care',
+      'men',
+      'baby_mom',
+      'tools',
+      'supplement',
+      'set',
+      'other',
+    ];
+
+    // Add all standard categories with short label and item counts
+    priorityCategories.forEach((catKey) => {
+      const labelObj = CATEGORY_LABELS[catKey];
+      if (!labelObj) return;
+      const count = products.filter((p) => p.category === catKey).length;
+      // Short label: split on '/' to keep compact chips on mobile/POS
+      const shortLabel = labelObj.my.split('/')[0].trim();
+      list.push({
+        id: catKey,
+        labelMy: shortLabel,
+        count: count > 0 ? count : undefined,
+      });
+    });
+
+    // Add custom categories
+    customCategories.forEach((cc) => {
+      if (!list.some((item) => item.id === cc.id)) {
+        const count = products.filter((p) => p.category === cc.id).length;
+        list.push({
+          id: cc.id,
+          labelMy: cc.nameMy,
+          count: count > 0 ? count : undefined,
+        });
+      }
+    });
+
+    return list;
+  }, [products, lowStockCount, customCategories]);
 
   return (
     <div className="h-full flex flex-col min-h-0 overflow-hidden max-w-[1600px] mx-auto w-full px-2 sm:px-3 py-1 sm:py-2 pb-16 sm:pb-2">
@@ -682,7 +748,7 @@ export const POSPage: React.FC<POSPageProps> = ({
                             {/* Brand & Stock Header */}
                             <div className="flex items-center justify-between gap-1 mb-1">
                               <span className="text-[9px] text-rose-700 bg-rose-50 border border-rose-100 px-1.5 py-0.2 rounded font-bold truncate max-w-[70%]">
-                                {product.brand || CATEGORY_LABELS[product.category]?.my}
+                                {product.brand || getCategoryDisplayName(product.category, customCategories)}
                               </span>
 
                               <span

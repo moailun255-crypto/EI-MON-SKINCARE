@@ -7,8 +7,33 @@ export type ProductCategory =
   | 'sunscreen'
   | 'mask'
   | 'treatment'
+  | 'eye_care'
+  | 'lip_care'
+  | 'exfoliator'
+  | 'mist'
+  | 'makeup'
+  | 'lipstick'
+  | 'powder'
+  | 'eye_makeup'
   | 'body'
-  | 'set';
+  | 'bath'
+  | 'hair'
+  | 'hand_foot'
+  | 'perfume'
+  | 'oral_care'
+  | 'men'
+  | 'baby_mom'
+  | 'tools'
+  | 'supplement'
+  | 'set'
+  | 'other'
+  | (string & {});
+
+export interface CustomCategory {
+  id: string;
+  nameMy: string;
+  nameEn: string;
+}
 
 export type SkinType = 'all' | 'oily' | 'dry' | 'sensitive' | 'combination' | 'acne';
 

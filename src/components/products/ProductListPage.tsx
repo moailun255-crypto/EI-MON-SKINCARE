@@ -36,10 +36,20 @@ export const ProductListPage: React.FC = () => {
     setActiveTab,
     setSelectedProductForEdit,
     useMyanmarDigits,
+    customCategories,
   } = useStore();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<ProductCategory>('all');
+
+  const getCategoryName = useCallback(
+    (catId: string) => {
+      const custom = customCategories.find((c) => c.id === catId);
+      if (custom) return custom.nameMy;
+      return CATEGORY_LABELS[catId]?.my || catId;
+    },
+    [customCategories]
+  );
   const [stockFilter, setStockFilter] = useState<'all' | 'low' | 'out'>('all');
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -400,12 +410,57 @@ export const ProductListPage: React.FC = () => {
             onChange={(e) => setCategoryFilter(e.target.value as ProductCategory)}
             className="text-xs font-medium px-3 py-2 rounded-xl border border-stone-200 bg-white focus:outline-none focus:ring-1 focus:ring-rose-500 cursor-pointer"
           >
-            <option value="all">အမျိုးအစားအားလုံး</option>
-            {Object.entries(CATEGORY_LABELS).map(([cat, label]) => (
-              <option key={cat} value={cat}>
-                {label.my}
-              </option>
-            ))}
+            <option value="all">အမျိုးအစားအားလုံး ({products.length})</option>
+            
+            <optgroup label="မျက်နှာနှင့် အသားအရေထိန်း (Skincare)">
+              {['cleanser', 'toner', 'serum', 'moisturizer', 'sunscreen', 'mask', 'treatment', 'eye_care', 'lip_care', 'exfoliator', 'mist'].map((cat) => (
+                <option key={cat} value={cat}>
+                  {CATEGORY_LABELS[cat]?.my}
+                </option>
+              ))}
+            </optgroup>
+
+            <optgroup label="မိတ်ကပ်နှင့် အလှပြင် (Makeup & Cosmetics)">
+              {['makeup', 'lipstick', 'powder', 'eye_makeup'].map((cat) => (
+                <option key={cat} value={cat}>
+                  {CATEGORY_LABELS[cat]?.my}
+                </option>
+              ))}
+            </optgroup>
+
+            <optgroup label="ခန္ဓာကိုယ်နှင့် ဆံကေသာ (Body & Hair)">
+              {['body', 'bath', 'hair', 'hand_foot'].map((cat) => (
+                <option key={cat} value={cat}>
+                  {CATEGORY_LABELS[cat]?.my}
+                </option>
+              ))}
+            </optgroup>
+
+            <optgroup label="ရေမွှေးနှင့် တစ်ကိုယ်ရေသုံး (Fragrance & Grooming)">
+              {['perfume', 'oral_care', 'men', 'baby_mom'].map((cat) => (
+                <option key={cat} value={cat}>
+                  {CATEGORY_LABELS[cat]?.my}
+                </option>
+              ))}
+            </optgroup>
+
+            <optgroup label="ကိရိယာနှင့် ဖြည့်စွက်စာ (Tools & Wellness)">
+              {['tools', 'supplement', 'set', 'other'].map((cat) => (
+                <option key={cat} value={cat}>
+                  {CATEGORY_LABELS[cat]?.my}
+                </option>
+              ))}
+            </optgroup>
+
+            {customCategories.length > 0 && (
+              <optgroup label="စိတ်ကြိုက် အမျိုးအစားများ (Custom Categories)">
+                {customCategories.map((cc) => (
+                  <option key={cc.id} value={cc.id}>
+                    {cc.nameMy} {cc.nameEn ? `(${cc.nameEn})` : ''}
+                  </option>
+                ))}
+              </optgroup>
+            )}
           </select>
 
           {/* Stock status filter */}
@@ -593,7 +648,7 @@ export const ProductListPage: React.FC = () => {
 
                         <td className="py-3 px-3">
                           <span className="px-2 py-0.5 rounded-md bg-stone-100 text-stone-700 font-medium text-[11px]">
-                            {CATEGORY_LABELS[p.category]?.my || p.category}
+                            {getCategoryName(p.category)}
                           </span>
                         </td>
 
@@ -721,7 +776,7 @@ export const ProductListPage: React.FC = () => {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5">
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-stone-100 text-stone-700">
-                            {CATEGORY_LABELS[p.category]?.my || p.category}
+                            {getCategoryName(p.category)}
                           </span>
                           <span
                             className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${

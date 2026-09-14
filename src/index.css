@@ -165,8 +165,10 @@ div[id*="camera"] #qr-shaded-region {
 }
 
 #pos-html5-camera-box video,
-#minimal-pos-camera-view video {
-  object-fit: cover !important;
+#minimal-pos-camera-view video,
+.scanner-video-container video {
+  object-fit: contain !important;
   width: 100% !important;
   height: 100% !important;
+  background-color: #000000;
 }

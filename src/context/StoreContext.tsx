@@ -8,6 +8,7 @@ import {
   StoreProfile,
   PageTab,
   PaymentMethod,
+  CustomCategory,
 } from '../types';
 import {
   INITIAL_ORDERS,
@@ -48,6 +49,7 @@ interface StoreContextType {
   languageMode: LanguageMode;
   useMyanmarDigits: boolean;
   selectedProductForEdit: Product | null;
+  pendingBarcodeForAdd: string | null;
   activeReceiptOrder: Order | null;
   isPinLocked: boolean;
   pinAuthError: string | null;
@@ -69,6 +71,7 @@ interface StoreContextType {
   setLanguageMode: (mode: LanguageMode) => void;
   setUseMyanmarDigits: (val: boolean) => void;
   setSelectedProductForEdit: (product: Product | null) => void;
+  setPendingBarcodeForAdd: (barcode: string | null) => void;
   setActiveReceiptOrder: (order: Order | null) => void;
 
   // Cart operations
@@ -99,6 +102,11 @@ interface StoreContextType {
   deleteMultipleProducts: (productIds: string[]) => void;
   clearAllProducts: (password: string) => { success: boolean; message: string };
   adjustStock: (productId: string, delta: number) => void;
+
+  // Custom Categories
+  customCategories: CustomCategory[];
+  addCustomCategory: (nameMy: string, nameEn?: string) => string;
+  deleteCustomCategory: (id: string) => void;
 
   // Expense management
   addExpense: (expenseData: Omit<Expense, 'id'>) => void;
@@ -131,6 +139,7 @@ const STORAGE_KEYS = {
   PROFILE: 'ei_mon_profile_v1',
   LANG: 'ei_mon_lang_mode',
   DIGITS: 'ei_mon_myanmar_digits',
+  CUSTOM_CATEGORIES: 'ei_mon_custom_categories_v1',
 };
 
 export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -206,6 +215,48 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [activeTab, setActiveTabState] = useState<PageTab>('pos');
   const [tabHistory, setTabHistory] = useState<PageTab[]>(['pos']);
 
+  // Custom Categories state (persistent)
+  const [customCategories, setCustomCategories] = useState<CustomCategory[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.CUSTOM_CATEGORIES);
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.CUSTOM_CATEGORIES, JSON.stringify(customCategories));
+    } catch (e) {
+      console.error('Failed to save custom categories', e);
+    }
+  }, [customCategories]);
+
+  const addCustomCategory = (nameMy: string, nameEn?: string): string => {
+    const cleanMy = nameMy.trim();
+    if (!cleanMy) return 'other';
+    const cleanEn = (nameEn || '').trim();
+    const idSlug = (cleanEn ? cleanEn.toLowerCase().replace(/[^a-z0-9]/g, '_') : 'cat_' + Date.now()).slice(0, 30);
+    const existing = customCategories.find(
+      (c) => c.id === idSlug || c.nameMy.toLowerCase() === cleanMy.toLowerCase()
+    );
+    if (existing) {
+      return existing.id;
+    }
+    const newCat: CustomCategory = {
+      id: idSlug,
+      nameMy: cleanMy,
+      nameEn: cleanEn || cleanMy,
+    };
+    setCustomCategories((prev) => [...prev, newCat]);
+    return idSlug;
+  };
+
+  const deleteCustomCategory = (id: string) => {
+    setCustomCategories((prev) => prev.filter((c) => c.id !== id));
+  };
+
   const setActiveTab = (tab: PageTab) => {
     setActiveTabState(tab);
     setTabHistory((prev) => {
@@ -235,9 +286,11 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [useMyanmarDigits, setUseMyanmarDigits] = useState<boolean>(false);
 
   const [selectedProductForEdit, setSelectedProductForEdit] = useState<Product | null>(null);
+  const [pendingBarcodeForAdd, setPendingBarcodeForAdd] = useState<string | null>(null);
   const [activeReceiptOrder, setActiveReceiptOrder] = useState<Order | null>(null);
   const [isPinLocked, setIsPinLocked] = useState<boolean>(false);
   const [pinAuthError, setPinAuthError] = useState<string | null>(null);
+
 
   // Supabase Cloud State
   const [supabaseConfig, setSupabaseConfigState] = useState<SupabaseConfig>(getStoredSupabaseConfig);
@@ -1123,6 +1176,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         languageMode,
         useMyanmarDigits,
         selectedProductForEdit,
+        pendingBarcodeForAdd,
         activeReceiptOrder,
         isPinLocked,
         pinAuthError,
@@ -1143,6 +1197,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setLanguageMode,
         setUseMyanmarDigits,
         setSelectedProductForEdit,
+        setPendingBarcodeForAdd,
         setActiveReceiptOrder,
 
         addToCart,
@@ -1162,6 +1217,11 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         deleteMultipleProducts,
         clearAllProducts,
         adjustStock,
+
+        // Custom Categories
+        customCategories,
+        addCustomCategory,
+        deleteCustomCategory,
 
         addExpense,
         deleteExpense,

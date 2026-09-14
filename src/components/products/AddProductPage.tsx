@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { useStore } from '../../context/StoreContext';
 import { Product, ProductCategory, SkinType } from '../../types';
 import { generateSKU } from '../../utils/format';
-import { CATEGORY_LABELS, SKIN_TYPE_LABELS } from '../../utils/translations';
+import { CATEGORY_LABELS, CATEGORY_GROUPS, SKIN_TYPE_LABELS } from '../../utils/translations';
 import { CameraScannerModal } from '../pos/CameraScannerModal';
 import { playBarcodeBeep } from '../../utils/scannerSound';
 import { normalizeBarcode, isBarcodeMatch } from '../../utils/barcodeValidator';
@@ -16,6 +16,9 @@ import {
   X,
   Barcode,
   AlertTriangle,
+  Plus,
+  FolderPlus,
+  Tag,
 } from 'lucide-react';
 
 export const AddProductPage: React.FC = () => {
@@ -23,8 +26,12 @@ export const AddProductPage: React.FC = () => {
     products,
     addProduct,
     updateProduct,
+    customCategories,
+    addCustomCategory,
     selectedProductForEdit,
     setSelectedProductForEdit,
+    pendingBarcodeForAdd,
+    setPendingBarcodeForAdd,
     setActiveTab,
     goBack,
   } = useStore();
@@ -48,6 +55,27 @@ export const AddProductPage: React.FC = () => {
     barcode: string;
     product: Product;
   } | null>(null);
+
+  // Custom Category creation state
+  const [showAddCustomCategory, setShowAddCustomCategory] = useState(false);
+  const [customCatMy, setCustomCatMy] = useState('');
+  const [customCatEn, setCustomCatEn] = useState('');
+  const [customCatError, setCustomCatError] = useState<string | null>(null);
+
+  const handleSaveCustomCategory = () => {
+    if (!customCatMy.trim()) {
+      setCustomCatError('ကျေးဇူးပြု၍ အမျိုးအစားအမည် ရိုက်ထည့်ပါ');
+      return;
+    }
+    const newId = addCustomCategory(customCatMy.trim(), customCatEn.trim());
+    setCategory(newId as ProductCategory);
+    setCustomCatMy('');
+    setCustomCatEn('');
+    setCustomCatError(null);
+    setShowAddCustomCategory(false);
+    setToastMessage('အမျိုးအစားအသစ် ထည့်သွင်းပြီးပါပြီ');
+    setTimeout(() => setToastMessage(null), 2500);
+  };
 
   // Check if entered barcode already exists on another product
   const duplicateProduct = useMemo(() => {
@@ -142,7 +170,12 @@ export const AddProductPage: React.FC = () => {
       // Clean blank state for new product - strictly do NOT auto-fill random barcodes!
       setNameMy('');
       setSku(generateSKU('EMS', 'SKN'));
-      setBarcode(''); // Kept clean so user can scan the actual barcode on the product
+      if (pendingBarcodeForAdd) {
+        setBarcode(pendingBarcodeForAdd);
+        setPendingBarcodeForAdd(null);
+      } else {
+        setBarcode('');
+      }
       setCategory('serum');
       setSkinType(['all']);
       setVolume('');
@@ -311,21 +344,57 @@ export const AddProductPage: React.FC = () => {
 
           <div className="grid grid-cols-1 gap-4">
             <div>
-              <label className="block text-xs font-bold text-stone-700 mb-1">
-                အမျိုးအစား
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-bold text-stone-700">
+                  အမျိုးအစား (Category)
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setShowAddCustomCategory(true)}
+                  className="text-xs font-bold text-rose-600 hover:text-rose-700 flex items-center gap-1 cursor-pointer bg-rose-50 hover:bg-rose-100 px-2 py-0.5 rounded-lg border border-rose-200 transition-colors"
+                >
+                  <Plus className="w-3 h-3" />
+                  <span>အမျိုးအစားအသစ် ထည့်မည်</span>
+                </button>
+              </div>
+
               <select
                 value={category}
-                onChange={(e) => setCategory(e.target.value as ProductCategory)}
+                onChange={(e) => {
+                  if (e.target.value === '__add_new__') {
+                    setShowAddCustomCategory(true);
+                  } else {
+                    setCategory(e.target.value as ProductCategory);
+                  }
+                }}
                 className="w-full text-xs sm:text-sm px-3.5 py-2.5 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-rose-500 bg-stone-50/50"
               >
-                {Object.entries(CATEGORY_LABELS)
-                  .filter(([k]) => k !== 'all')
-                  .map(([cat, label]) => (
-                    <option key={cat} value={cat}>
-                      {label.my}
-                    </option>
-                  ))}
+                {CATEGORY_GROUPS.map((grp) => (
+                  <optgroup key={grp.groupMy} label={grp.groupMy}>
+                    {grp.keys.map((catKey) => {
+                      const label = CATEGORY_LABELS[catKey];
+                      return (
+                        <option key={catKey} value={catKey}>
+                          {label?.my || catKey} ({label?.en || catKey})
+                        </option>
+                      );
+                    })}
+                  </optgroup>
+                ))}
+
+                {customCategories.length > 0 && (
+                  <optgroup label="စိတ်ကြိုက် အမျိုးအစားများ (Custom Categories)">
+                    {customCategories.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.nameMy} {c.nameEn ? `(${c.nameEn})` : ''}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
+
+                <option value="__add_new__" className="text-rose-600 font-bold">
+                  + အမျိုးအစားအသစ် ထည့်သွင်းမည် (Add New Category)...
+                </option>
               </select>
             </div>
           </div>
@@ -682,6 +751,98 @@ export const AddProductPage: React.FC = () => {
               >
                 ဘားကုဒ် ပြန်ဖျက်မည် (Clear)
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Category Creation Modal */}
+      {showAddCustomCategory && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-5 max-w-sm w-full shadow-2xl border border-stone-200 animate-scaleIn">
+            <div className="flex items-center justify-between pb-3 mb-4 border-b border-stone-100">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
+                  <Plus className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-stone-900">
+                    အမျိုးအစားအသစ် ထည့်မည်
+                  </h3>
+                  <p className="text-[11px] text-stone-500">
+                    Add Custom Product Category
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAddCustomCategory(false);
+                  setCustomCatError(null);
+                }}
+                className="p-1 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-100 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-bold text-stone-700 mb-1">
+                  အမျိုးအစားအမည် (မြန်မာ) <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={customCatMy}
+                  onChange={(e) => {
+                    setCustomCatMy(e.target.value);
+                    setCustomCatError(null);
+                  }}
+                  placeholder="ဥပမာ - နှုတ်ခမ်းနီ၊ ခေါင်းလိမ်းဆီ..."
+                  className="w-full text-xs sm:text-sm px-3 py-2 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-rose-500 bg-stone-50/50"
+                  autoFocus
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-stone-700 mb-1">
+                  အင်္ဂလိပ်အမည် (English Name - စိတ်ကြိုက်)
+                </label>
+                <input
+                  type="text"
+                  value={customCatEn}
+                  onChange={(e) => setCustomCatEn(e.target.value)}
+                  placeholder="e.g. Lip Gloss, Hair Oil..."
+                  className="w-full text-xs sm:text-sm px-3 py-2 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-rose-500 bg-stone-50/50"
+                />
+              </div>
+
+              {customCatError && (
+                <p className="text-xs text-rose-600 font-semibold flex items-center gap-1">
+                  <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                  <span>{customCatError}</span>
+                </p>
+              )}
+
+              <div className="pt-2 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAddCustomCategory(false);
+                    setCustomCatError(null);
+                  }}
+                  className="px-3.5 py-2 rounded-xl text-xs font-semibold text-stone-600 hover:bg-stone-100 cursor-pointer"
+                >
+                  မလုပ်တော့ပါ
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveCustomCategory}
+                  className="px-4 py-2 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-xs cursor-pointer"
+                >
+                  ထည့်သွင်းမည်
+                </button>
+              </div>
             </div>
           </div>
         </div>
