@@ -29,9 +29,15 @@ export const SecurityBackupPage: React.FC = () => {
   const [profileForm, setProfileForm] = useState<StoreProfile>({ ...storeProfile });
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
-  // Sync profileForm whenever storeProfile updates
+  // Track if user is actively modifying or has focused the form to prevent external sync from wiping input
+  const isDirtyRef = React.useRef(false);
+  const isFocusedRef = React.useRef(false);
+
+  // Sync profileForm whenever storeProfile updates ONLY if user has not modified or focused
   useEffect(() => {
-    setProfileForm({ ...storeProfile });
+    if (!isDirtyRef.current && !isFocusedRef.current) {
+      setProfileForm({ ...storeProfile });
+    }
   }, [storeProfile]);
 
   // Step-by-step password modification state (never reveal current password)
@@ -103,16 +109,18 @@ export const SecurityBackupPage: React.FC = () => {
 
   const handleSaveProfile = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    const cleanAddr = (profileForm.addressMy || profileForm.address || '').trim();
-    const cleanName = (profileForm.name || profileForm.nameMy || '').trim();
+    isDirtyRef.current = false;
+    isFocusedRef.current = false;
+    const cleanAddr = (profileForm.addressMy ?? profileForm.address ?? '').trim();
+    const cleanName = (profileForm.nameMy ?? profileForm.name ?? '').trim();
     const updated: StoreProfile = {
       ...profileForm,
       name: cleanName,
       nameMy: cleanName,
       address: cleanAddr,
       addressMy: cleanAddr,
-      phone: profileForm.phone.trim(),
-      activeCashier: profileForm.activeCashier.trim() || 'မအိမွန်',
+      phone: (profileForm.phone || '').trim(),
+      activeCashier: (profileForm.activeCashier || '').trim() || 'မအိမွန်',
     };
     updateStoreProfile(updated);
     showToast('ဆိုင်လိပ်စာနှင့် ဆက်တင်များ အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ (ဘောင်ချာတွင် ချက်ချင်းပြောင်းလဲပါမည်)');
@@ -189,11 +197,24 @@ export const SecurityBackupPage: React.FC = () => {
               <input
                 type="text"
                 required
-                value={profileForm.name}
-                onChange={(e) =>
-                  setProfileForm({ ...profileForm, name: e.target.value })
-                }
-                className="w-full text-xs sm:text-sm px-3 py-2 rounded-xl border border-stone-200 font-bold"
+                value={profileForm.nameMy ?? profileForm.name ?? ''}
+                onChange={(e) => {
+                  isDirtyRef.current = true;
+                  const val = e.target.value;
+                  setProfileForm((prev) => ({ ...prev, name: val, nameMy: val }));
+                }}
+                onFocus={() => {
+                  isFocusedRef.current = true;
+                }}
+                onBlur={() => {
+                  isFocusedRef.current = false;
+                }}
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck={false}
+                placeholder="ဆိုင်အမည် ထည့်သွင်းပါ"
+                className="w-full text-xs sm:text-sm px-3 py-2 rounded-xl border border-stone-200 font-bold focus:outline-none focus:ring-2 focus:ring-rose-500 bg-white"
               />
             </div>
 
@@ -206,10 +227,11 @@ export const SecurityBackupPage: React.FC = () => {
                   ပြောင်းလဲပြီးပါက 'ဆက်တင်သိမ်းမည်' ကို နှိပ်ပါ
                 </span>
               </div>
-              <input
-                type="text"
-                value={profileForm.addressMy || profileForm.address || ''}
+              <textarea
+                rows={3}
+                value={profileForm.addressMy ?? profileForm.address ?? ''}
                 onChange={(e) => {
+                  isDirtyRef.current = true;
                   const val = e.target.value;
                   setProfileForm((prev) => ({
                     ...prev,
@@ -217,8 +239,18 @@ export const SecurityBackupPage: React.FC = () => {
                     address: val,
                   }));
                 }}
-                placeholder="အမှတ်၊ လမ်း၊ မြို့နယ်၊ မြို့..."
-                className="w-full text-xs sm:text-sm px-3 py-2 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-rose-500"
+                onFocus={() => {
+                  isFocusedRef.current = true;
+                }}
+                onBlur={() => {
+                  isFocusedRef.current = false;
+                }}
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck={false}
+                placeholder="အမှတ်၊ လမ်း၊ ရပ်ကွက်၊ မြို့နယ်၊ မြို့..."
+                className="w-full text-xs sm:text-sm px-3.5 py-2.5 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-rose-500 leading-relaxed font-medium bg-white"
               />
             </div>
 
@@ -228,11 +260,23 @@ export const SecurityBackupPage: React.FC = () => {
               </label>
               <input
                 type="text"
-                value={profileForm.phone}
-                onChange={(e) =>
-                  setProfileForm({ ...profileForm, phone: e.target.value })
-                }
-                className="w-full text-xs sm:text-sm px-3 py-2 rounded-xl border border-stone-200 font-mono"
+                value={profileForm.phone ?? ''}
+                onChange={(e) => {
+                  isDirtyRef.current = true;
+                  setProfileForm((prev) => ({ ...prev, phone: e.target.value }));
+                }}
+                onFocus={() => {
+                  isFocusedRef.current = true;
+                }}
+                onBlur={() => {
+                  isFocusedRef.current = false;
+                }}
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck={false}
+                placeholder="09-..."
+                className="w-full text-xs sm:text-sm px-3 py-2 rounded-xl border border-stone-200 font-mono focus:outline-none focus:ring-2 focus:ring-rose-500 bg-white"
               />
             </div>
 
@@ -242,14 +286,26 @@ export const SecurityBackupPage: React.FC = () => {
               </label>
               <input
                 type="text"
-                value={profileForm.activeCashier}
-                onChange={(e) =>
-                  setProfileForm({
-                    ...profileForm,
+                value={profileForm.activeCashier ?? ''}
+                onChange={(e) => {
+                  isDirtyRef.current = true;
+                  setProfileForm((prev) => ({
+                    ...prev,
                     activeCashier: e.target.value,
-                  })
-                }
-                className="w-full text-xs sm:text-sm px-3 py-2 rounded-xl border border-stone-200"
+                  }));
+                }}
+                onFocus={() => {
+                  isFocusedRef.current = true;
+                }}
+                onBlur={() => {
+                  isFocusedRef.current = false;
+                }}
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck={false}
+                placeholder="ငွေကိုင်အမည်"
+                className="w-full text-xs sm:text-sm px-3 py-2 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-rose-500 bg-white"
               />
             </div>
 

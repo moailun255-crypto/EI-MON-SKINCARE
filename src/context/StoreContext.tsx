@@ -352,12 +352,97 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [pinAuthError, setPinAuthError] = useState<string | null>(null);
 
 
+  // Safe check if store profiles are identical to avoid spurious re-renders
+  const isProfileEqual = (a: StoreProfile, b: StoreProfile): boolean => {
+    if (!a || !b) return a === b;
+    return (
+      (a.name || '') === (b.name || '') &&
+      (a.nameMy || '') === (b.nameMy || '') &&
+      (a.address || '') === (b.address || '') &&
+      (a.addressMy || '') === (b.addressMy || '') &&
+      (a.phone || '') === (b.phone || '') &&
+      (a.activeCashier || '') === (b.activeCashier || '') &&
+      (a.kpayNumber || '') === (b.kpayNumber || '') &&
+      (a.kpayName || '') === (b.kpayName || '') &&
+      (a.waveNumber || '') === (b.waveNumber || '') &&
+      (a.waveName || '') === (b.waveName || '') &&
+      (a.paperSize || '') === (b.paperSize || '') &&
+      (a.orderDeletePassword || '') === (b.orderDeletePassword || '') &&
+      (a.taxRate || 0) === (b.taxRate || 0)
+    );
+  };
+
+  // Keep references to current state to prevent race conditions during async syncs
+  const productsRef = React.useRef<Product[]>(products);
+  useEffect(() => {
+    productsRef.current = products;
+  }, [products]);
+
+  const storeProfileRef = React.useRef<StoreProfile>(storeProfile);
+  useEffect(() => {
+    storeProfileRef.current = storeProfile;
+  }, [storeProfile]);
+
   // Supabase Cloud State
   const [supabaseConfig, setSupabaseConfigState] = useState<SupabaseConfig>(getStoredSupabaseConfig);
   const [isCloudConnected, setIsCloudConnected] = useState<boolean>(false);
   const [cloudSyncStatus, setCloudSyncStatus] = useState<'idle' | 'syncing' | 'synced' | 'error'>('idle');
   const [cloudError, setCloudError] = useState<string | null>(null);
   const [needsTableSetup, setNeedsTableSetup] = useState<boolean>(false);
+
+  // Safe apply cloud data helper
+  const applyCloudData = (cloudData: {
+    products: Product[] | null;
+    orders: Order[] | null;
+    expenses: Expense[] | null;
+    storeProfile: StoreProfile | null;
+  }) => {
+    // 1. Safe Products update: NEVER wipe local products if cloud has 0 rows
+    if (cloudData.products !== null) {
+      if (cloudData.products.length > 0) {
+        setProducts(cloudData.products);
+        localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(cloudData.products));
+      } else {
+        // Cloud returned 0 products!
+        const isExplicitlyCleared = localStorage.getItem('ei_mon_products_explicitly_cleared') === 'true';
+        if (!isExplicitlyCleared) {
+          const currentLocal = productsRef.current;
+          if (currentLocal && currentLocal.length > 0) {
+            // Keep local products and push to cloud so cloud gets seeded
+            pushProductsToCloud(currentLocal);
+          } else {
+            // Restore initial products and push to cloud
+            setProducts(INITIAL_PRODUCTS);
+            localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(INITIAL_PRODUCTS));
+            pushProductsToCloud(INITIAL_PRODUCTS);
+          }
+        } else {
+          setProducts([]);
+          localStorage.setItem(STORAGE_KEYS.PRODUCTS, '[]');
+        }
+      }
+    }
+
+    // 2. Safe Orders update
+    if (cloudData.orders !== null) {
+      setOrders(cloudData.orders);
+      localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify(cloudData.orders));
+    }
+
+    // 3. Safe Expenses update
+    if (cloudData.expenses !== null) {
+      setExpenses(cloudData.expenses);
+      localStorage.setItem(STORAGE_KEYS.EXPENSES, JSON.stringify(cloudData.expenses));
+    }
+
+    // 4. Safe StoreProfile update: only update if remote differs to protect active user editing
+    if (cloudData.storeProfile !== null) {
+      if (!isProfileEqual(storeProfileRef.current, cloudData.storeProfile)) {
+        setStoreProfile(cloudData.storeProfile);
+        localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(cloudData.storeProfile));
+      }
+    }
+  };
 
   // Initial cloud sync and realtime multi-device sync
   useEffect(() => {
@@ -391,26 +476,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
         const cloudData = await fetchCloudData();
         if (isMounted) {
-          if (cloudData.products !== null) {
-            setProducts(cloudData.products);
-            localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(cloudData.products));
-          }
-
-          if (cloudData.orders !== null) {
-            setOrders(cloudData.orders);
-            localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify(cloudData.orders));
-          }
-
-          if (cloudData.expenses !== null) {
-            setExpenses(cloudData.expenses);
-            localStorage.setItem(STORAGE_KEYS.EXPENSES, JSON.stringify(cloudData.expenses));
-          }
-
-          if (cloudData.storeProfile !== null) {
-            setStoreProfile(cloudData.storeProfile);
-            localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(cloudData.storeProfile));
-          }
-
+          applyCloudData(cloudData);
           setCloudSyncStatus('synced');
         }
       } catch (err: any) {
@@ -461,9 +527,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
           // 2. Full fetch to guarantee multi-item and complete sync consistency across all devices
           const fresh = await fetchCloudData();
-          if (fresh.products !== null && isMounted) {
-            setProducts(fresh.products);
-            localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(fresh.products));
+          if (isMounted) {
+            applyCloudData(fresh);
           }
         }
       )
@@ -483,69 +548,41 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         { event: '*', schema: 'public', table: 'store_profile' },
         async () => {
           const fresh = await fetchCloudData();
-          if (fresh.storeProfile !== null && isMounted) {
-            setStoreProfile(fresh.storeProfile);
-            localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(fresh.storeProfile));
+          if (isMounted) {
+            applyCloudData(fresh);
           }
         }
       )
       .subscribe();
 
-    // Multi-device sync on app tab/window focus
+    // Multi-device sync on app tab/window focus (avoid thrashing)
+    let lastFocusSyncTime = 0;
     const handleVisibilitySync = () => {
+      const now = Date.now();
+      // Debounce focus sync to at most once per 15 seconds to prevent interrupting virtual keyboard typing
+      if (now - lastFocusSyncTime < 15000) return;
       if (document.visibilityState === 'visible') {
+        lastFocusSyncTime = now;
         fetchCloudData().then((fresh) => {
           if (!isMounted) return;
-          if (fresh.products !== null) {
-            setProducts(fresh.products);
-            localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(fresh.products));
-          }
-          if (fresh.orders !== null) {
-            setOrders(fresh.orders);
-            localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify(fresh.orders));
-          }
-          if (fresh.expenses !== null) {
-            setExpenses(fresh.expenses);
-            localStorage.setItem(STORAGE_KEYS.EXPENSES, JSON.stringify(fresh.expenses));
-          }
-          if (fresh.storeProfile !== null) {
-            setStoreProfile(fresh.storeProfile);
-            localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(fresh.storeProfile));
-          }
+          applyCloudData(fresh);
         });
       }
     };
     window.addEventListener('visibilitychange', handleVisibilitySync);
-    window.addEventListener('focus', handleVisibilitySync);
 
-    // Periodic sync interval (every 10 seconds)
+    // Periodic background sync interval (every 30 seconds instead of 10s to reduce keyboard interruptions)
     const intervalSync = setInterval(() => {
       fetchCloudData().then((fresh) => {
         if (!isMounted) return;
-        if (fresh.products !== null) {
-          setProducts(fresh.products);
-          localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(fresh.products));
-        }
-        if (fresh.orders !== null) {
-          setOrders(fresh.orders);
-          localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify(fresh.orders));
-        }
-        if (fresh.expenses !== null) {
-          setExpenses(fresh.expenses);
-          localStorage.setItem(STORAGE_KEYS.EXPENSES, JSON.stringify(fresh.expenses));
-        }
-        if (fresh.storeProfile !== null) {
-          setStoreProfile(fresh.storeProfile);
-          localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(fresh.storeProfile));
-        }
+        applyCloudData(fresh);
       });
-    }, 10000);
+    }, 30000);
 
     return () => {
       isMounted = false;
       client.removeChannel(channel);
       window.removeEventListener('visibilitychange', handleVisibilitySync);
-      window.removeEventListener('focus', handleVisibilitySync);
       clearInterval(intervalSync);
     };
   }, [supabaseConfig]);
@@ -632,26 +669,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setNeedsTableSetup(false);
 
       const data = await fetchCloudData();
-      if (data.products !== null) {
-        setProducts(data.products);
-        localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(data.products));
-      }
-
-      if (data.orders !== null) {
-        setOrders(data.orders);
-        localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify(data.orders));
-      }
-
-      if (data.expenses !== null) {
-        setExpenses(data.expenses);
-        localStorage.setItem(STORAGE_KEYS.EXPENSES, JSON.stringify(data.expenses));
-      }
-
-      if (data.storeProfile !== null) {
-        setStoreProfile(data.storeProfile);
-        localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(data.storeProfile));
-      }
-
+      applyCloudData(data);
       setCloudSyncStatus('synced');
     } catch (err: any) {
       setCloudSyncStatus('error');

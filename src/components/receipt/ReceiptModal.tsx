@@ -660,7 +660,11 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ order, onClose }) =>
                     onChange={(e) =>
                       setEditShopForm({ ...editShopForm, name: e.target.value })
                     }
-                    className="w-full text-xs px-3 py-2 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-rose-500 font-bold"
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck={false}
+                    className="w-full text-xs px-3 py-2 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-rose-500 font-bold bg-white"
                   />
                 </div>
 
@@ -669,14 +673,18 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ order, onClose }) =>
                     ဆိုင်လိပ်စာ (ဘောင်ချာတွင် ပေါ်မည့်လိပ်စာ)
                   </label>
                   <textarea
-                    rows={2}
+                    rows={3}
                     required
                     value={editShopForm.address}
                     onChange={(e) =>
                       setEditShopForm({ ...editShopForm, address: e.target.value })
                     }
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck={false}
                     placeholder="ဆိုင်လိပ်စာ ထည့်ပါ..."
-                    className="w-full text-xs px-3 py-2 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-rose-500 leading-relaxed"
+                    className="w-full text-xs px-3 py-2 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-rose-500 leading-relaxed bg-white font-medium"
                   />
                 </div>
 
@@ -691,7 +699,11 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ order, onClose }) =>
                     onChange={(e) =>
                       setEditShopForm({ ...editShopForm, phone: e.target.value })
                     }
-                    className="w-full text-xs px-3 py-2 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-rose-500 font-mono"
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck={false}
+                    className="w-full text-xs px-3 py-2 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-rose-500 font-mono bg-white"
                   />
                 </div>
 

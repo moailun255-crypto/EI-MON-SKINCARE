@@ -330,6 +330,10 @@ export const AddProductPage: React.FC = () => {
                 placeholder="ဥပမာ - နှလုံးရွက် ချွေးပေါက်ကျဉ်း တိုနာ"
                 value={nameMy}
                 onChange={(e) => setNameMy(e.target.value)}
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck={false}
                 className="w-full text-xs sm:text-sm px-3.5 py-2.5 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-rose-500 bg-stone-50/50"
               />
             </div>
@@ -617,6 +621,10 @@ export const AddProductPage: React.FC = () => {
             rows={2}
             value={descriptionMy}
             onChange={(e) => setDescriptionMy(e.target.value)}
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck={false}
             placeholder="အသားအရေအတွက် အကျိုးကျေးဇူးများနှင့် အသုံးပြုပုံ..."
             className="w-full text-xs sm:text-sm px-3.5 py-2.5 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-rose-500 bg-stone-50/50"
           />

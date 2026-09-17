@@ -262,8 +262,12 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileCart }) => {
                 type="text"
                 value={newCashierName}
                 onChange={(e) => setNewCashierName(e.target.value)}
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck={false}
                 placeholder="ဥပမာ - အိမွန်၊ ဝန်ထမ်း ၁"
-                className="w-full text-sm px-3 py-2 rounded-xl border border-stone-300 focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-500"
+                className="w-full text-sm px-3 py-2 rounded-xl border border-stone-300 focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-500 bg-white"
                 autoFocus
               />
 
