@@ -114,16 +114,16 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileCart }) => {
         </div>
 
         {/* Center Live Clock (Visible on md, lg, xl screens) */}
-        <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-xl bg-stone-50 border border-stone-200 text-stone-700 shadow-2xs">
+        <div className="hidden md:flex items-center gap-1.5 lg:gap-2 px-2.5 lg:px-3 py-1 rounded-xl bg-stone-50 border border-stone-200 text-stone-700 shadow-2xs shrink-0">
           <Clock className="w-3.5 h-3.5 text-rose-600 shrink-0" />
           <span className="font-mono text-xs font-bold tracking-tight text-stone-900">
             {currentTime}
           </span>
-          <span className="text-[10px] text-stone-400 font-medium">| {currentDate}</span>
+          <span className="hidden xl:inline text-[10px] text-stone-400 font-medium">| {currentDate}</span>
         </div>
 
         {/* Right side controls */}
-        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+        <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 shrink-0">
           {/* Supabase Cloud Live Sync status indicator */}
           <button
             type="button"
@@ -159,8 +159,8 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileCart }) => {
               {cloudSyncStatus === 'syncing'
                 ? 'Syncing...'
                 : isCloudConnected
-                ? 'Cloud Realtime'
-                : 'Cloud Offline'}
+                ? 'Cloud'
+                : 'Offline'}
             </span>
           </button>
 
@@ -172,7 +172,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileCart }) => {
               setIsChangingCashier(true);
             }}
             title="ငွေကိုင်အမည် ပြောင်းလဲရန် နှိပ်ပါ"
-            className="flex items-center gap-1.5 px-1.5 py-1 sm:px-2.5 sm:py-1 rounded-xl bg-stone-50 border border-stone-200 hover:border-rose-300 transition-colors app-touch-btn cursor-pointer shadow-2xs min-h-[36px]"
+            className="flex items-center gap-1.5 px-1.5 py-1 sm:px-2 sm:py-1 md:px-2.5 rounded-xl bg-stone-50 border border-stone-200 hover:border-rose-300 transition-colors app-touch-btn cursor-pointer shadow-2xs min-h-[36px]"
           >
             <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-rose-600 text-white flex items-center justify-center font-bold text-xs shadow-2xs shrink-0">
               {storeProfile.activeCashier.charAt(0) || 'င'}
@@ -181,7 +181,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileCart }) => {
               <p className="text-[8px] text-stone-400 uppercase font-semibold leading-none">
                 တာဝန်ကျ
               </p>
-              <p className="text-[11px] font-bold text-stone-800 leading-tight truncate max-w-[85px]">
+              <p className="text-[11px] font-bold text-stone-800 leading-tight truncate max-w-[75px] md:max-w-[90px]">
                 {storeProfile.activeCashier}
               </p>
             </div>

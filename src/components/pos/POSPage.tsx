@@ -568,14 +568,14 @@ export const POSPage: React.FC<POSPageProps> = ({
       </div>
 
       {/* ========================================================================= */}
-      {/* WORKSPACE: MOBILE CATALOG OR DESKTOP DUAL-PANEL POS                       */}
+      {/* WORKSPACE: MOBILE CATALOG OR DESKTOP/TABLET DUAL-PANEL POS                */}
       {/* ========================================================================= */}
       <div className={`flex-1 min-h-0 overflow-hidden ${mobileView === 'catalog' ? 'flex flex-col' : 'hidden md:flex flex-col'}`}>
-        <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-12 gap-2.5 sm:gap-3 overflow-hidden">
-          {/* Left Column: Product Catalog & Search (col-span-7 lg:col-span-8) */}
-          <div className="md:col-span-7 lg:col-span-8 h-full flex flex-col min-h-0 space-y-1.5 overflow-hidden">
+        <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-12 gap-2 sm:gap-2.5 lg:gap-3 overflow-hidden">
+          {/* Left Column: Product Catalog & Search (col-span-7 on tablet, col-span-8 on wide screens) */}
+          <div className="md:col-span-7 lg:col-span-7 xl:col-span-8 h-full flex flex-col min-h-0 space-y-1.5 overflow-hidden">
             {/* Search + Scanner + Horizontal Categories Toolbar (shrink-0) */}
-            <div className="bg-white p-2 rounded-2xl border border-stone-200 shadow-2xs space-y-1.5 shrink-0">
+            <div className="bg-white p-2 md:p-2.5 rounded-2xl border border-stone-200 shadow-2xs space-y-1.5 shrink-0">
               <div className="flex items-center gap-1.5">
                 {/* Search & Barcode Input */}
                 <form onSubmit={handleSearchSubmit} className="relative flex-1">
@@ -588,7 +588,7 @@ export const POSPage: React.FC<POSPageProps> = ({
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="ပစ္စည်းအမည်၊ SKU သို့မဟုတ် ဘားကုဒ်..."
-                    className="w-full text-xs pl-8 pr-7 py-1.5 rounded-xl border border-stone-200 focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-500 bg-stone-50/60"
+                    className="w-full text-xs pl-8 pr-7 py-1.5 md:py-2 rounded-xl border border-stone-200 focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-500 bg-stone-50/60 min-h-[36px]"
                   />
                   {searchQuery && (
                     <button
@@ -605,7 +605,7 @@ export const POSPage: React.FC<POSPageProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsCameraScannerOpen(true)}
-                  className="px-2.5 py-1.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-bold text-xs flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer shrink-0"
+                  className="px-2.5 md:px-3 py-1.5 md:py-2 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-bold text-xs flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer shrink-0 min-h-[36px] app-touch-btn"
                 >
                   <Camera className="w-3.5 h-3.5 text-rose-400" />
                   <span className="text-xs font-bold">စကင်</span>
@@ -613,14 +613,14 @@ export const POSPage: React.FC<POSPageProps> = ({
               </div>
 
               {/* Category Filter Horizontal Chips */}
-              <div className="flex items-center gap-1 overflow-x-auto pb-0.5 no-scrollbar">
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 no-scrollbar overscroll-x-contain touch-pan-x">
                 {categoriesList.map((cat) => {
                   const isSelected = selectedCategory === cat.id;
                   return (
                     <button
                       key={cat.id}
                       onClick={() => setSelectedCategory(cat.id)}
-                      className={`px-2 py-0.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1 border shrink-0 ${
+                      className={`px-2.5 py-1 md:py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1 border shrink-0 min-h-[30px] md:min-h-[32px] app-touch-btn active:scale-95 ${
                         isSelected
                           ? 'bg-rose-600 border-rose-600 text-white shadow-2xs font-bold'
                           : 'bg-stone-50 border-stone-200 text-stone-600 hover:bg-stone-100 hover:text-stone-900'
@@ -773,8 +773,8 @@ export const POSPage: React.FC<POSPageProps> = ({
             </div>
           </div>
 
-          {/* Right Column: Desktop Cart Panel (col-span-5 lg:col-span-4) */}
-          <div className="hidden md:flex md:col-span-5 lg:col-span-4 h-full flex-col min-h-0 overflow-hidden">
+          {/* Right Column: Desktop/Tablet Cart Panel (col-span-5 on tablet, col-span-4 on wide screens) */}
+          <div className="hidden md:flex md:col-span-5 lg:col-span-5 xl:col-span-4 h-full flex-col min-h-0 overflow-hidden">
             <CartPanel onCheckout={() => setIsPaymentModalOpen(true)} />
           </div>
         </div>

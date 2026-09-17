@@ -76,7 +76,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
   const paymentMethodsList: { id: PaymentMethod; label: string; sub: string; icon: React.ReactNode }[] = [
     { id: 'cash', label: 'ငွေသား (Cash)', sub: 'ကျပ်ငွေစက္ကူ', icon: <Banknote className="w-4 h-4 text-emerald-600" /> },
-    { id: 'kpay', label: 'KBZPay', sub: 'KPay စကင် / အကောင့်', icon: <Smartphone className="w-4 h-4 text-blue-600" /> },
+    { id: 'kpay', label: 'ဒစ်ဂျစ်တယ် / ငွေလွှဲ', sub: 'KPay / Mobile Banking', icon: <Smartphone className="w-4 h-4 text-blue-600" /> },
   ];
 
   return (
@@ -182,15 +182,15 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
               </div>
 
               {/* Quick Cash Buttons */}
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex flex-wrap gap-1.5 sm:gap-2">
                 {quickCashOptions.map((opt) => (
                   <button
                     key={opt}
                     type="button"
                     onClick={() => setAmountReceived(opt)}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors cursor-pointer ${
+                    className={`px-3 py-1.5 md:py-2 rounded-xl text-xs font-bold border transition-colors cursor-pointer min-h-[36px] app-touch-btn active:scale-95 ${
                       amountReceived === opt
-                        ? 'bg-rose-600 text-white border-rose-600'
+                        ? 'bg-rose-600 text-white border-rose-600 shadow-2xs'
                         : 'bg-white text-stone-700 border-stone-300 hover:bg-stone-100'
                     }`}
                   >

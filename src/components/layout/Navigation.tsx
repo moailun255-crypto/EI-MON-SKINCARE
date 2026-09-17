@@ -72,6 +72,7 @@ export const Navigation: React.FC = () => {
   const navItems: {
     id: PageTab;
     title: string;
+    titleTablet: string;
     icon: React.ReactNode;
     badge?: number;
     badgeColor?: string;
@@ -79,36 +80,42 @@ export const Navigation: React.FC = () => {
     {
       id: 'pos',
       title: 'အရောင်းကောင်တာ (POS)',
-      icon: <Store className="w-4 h-4" />,
+      titleTablet: 'အရောင်း',
+      icon: <Store className="w-4 h-4 shrink-0" />,
     },
     {
       id: 'products',
       title: 'ကုန်ပစ္စည်းများ',
-      icon: <Boxes className="w-4 h-4" />,
+      titleTablet: 'ကုန်ပစ္စည်း',
+      icon: <Boxes className="w-4 h-4 shrink-0" />,
       badge: lowStockCount > 0 ? lowStockCount : undefined,
       badgeColor: 'bg-amber-500 text-stone-900',
     },
     {
       id: 'add-product',
       title: 'အသစ်ထည့်',
-      icon: <Plus className="w-4 h-4" />,
+      titleTablet: 'အသစ်ထည့်',
+      icon: <Plus className="w-4 h-4 shrink-0" />,
     },
     {
       id: 'transactions',
       title: 'အရောင်းမှတ်တမ်း',
-      icon: <ReceiptText className="w-4 h-4" />,
+      titleTablet: 'မှတ်တမ်း',
+      icon: <ReceiptText className="w-4 h-4 shrink-0" />,
       badge: todayCompletedOrders.length > 0 ? todayCompletedOrders.length : undefined,
       badgeColor: 'bg-rose-500 text-white',
     },
     {
       id: 'finance',
       title: 'ဘဏ္ဍာရေးနှင့် စာရင်း',
-      icon: <TrendingUp className="w-4 h-4" />,
+      titleTablet: 'ဘဏ္ဍာရေး',
+      icon: <TrendingUp className="w-4 h-4 shrink-0" />,
     },
     {
       id: 'security',
       title: 'လုံခြုံရေးနှင့် Cloud',
-      icon: <ShieldCheck className="w-4 h-4" />,
+      titleTablet: 'လုံခြုံရေး',
+      icon: <ShieldCheck className="w-4 h-4 shrink-0" />,
     },
   ];
 
@@ -121,18 +128,19 @@ export const Navigation: React.FC = () => {
       {/* Clean, high contrast, non-crowded bar sitting directly under header       */}
       {/* ========================================================================= */}
       <nav className="hidden sm:block sticky top-13 sm:top-14 z-25 bg-white/95 backdrop-blur-md border-b border-stone-200/90 shadow-2xs shrink-0">
-        <div className="max-w-7xl mx-auto px-3 sm:px-5 py-1.5 flex items-center justify-between gap-3">
+        <div className="max-w-7xl mx-auto px-2.5 sm:px-4 lg:px-5 py-1.5 flex items-center justify-between gap-2 lg:gap-3">
           {/* Left: Optional Quick Back to POS button & Primary Navigation Tabs */}
-          <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none py-0.5">
+          <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 overflow-x-auto scrollbar-none py-0.5 overscroll-x-contain touch-pan-x">
             {activeTab !== 'pos' && (
               <button
                 type="button"
                 onClick={() => setActiveTab('pos')}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs sm:text-sm transition-all active:scale-95 cursor-pointer shadow-2xs shrink-0 mr-1"
+                className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs sm:text-sm transition-all active:scale-95 cursor-pointer shadow-2xs shrink-0 mr-0.5"
                 title="အရောင်းကောင်တာသို့ ပြန်သွားမည် (Back to POS)"
               >
-                <ArrowLeft className="w-4 h-4 text-rose-600" />
-                <span>အရောင်းကောင်တာ</span>
+                <ArrowLeft className="w-4 h-4 text-rose-600 shrink-0" />
+                <span className="hidden md:inline">အရောင်းသို့</span>
+                <span className="inline md:hidden">အရောင်း</span>
               </button>
             )}
 
@@ -144,16 +152,17 @@ export const Navigation: React.FC = () => {
                   key={item.id}
                   type="button"
                   onClick={() => setActiveTab(item.id)}
-                  className={`flex items-center gap-2 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap min-h-[38px] select-none ${
+                  className={`flex items-center gap-1.5 md:gap-2 px-2.5 sm:px-2.5 md:px-3 lg:px-3.5 py-1.5 md:py-2 rounded-xl text-xs lg:text-sm font-bold transition-all cursor-pointer whitespace-nowrap min-h-[38px] md:min-h-[40px] select-none app-touch-btn active:scale-98 ${
                     isActive
-                      ? 'bg-rose-600 text-white shadow-xs shadow-rose-300 font-extrabold scale-[1.02]'
+                      ? 'bg-rose-600 text-white shadow-xs shadow-rose-300 font-extrabold scale-[1.01]'
                       : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100/90'
                   }`}
                 >
                   <span className={isActive ? 'text-white' : 'text-stone-500'}>
                     {item.icon}
                   </span>
-                  <span>{item.title}</span>
+                  <span className="hidden lg:inline">{item.title}</span>
+                  <span className="inline lg:hidden">{item.titleTablet}</span>
                   {item.badge !== undefined && (
                     <span
                       className={`text-[10px] font-black px-1.5 py-0.2 rounded-full leading-tight ${
@@ -170,8 +179,8 @@ export const Navigation: React.FC = () => {
             })}
           </div>
 
-          {/* Right (Desktop lg+): Realtime Daily POS Pulse */}
-          <div className="hidden lg:flex items-center gap-3 shrink-0 pl-3 border-l border-stone-200">
+          {/* Right (Desktop xl+): Realtime Daily POS Pulse */}
+          <div className="hidden xl:flex items-center gap-2.5 shrink-0 pl-3 border-l border-stone-200">
             <div className="text-right">
               <p className="text-[9px] text-stone-400 font-bold uppercase leading-none">
                 ယနေ့ ရောင်းရငွေ
@@ -180,8 +189,8 @@ export const Navigation: React.FC = () => {
                 {formatMMK(todayRevenue, useMyanmarDigits)}
               </p>
             </div>
-            <div className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-700 shrink-0">
-              <TrendingUp className="w-4 h-4" />
+            <div className="w-7 h-7 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-700 shrink-0">
+              <TrendingUp className="w-3.5 h-3.5" />
             </div>
           </div>
         </div>

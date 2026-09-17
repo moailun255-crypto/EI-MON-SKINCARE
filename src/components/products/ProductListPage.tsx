@@ -644,9 +644,9 @@ export const ProductListPage: React.FC = () => {
                     <th className="py-2 px-2.5">ပစ္စည်းအမည်</th>
                     <th className="py-2 px-2.5">အမျိုးအစား</th>
                     <th className="py-2 px-2.5">ဘားကုဒ်</th>
-                    <th className="py-2 px-2.5 text-right">ဝယ်ရင်းစျေး</th>
+                    <th className="hidden lg:table-cell py-2 px-2.5 text-right">ဝယ်ရင်းစျေး</th>
                     <th className="py-2 px-2.5 text-right">ရောင်းစျေး</th>
-                    <th className="py-2 px-2.5 text-right">အမြတ်ငွေ</th>
+                    <th className="hidden lg:table-cell py-2 px-2.5 text-right">အမြတ်ငွေ</th>
                     <th className="py-2 px-2.5 text-center">လက်ကျန်</th>
                     <th className="py-2 px-3 text-right">လုပ်ဆောင်ချက်</th>
                   </tr>
@@ -677,31 +677,31 @@ export const ProductListPage: React.FC = () => {
 
                         <td className="py-2 px-2.5">
                           <div className="min-w-0">
-                            <p className="font-bold text-stone-900 truncate max-w-sm">
+                            <p className="font-bold text-stone-900 truncate max-w-[200px] md:max-w-xs lg:max-w-sm">
                               {p.nameMy}
                             </p>
                           </div>
                         </td>
 
-                        <td className="py-2 px-2.5">
+                        <td className="py-2 px-2.5 whitespace-nowrap">
                           <span className="px-2 py-0.5 rounded-md bg-stone-100 text-stone-700 font-medium text-[10px]">
                             {getCategoryName(p.category)}
                           </span>
                         </td>
 
-                        <td className="py-2 px-2.5 font-mono text-[10px] text-stone-700 font-bold">
+                        <td className="py-2 px-2.5 font-mono text-[10px] text-stone-700 font-bold whitespace-nowrap">
                           {p.barcode}
                         </td>
 
-                        <td className="py-2 px-2.5 text-right font-semibold text-stone-600">
+                        <td className="hidden lg:table-cell py-2 px-2.5 text-right font-semibold text-stone-600 whitespace-nowrap">
                           {formatMMK(p.costPrice, useMyanmarDigits)}
                         </td>
 
-                        <td className="py-2 px-2.5 text-right font-bold text-rose-700">
+                        <td className="py-2 px-2.5 text-right font-bold text-rose-700 whitespace-nowrap">
                           {formatMMK(p.sellingPrice, useMyanmarDigits)}
                         </td>
 
-                        <td className="py-2 px-2.5 text-right">
+                        <td className="hidden lg:table-cell py-2 px-2.5 text-right whitespace-nowrap">
                           <span className="font-bold text-emerald-700">
                             +{formatMMK(profitMMK, useMyanmarDigits)}
                           </span>
@@ -714,7 +714,7 @@ export const ProductListPage: React.FC = () => {
                           <div className="flex items-center justify-center gap-1">
                             <button
                               onClick={() => handleAdjustStockWithFeedback(p, -1)}
-                              className="w-5 h-5 rounded bg-stone-100 hover:bg-stone-200 text-stone-700 flex items-center justify-center text-xs cursor-pointer"
+                              className="w-6 h-6 rounded-md bg-stone-100 hover:bg-stone-200 active:bg-stone-300 text-stone-700 flex items-center justify-center text-xs cursor-pointer app-touch-btn"
                               title="-1"
                             >
                               <Minus className="w-3 h-3" />
@@ -732,7 +732,7 @@ export const ProductListPage: React.FC = () => {
                             </span>
                             <button
                               onClick={() => handleAdjustStockWithFeedback(p, 1)}
-                              className="w-5 h-5 rounded bg-stone-100 hover:bg-stone-200 text-stone-700 flex items-center justify-center text-xs cursor-pointer"
+                              className="w-6 h-6 rounded-md bg-stone-100 hover:bg-stone-200 active:bg-stone-300 text-stone-700 flex items-center justify-center text-xs cursor-pointer app-touch-btn"
                               title="+1"
                             >
                               <Plus className="w-3 h-3" />
@@ -749,14 +749,14 @@ export const ProductListPage: React.FC = () => {
                           <div className="flex items-center justify-end gap-1">
                             <button
                               onClick={() => handleEdit(p)}
-                              className="p-1 rounded-lg text-stone-600 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                              className="p-1.5 rounded-lg text-stone-600 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer app-touch-btn"
                               title="ပြင်ဆင်မည်"
                             >
                               <Edit2 className="w-3.5 h-3.5" />
                             </button>
                             <button
                               onClick={() => setConfirmDeleteId(p.id)}
-                              className="p-1 rounded-lg text-stone-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                              className="p-1.5 rounded-lg text-stone-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer app-touch-btn"
                               title="ဖျက်မည်"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
