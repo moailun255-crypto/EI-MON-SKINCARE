@@ -159,14 +159,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const saved = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
       if (saved !== null) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          // If 6923700966701 (L'Oreal Paris Revitalift) is not in existing saved products, append it
-          if (!parsed.some((p: Product) => p.barcode === '6923700966701')) {
-            const lorealProd = INITIAL_PRODUCTS.find((p) => p.barcode === '6923700966701');
-            if (lorealProd) {
-              return [lorealProd, ...parsed];
-            }
-          }
+        if (Array.isArray(parsed)) {
           return parsed;
         }
       }
@@ -397,30 +390,11 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     expenses: Expense[] | null;
     storeProfile: StoreProfile | null;
   }) => {
-    // 1. Safe Products update: NEVER wipe local products if cloud has 0 rows
+    // 1. Safe Products update: Directly reflect cloud state without resurrecting deleted items
     if (cloudData.products !== null) {
-      if (cloudData.products.length > 0) {
-        setProducts(cloudData.products);
-        localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(cloudData.products));
-      } else {
-        // Cloud returned 0 products!
-        const isExplicitlyCleared = localStorage.getItem('ei_mon_products_explicitly_cleared') === 'true';
-        if (!isExplicitlyCleared) {
-          const currentLocal = productsRef.current;
-          if (currentLocal && currentLocal.length > 0) {
-            // Keep local products and push to cloud so cloud gets seeded
-            pushProductsToCloud(currentLocal);
-          } else {
-            // Restore initial products and push to cloud
-            setProducts(INITIAL_PRODUCTS);
-            localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(INITIAL_PRODUCTS));
-            pushProductsToCloud(INITIAL_PRODUCTS);
-          }
-        } else {
-          setProducts([]);
-          localStorage.setItem(STORAGE_KEYS.PRODUCTS, '[]');
-        }
-      }
+      setProducts(cloudData.products);
+      productsRef.current = cloudData.products;
+      localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(cloudData.products));
     }
 
     // 2. Safe Orders update
@@ -439,6 +413,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (cloudData.storeProfile !== null) {
       if (!isProfileEqual(storeProfileRef.current, cloudData.storeProfile)) {
         setStoreProfile(cloudData.storeProfile);
+        storeProfileRef.current = cloudData.storeProfile;
         localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(cloudData.storeProfile));
       }
     }
@@ -546,7 +521,13 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'store_profile' },
-        async () => {
+        async (payload) => {
+          if (payload.new && (payload.new as any).profile) {
+            const remoteProfile = (payload.new as any).profile as StoreProfile;
+            setStoreProfile(remoteProfile);
+            storeProfileRef.current = remoteProfile;
+            localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(remoteProfile));
+          }
           const fresh = await fetchCloudData();
           if (isMounted) {
             applyCloudData(fresh);
@@ -555,34 +536,43 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       )
       .subscribe();
 
-    // Multi-device sync on app tab/window focus (avoid thrashing)
+    // Multi-device sync on app tab/window focus or resume
     let lastFocusSyncTime = 0;
-    const handleVisibilitySync = () => {
+    const handleFocusSync = () => {
       const now = Date.now();
-      // Debounce focus sync to at most once per 15 seconds to prevent interrupting virtual keyboard typing
-      if (now - lastFocusSyncTime < 15000) return;
+      // Debounce focus sync to at most once per 3 seconds for fast multi-device updates
+      if (now - lastFocusSyncTime < 3000) return;
+      lastFocusSyncTime = now;
+      fetchCloudData().then((fresh) => {
+        if (!isMounted) return;
+        applyCloudData(fresh);
+      });
+    };
+
+    const handleVisibility = () => {
       if (document.visibilityState === 'visible') {
-        lastFocusSyncTime = now;
-        fetchCloudData().then((fresh) => {
-          if (!isMounted) return;
-          applyCloudData(fresh);
-        });
+        handleFocusSync();
       }
     };
-    window.addEventListener('visibilitychange', handleVisibilitySync);
 
-    // Periodic background sync interval (every 30 seconds instead of 10s to reduce keyboard interruptions)
+    window.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('focus', handleFocusSync);
+    window.addEventListener('pageshow', handleFocusSync);
+
+    // Periodic background sync interval (every 10 seconds for snappy multi-device updates)
     const intervalSync = setInterval(() => {
       fetchCloudData().then((fresh) => {
         if (!isMounted) return;
         applyCloudData(fresh);
       });
-    }, 30000);
+    }, 10000);
 
     return () => {
       isMounted = false;
       client.removeChannel(channel);
-      window.removeEventListener('visibilitychange', handleVisibilitySync);
+      window.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('focus', handleFocusSync);
+      window.removeEventListener('pageshow', handleFocusSync);
       clearInterval(intervalSync);
     };
   }, [supabaseConfig]);
@@ -971,9 +961,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const deleteProduct = (productId: string) => {
     setProducts((prev) => {
       const updated = prev.filter((p) => p.id !== productId);
-      if (updated.length === 0) {
-        localStorage.setItem('ei_mon_products_explicitly_cleared', 'true');
-      }
+      productsRef.current = updated;
       return updated;
     });
     removeFromCart(productId);
@@ -983,7 +971,11 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const deleteMultipleProducts = (productIds: string[]) => {
     if (productIds.length === 0) return;
     const idSet = new Set(productIds);
-    setProducts((prev) => prev.filter((p) => !idSet.has(p.id)));
+    setProducts((prev) => {
+      const updated = prev.filter((p) => !idSet.has(p.id));
+      productsRef.current = updated;
+      return updated;
+    });
     productIds.forEach((id) => removeFromCart(id));
     deleteMultipleProductsFromCloud(productIds);
   };
@@ -996,6 +988,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       };
     }
     setProducts([]);
+    productsRef.current = [];
     clearCart();
     localStorage.setItem(STORAGE_KEYS.PRODUCTS, '[]');
     clearAllProductsFromCloud();

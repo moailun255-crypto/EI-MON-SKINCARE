@@ -15,6 +15,7 @@ import {
   Check,
   ArrowLeft,
   RotateCcw,
+  RefreshCw,
 } from 'lucide-react';
 
 export const SecurityBackupPage: React.FC = () => {
@@ -24,18 +25,20 @@ export const SecurityBackupPage: React.FC = () => {
     verifyDeletePassword,
     updateDeletePassword,
     setActiveTab,
+    syncNowWithCloud,
+    isCloudConnected,
+    cloudSyncStatus,
   } = useStore();
 
   const [profileForm, setProfileForm] = useState<StoreProfile>({ ...storeProfile });
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
-  // Track if user is actively modifying or has focused the form to prevent external sync from wiping input
-  const isDirtyRef = React.useRef(false);
+  // Track if user is actively focused on an input element to prevent typing interruption
   const isFocusedRef = React.useRef(false);
 
-  // Sync profileForm whenever storeProfile updates ONLY if user has not modified or focused
+  // Sync profileForm whenever storeProfile updates (e.g. from phone/cloud) as long as user is not actively typing
   useEffect(() => {
-    if (!isDirtyRef.current && !isFocusedRef.current) {
+    if (!isFocusedRef.current) {
       setProfileForm({ ...storeProfile });
     }
   }, [storeProfile]);
@@ -109,7 +112,6 @@ export const SecurityBackupPage: React.FC = () => {
 
   const handleSaveProfile = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    isDirtyRef.current = false;
     isFocusedRef.current = false;
     const cleanAddr = (profileForm.addressMy ?? profileForm.address ?? '').trim();
     const cleanName = (profileForm.nameMy ?? profileForm.name ?? '').trim();
@@ -165,7 +167,7 @@ export const SecurityBackupPage: React.FC = () => {
           onSubmit={handleSaveProfile}
           className="bg-white p-5 sm:p-6 rounded-3xl border border-stone-200 shadow-xs space-y-4"
         >
-          <div className="flex items-center justify-between pb-2 border-b border-stone-100">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-stone-100 gap-2">
             <div className="flex items-center gap-2">
               <div className="p-2 rounded-xl bg-rose-50 text-rose-700">
                 <Store className="w-5 h-5" />
@@ -174,19 +176,56 @@ export const SecurityBackupPage: React.FC = () => {
                 <h3 className="font-extrabold text-stone-900 text-sm sm:text-base">
                   ဆိုင်အချက်အလက်နှင့် ပြေစာပုံစံ
                 </h3>
-                <p className="text-[11px] text-stone-400">
-                  ဘောင်ချာပေါ်တွင် ဖော်ပြမည့် အချက်အလက်များ
-                </p>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <p className="text-[11px] text-stone-400">
+                    ဘောင်ချာပေါ်တွင် ဖော်ပြမည့် အချက်အလက်များ
+                  </p>
+                  {isCloudConnected && (
+                    <span className="text-[10px] bg-emerald-50 text-emerald-700 font-bold px-1.5 py-0.2 rounded-md border border-emerald-200">
+                      Cloud အချိန်နှင့်တပြေးညီ ချိတ်ဆက်ထားသည်
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
 
-            <button
-              type="submit"
-              className="py-1.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
-            >
-              <Save className="w-3.5 h-3.5" />
-              <span>ဆက်တင်သိမ်းမည်</span>
-            </button>
+            <div className="flex items-center gap-2 self-end sm:self-auto">
+              {isCloudConnected && (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    isFocusedRef.current = false;
+                    await syncNowWithCloud();
+                    showToast('Cloud မှ နောက်ဆုံးရ အချက်အလက်များ ချက်ချင်း ရယူပြီးပါပြီ');
+                  }}
+                  className="py-1.5 px-3 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer border border-stone-200"
+                  title="ဖုန်းတွင် ပြင်ဆင်ထားသော နောက်ဆုံးရ အချက်အလက်များကို ချက်ချင်း ရယူမည်"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${cloudSyncStatus === 'syncing' ? 'animate-spin text-rose-600' : ''}`} />
+                  <span>Cloud မှ ပြန်ယူမည်</span>
+                </button>
+              )}
+              <button
+                type="submit"
+                className="py-1.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+              >
+                <Save className="w-3.5 h-3.5" />
+                <span>ဆက်တင်သိမ်းမည်</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Current Live Cloud Sync Address Indicator */}
+          <div className="bg-stone-50 border border-stone-200/90 rounded-xl p-2.5 flex items-center justify-between text-xs gap-2">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <span className="text-[11px] text-stone-500 shrink-0 font-medium">စက်အားလုံးတွင် ပေါ်နေသော လိပ်စာ:</span>
+              <span className="font-bold text-stone-900 truncate">
+                {storeProfile.addressMy || storeProfile.address || 'တောင်ကြီးမြို့  မြသီတာလမ်း'}
+              </span>
+            </div>
+            <span className="text-[10px] text-rose-600 font-bold shrink-0">
+              အောက်တွင် ပြင်ပြီးပါက 'ဆက်တင်သိမ်းမည်' နှိပ်ပါ
+            </span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
@@ -199,7 +238,6 @@ export const SecurityBackupPage: React.FC = () => {
                 required
                 value={profileForm.nameMy ?? profileForm.name ?? ''}
                 onChange={(e) => {
-                  isDirtyRef.current = true;
                   const val = e.target.value;
                   setProfileForm((prev) => ({ ...prev, name: val, nameMy: val }));
                 }}
@@ -231,7 +269,6 @@ export const SecurityBackupPage: React.FC = () => {
                 rows={3}
                 value={profileForm.addressMy ?? profileForm.address ?? ''}
                 onChange={(e) => {
-                  isDirtyRef.current = true;
                   const val = e.target.value;
                   setProfileForm((prev) => ({
                     ...prev,
@@ -262,7 +299,6 @@ export const SecurityBackupPage: React.FC = () => {
                 type="text"
                 value={profileForm.phone ?? ''}
                 onChange={(e) => {
-                  isDirtyRef.current = true;
                   setProfileForm((prev) => ({ ...prev, phone: e.target.value }));
                 }}
                 onFocus={() => {
@@ -288,7 +324,6 @@ export const SecurityBackupPage: React.FC = () => {
                 type="text"
                 value={profileForm.activeCashier ?? ''}
                 onChange={(e) => {
-                  isDirtyRef.current = true;
                   setProfileForm((prev) => ({
                     ...prev,
                     activeCashier: e.target.value,
