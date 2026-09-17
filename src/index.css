@@ -1,5 +1,48 @@
 @import "tailwindcss";
 
+/* NATIVE MOBILE APP ERGONOMICS & OPTIMIZATION */
+:root {
+  --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+}
+
+html, body {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  overscroll-behavior-y: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Prevent unwanted zoom on inputs in iOS Safari */
+@media screen and (max-width: 768px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Tactile Native App Press Feedback */
+.app-touch-card {
+  -webkit-touch-callout: none;
+  user-select: none;
+  transition: transform 0.12s cubic-bezier(0.2, 0.8, 0.4, 1), box-shadow 0.12s ease;
+}
+.app-touch-card:active {
+  transform: scale(0.975);
+}
+
+.app-touch-btn {
+  -webkit-touch-callout: none;
+  user-select: none;
+  transition: transform 0.1s cubic-bezier(0.2, 0.8, 0.4, 1), background-color 0.15s ease, opacity 0.1s ease;
+}
+.app-touch-btn:active {
+  transform: scale(0.94);
+  opacity: 0.9;
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;

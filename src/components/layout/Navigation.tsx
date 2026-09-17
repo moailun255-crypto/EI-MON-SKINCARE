@@ -190,16 +190,18 @@ export const Navigation: React.FC = () => {
       {/* ========================================================================= */}
       {/* MOBILE BOTTOM NAVIGATION BAR (Smart Ergonomic 5-Slot Layout for Phones)   */}
       {/* ========================================================================= */}
-      <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-stone-200 px-2 py-1 flex items-center justify-around shadow-lg">
+      <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-lg border-t border-stone-200/90 px-2 pt-1 pb-[max(8px,env(safe-area-inset-bottom,8px))] flex items-center justify-around shadow-[0_-4px_20px_rgba(0,0,0,0.06)] select-none">
         {/* 1. POS */}
         <button
           type="button"
           onClick={() => setActiveTab('pos')}
-          className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer min-h-[48px] ${
-            activeTab === 'pos' ? 'text-rose-600 font-extrabold' : 'text-stone-500 hover:text-stone-900'
+          className={`flex flex-col items-center justify-center py-1 px-3 rounded-2xl transition-all app-touch-btn cursor-pointer min-h-[46px] min-w-[56px] ${
+            activeTab === 'pos'
+              ? 'text-rose-600 font-extrabold bg-rose-50/80'
+              : 'text-stone-500 hover:text-stone-900 active:bg-stone-100'
           }`}
         >
-          <Store className={`w-5 h-5 ${activeTab === 'pos' ? 'stroke-[2.5]' : ''}`} />
+          <Store className={`w-5 h-5 ${activeTab === 'pos' ? 'stroke-[2.5] text-rose-600 scale-105' : ''}`} />
           <span className="text-[10px] font-bold tracking-tight mt-0.5">အရောင်း</span>
         </button>
 
@@ -207,14 +209,16 @@ export const Navigation: React.FC = () => {
         <button
           type="button"
           onClick={() => setActiveTab('products')}
-          className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer relative min-h-[48px] ${
-            activeTab === 'products' ? 'text-rose-600 font-extrabold' : 'text-stone-500 hover:text-stone-900'
+          className={`flex flex-col items-center justify-center py-1 px-3 rounded-2xl transition-all app-touch-btn cursor-pointer relative min-h-[46px] min-w-[56px] ${
+            activeTab === 'products'
+              ? 'text-rose-600 font-extrabold bg-rose-50/80'
+              : 'text-stone-500 hover:text-stone-900 active:bg-stone-100'
           }`}
         >
           <div className="relative">
-            <Boxes className={`w-5 h-5 ${activeTab === 'products' ? 'stroke-[2.5]' : ''}`} />
+            <Boxes className={`w-5 h-5 ${activeTab === 'products' ? 'stroke-[2.5] text-rose-600 scale-105' : ''}`} />
             {lowStockCount > 0 && (
-              <span className="absolute -top-1.5 -right-2 bg-amber-500 text-stone-900 text-[9px] font-black px-1 rounded-full">
+              <span className="absolute -top-1.5 -right-2.5 bg-amber-500 text-stone-900 text-[9px] font-black px-1.5 py-0.2 rounded-full shadow-2xs">
                 {lowStockCount}
               </span>
             )}
@@ -226,17 +230,17 @@ export const Navigation: React.FC = () => {
         <button
           type="button"
           onClick={() => setActiveTab('add-product')}
-          className="flex flex-col items-center justify-center -mt-4 cursor-pointer focus:outline-hidden active:scale-95 transition-transform"
+          className="flex flex-col items-center justify-center -mt-5 cursor-pointer focus:outline-hidden app-touch-btn"
           title="ကုန်ပစ္စည်းအသစ် ထည့်သွင်းမည်"
         >
           <div
-            className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg border-2 border-white transition-all ${
+            className={`w-13 h-13 rounded-2xl flex items-center justify-center shadow-lg border-2 border-white transition-all ${
               activeTab === 'add-product'
-                ? 'bg-rose-700 text-white ring-2 ring-rose-400'
-                : 'bg-rose-600 text-white hover:bg-rose-700'
+                ? 'bg-rose-700 text-white ring-3 ring-rose-400/50 shadow-rose-500/40'
+                : 'bg-rose-600 text-white shadow-rose-600/30'
             }`}
           >
-            <Plus className="w-6 h-6 stroke-[2.5]" />
+            <Plus className="w-6 h-6 stroke-[2.7]" />
           </div>
           <span className="text-[9px] font-black text-rose-700 mt-0.5 tracking-tight">အသစ်ထည့်</span>
         </button>
@@ -245,14 +249,16 @@ export const Navigation: React.FC = () => {
         <button
           type="button"
           onClick={() => setActiveTab('transactions')}
-          className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer relative min-h-[48px] ${
-            activeTab === 'transactions' ? 'text-rose-600 font-extrabold' : 'text-stone-500 hover:text-stone-900'
+          className={`flex flex-col items-center justify-center py-1 px-3 rounded-2xl transition-all app-touch-btn cursor-pointer relative min-h-[46px] min-w-[56px] ${
+            activeTab === 'transactions'
+              ? 'text-rose-600 font-extrabold bg-rose-50/80'
+              : 'text-stone-500 hover:text-stone-900 active:bg-stone-100'
           }`}
         >
           <div className="relative">
-            <ReceiptText className={`w-5 h-5 ${activeTab === 'transactions' ? 'stroke-[2.5]' : ''}`} />
+            <ReceiptText className={`w-5 h-5 ${activeTab === 'transactions' ? 'stroke-[2.5] text-rose-600 scale-105' : ''}`} />
             {todayCompletedOrders.length > 0 && (
-              <span className="absolute -top-1.5 -right-2 bg-rose-500 text-white text-[9px] font-bold px-1 rounded-full">
+              <span className="absolute -top-1.5 -right-2.5 bg-rose-500 text-white text-[9px] font-bold px-1.5 py-0.2 rounded-full shadow-2xs">
                 {todayCompletedOrders.length}
               </span>
             )}
@@ -264,14 +270,16 @@ export const Navigation: React.FC = () => {
         <button
           type="button"
           onClick={() => setIsMobileMenuOpen(true)}
-          className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer relative min-h-[48px] ${
-            isMoreTabActive ? 'text-rose-600 font-extrabold' : 'text-stone-500 hover:text-stone-900'
+          className={`flex flex-col items-center justify-center py-1 px-3 rounded-2xl transition-all app-touch-btn cursor-pointer relative min-h-[46px] min-w-[56px] ${
+            isMoreTabActive
+              ? 'text-rose-600 font-extrabold bg-rose-50/80'
+              : 'text-stone-500 hover:text-stone-900 active:bg-stone-100'
           }`}
         >
           <div className="relative">
-            <Menu className={`w-5 h-5 ${isMoreTabActive ? 'stroke-[2.5]' : ''}`} />
+            <Menu className={`w-5 h-5 ${isMoreTabActive ? 'stroke-[2.5] text-rose-600 scale-105' : ''}`} />
             {isMoreTabActive && (
-              <span className="absolute -top-1 -right-1 w-2 h-2 bg-rose-600 rounded-full" />
+              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-rose-600 rounded-full border border-white" />
             )}
           </div>
           <span className="text-[10px] font-bold tracking-tight mt-0.5">မီနူး</span>
@@ -288,7 +296,10 @@ export const Navigation: React.FC = () => {
           />
 
           {/* Bottom Sheet Modal */}
-          <div className="bg-white w-full rounded-t-3xl shadow-2xl p-5 border-t border-stone-200 max-h-[85vh] overflow-y-auto space-y-4 animate-slideUp">
+          <div className="bg-white w-full rounded-t-3xl shadow-2xl p-5 pb-[max(20px,env(safe-area-inset-bottom,20px))] border-t border-stone-200 max-h-[85vh] overflow-y-auto space-y-4 animate-slideUp">
+            {/* Native Sheet Pull Drag Bar */}
+            <div className="w-12 h-1.5 bg-stone-300 rounded-full mx-auto -mt-1 mb-2" />
+
             {/* Sheet Handle and Title */}
             <div className="flex items-center justify-between pb-3 border-b border-stone-100">
               <div>
@@ -300,7 +311,7 @@ export const Navigation: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="p-2 rounded-full bg-stone-100 text-stone-600 hover:bg-stone-200 cursor-pointer"
+                className="p-2 rounded-full bg-stone-100 text-stone-600 hover:bg-stone-200 cursor-pointer app-touch-btn"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -314,7 +325,7 @@ export const Navigation: React.FC = () => {
                   setActiveTab('pos');
                   setIsMobileMenuOpen(false);
                 }}
-                className="w-full py-3 px-4 rounded-2xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 font-bold text-sm flex items-center justify-between transition-colors cursor-pointer shadow-2xs"
+                className="w-full py-3 px-4 rounded-2xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 font-bold text-sm flex items-center justify-between transition-colors app-touch-btn cursor-pointer shadow-2xs"
               >
                 <div className="flex items-center gap-2.5">
                   <ArrowLeft className="w-5 h-5 text-rose-600" />
@@ -333,7 +344,7 @@ export const Navigation: React.FC = () => {
                   setActiveTab('finance');
                   setIsMobileMenuOpen(false);
                 }}
-                className={`p-3.5 rounded-2xl border text-left flex flex-col justify-between gap-2 transition-all cursor-pointer ${
+                className={`p-3.5 rounded-2xl border text-left flex flex-col justify-between gap-2 transition-all app-touch-card cursor-pointer ${
                   activeTab === 'finance'
                     ? 'bg-rose-600 text-white border-rose-600 shadow-xs'
                     : 'bg-stone-50 border-stone-200 text-stone-800 hover:bg-stone-100'
@@ -364,7 +375,7 @@ export const Navigation: React.FC = () => {
                   setActiveTab('security');
                   setIsMobileMenuOpen(false);
                 }}
-                className={`p-3.5 rounded-2xl border text-left flex flex-col justify-between gap-2 transition-all cursor-pointer ${
+                className={`p-3.5 rounded-2xl border text-left flex flex-col justify-between gap-2 transition-all app-touch-card cursor-pointer ${
                   activeTab === 'security'
                     ? 'bg-rose-600 text-white border-rose-600 shadow-xs'
                     : 'bg-stone-50 border-stone-200 text-stone-800 hover:bg-stone-100'
@@ -408,7 +419,7 @@ export const Navigation: React.FC = () => {
                     setCashierInput(storeProfile.activeCashier || '');
                     setIsChangingCashier(true);
                   }}
-                  className="px-3 py-1.5 rounded-xl bg-white border border-stone-200 hover:border-stone-300 text-xs font-bold text-stone-700 cursor-pointer shadow-2xs"
+                  className="px-3 py-1.5 rounded-xl bg-white border border-stone-200 hover:border-stone-300 text-xs font-bold text-stone-700 app-touch-btn cursor-pointer shadow-2xs"
                 >
                   ပြောင်းလဲမည်
                 </button>
@@ -435,7 +446,7 @@ export const Navigation: React.FC = () => {
                   type="button"
                   onClick={() => syncNowWithCloud()}
                   disabled={cloudSyncStatus === 'syncing'}
-                  className="px-2.5 py-1.5 rounded-xl bg-white border border-stone-200 hover:border-stone-300 text-xs font-bold text-stone-700 flex items-center gap-1 cursor-pointer shadow-2xs"
+                  className="px-2.5 py-1.5 rounded-xl bg-white border border-stone-200 hover:border-stone-300 text-xs font-bold text-stone-700 flex items-center gap-1 app-touch-btn cursor-pointer shadow-2xs"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 text-rose-600 ${cloudSyncStatus === 'syncing' ? 'animate-spin' : ''}`} />
                   <span>Refresh</span>
@@ -448,7 +459,7 @@ export const Navigation: React.FC = () => {
                 <button
                   type="button"
                   onClick={toggleMyanmarDigits}
-                  className="p-2.5 rounded-2xl bg-stone-50 border border-stone-200 text-stone-700 hover:bg-stone-100 flex items-center justify-center gap-2 font-bold text-xs cursor-pointer"
+                  className="p-2.5 rounded-2xl bg-stone-50 border border-stone-200 text-stone-700 hover:bg-stone-100 flex items-center justify-center gap-2 font-bold text-xs app-touch-btn cursor-pointer"
                 >
                   <Languages className="w-4 h-4 text-stone-500" />
                   <span>{useMyanmarDigits ? 'မြန်မာဂဏန်း (၁၂၃)' : 'English Numbers (123)'}</span>
@@ -458,7 +469,7 @@ export const Navigation: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleToggleSound}
-                  className="p-2.5 rounded-2xl bg-stone-50 border border-stone-200 text-stone-700 hover:bg-stone-100 flex items-center justify-center gap-2 font-bold text-xs cursor-pointer"
+                  className="p-2.5 rounded-2xl bg-stone-50 border border-stone-200 text-stone-700 hover:bg-stone-100 flex items-center justify-center gap-2 font-bold text-xs app-touch-btn cursor-pointer"
                 >
                   {isMuted ? <VolumeX className="w-4 h-4 text-stone-400" /> : <Volume2 className="w-4 h-4 text-rose-600" />}
                   <span>{isMuted ? 'အသံပိတ်ထားသည်' : 'အသံဖွင့်ထားသည်'}</span>

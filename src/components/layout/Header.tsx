@@ -98,10 +98,10 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileCart }) => {
   };
 
   return (
-    <header className="bg-white border-b border-stone-200 sticky top-0 z-30 shadow-2xs h-13 sm:h-14 shrink-0">
-      <div className="max-w-7xl mx-auto h-full px-3 sm:px-5 flex items-center justify-between gap-2 sm:gap-4">
+    <header className="bg-white/95 backdrop-blur-md border-b border-stone-200/90 sticky top-0 z-30 shadow-2xs h-13 sm:h-14 shrink-0 transition-all select-none">
+      <div className="max-w-7xl mx-auto h-full px-2.5 sm:px-5 flex items-center justify-between gap-1.5 sm:gap-4">
         {/* Brand identity & System Tagline */}
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           <BrandLogo size="md" />
           <div className="hidden lg:flex flex-col border-l border-stone-200 pl-3">
             <span className="text-[11px] font-black tracking-tight text-stone-800 leading-tight">
@@ -123,7 +123,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileCart }) => {
         </div>
 
         {/* Right side controls */}
-        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
           {/* Supabase Cloud Live Sync status indicator */}
           <button
             type="button"
@@ -139,10 +139,10 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileCart }) => {
                 ? 'Supabase Cloud ချိတ်ဆက်ထားသည် (ကလစ်နှိပ်၍ အခုချက်ချင်း Refresh ပြုလုပ်ပါ)'
                 : 'အော့ဖ်လိုင်း (Supabase Cloud ချိတ်ဆက်ရန် နှိပ်ပါ)'
             }
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border shadow-2xs ${
+            className={`flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all app-touch-btn cursor-pointer border shadow-2xs min-h-[36px] ${
               isCloudConnected
-                ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
-                : 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100'
+                ? 'bg-emerald-50 text-emerald-800 border-emerald-200 active:bg-emerald-100'
+                : 'bg-amber-50 text-amber-800 border-amber-200 active:bg-amber-100'
             }`}
           >
             {cloudSyncStatus === 'syncing' ? (
@@ -153,7 +153,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileCart }) => {
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
               </span>
             ) : (
-              <CloudOff className="w-3 h-3 text-amber-600" />
+              <CloudOff className="w-3.5 h-3.5 text-amber-600" />
             )}
             <span className="text-[11px] hidden sm:inline font-bold">
               {cloudSyncStatus === 'syncing'
@@ -172,7 +172,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileCart }) => {
               setIsChangingCashier(true);
             }}
             title="ငွေကိုင်အမည် ပြောင်းလဲရန် နှိပ်ပါ"
-            className="flex items-center gap-1.5 px-2 py-1 sm:px-2.5 sm:py-1 rounded-xl bg-stone-50 border border-stone-200 hover:border-rose-300 transition-colors cursor-pointer shadow-2xs"
+            className="flex items-center gap-1.5 px-1.5 py-1 sm:px-2.5 sm:py-1 rounded-xl bg-stone-50 border border-stone-200 hover:border-rose-300 transition-colors app-touch-btn cursor-pointer shadow-2xs min-h-[36px]"
           >
             <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-rose-600 text-white flex items-center justify-center font-bold text-xs shadow-2xs shrink-0">
               {storeProfile.activeCashier.charAt(0) || 'င'}
@@ -194,7 +194,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileCart }) => {
               type="button"
               onClick={toggleMyanmarDigits}
               title={useMyanmarDigits ? 'Switch to English Numbers (123)' : 'မြန်မာဂဏန်းပြောင်းမည် (၁၂၃)'}
-              className="px-2 py-1.5 rounded-xl text-xs font-bold border border-stone-200 hover:border-stone-300 bg-stone-50 hover:bg-stone-100 text-stone-700 transition-colors cursor-pointer flex items-center gap-1 shadow-2xs"
+              className="px-2 py-1.5 rounded-xl text-xs font-bold border border-stone-200 hover:border-stone-300 bg-stone-50 hover:bg-stone-100 text-stone-700 transition-colors app-touch-btn cursor-pointer flex items-center gap-1 shadow-2xs min-h-[36px]"
             >
               <Languages className="w-3.5 h-3.5 text-stone-500" />
               <span className="text-[11px] font-mono font-bold">{useMyanmarDigits ? '၁၂၃' : '123'}</span>
@@ -205,7 +205,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileCart }) => {
               type="button"
               onClick={handleToggleMute}
               title={isMuted ? 'အသံဖွင့်မည် (Sound ON)' : 'အသံပိတ်မည် (Mute Sound)'}
-              className={`p-1.5 sm:p-2 rounded-xl border text-xs font-bold transition-colors cursor-pointer shadow-2xs ${
+              className={`p-2 rounded-xl border text-xs font-bold transition-colors app-touch-btn cursor-pointer shadow-2xs min-h-[36px] min-w-[36px] flex items-center justify-center ${
                 isMuted
                   ? 'bg-stone-100 border-stone-200 text-stone-400 hover:text-stone-700'
                   : 'bg-rose-50 border-rose-200 text-rose-700 hover:bg-rose-100'
@@ -219,7 +219,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileCart }) => {
               type="button"
               onClick={toggleFullscreen}
               title={isFullscreen ? 'မျက်နှာပြင် အပြည့်မှ ထွက်မည်' : 'မျက်နှာပြင် အပြည့်သုံးမည် (Fullscreen)'}
-              className="hidden sm:flex p-1.5 sm:p-2 rounded-xl border border-stone-200 bg-stone-50 hover:bg-stone-100 text-stone-600 transition-colors cursor-pointer shadow-2xs"
+              className="hidden sm:flex p-2 rounded-xl border border-stone-200 bg-stone-50 hover:bg-stone-100 text-stone-600 transition-colors app-touch-btn cursor-pointer shadow-2xs min-h-[36px] min-w-[36px] items-center justify-center"
             >
               {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
             </button>
@@ -229,7 +229,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileCart }) => {
               <button
                 type="button"
                 onClick={onOpenMobileCart}
-                className="md:hidden relative p-2 rounded-xl bg-rose-600 text-white hover:bg-rose-700 shadow-xs flex items-center justify-center cursor-pointer"
+                className="md:hidden relative p-2 rounded-xl bg-rose-600 text-white hover:bg-rose-700 shadow-xs flex items-center justify-center app-touch-btn cursor-pointer min-h-[36px] min-w-[36px]"
               >
                 <ShoppingCart className="w-4 h-4" />
                 {cartItemCount > 0 && (

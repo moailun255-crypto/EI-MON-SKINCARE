@@ -417,7 +417,7 @@ export const TransactionsPage: React.FC = () => {
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => setActiveReceiptOrder(order)}
-                        className="px-2.5 py-2 rounded-xl bg-stone-100 hover:bg-rose-100 hover:text-rose-700 text-stone-700 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                        className="px-3 py-2 rounded-xl bg-stone-100 hover:bg-rose-100 hover:text-rose-700 active:bg-rose-200 text-stone-700 text-xs font-bold flex items-center gap-1.5 transition-all app-touch-btn cursor-pointer min-h-[38px]"
                         title="ပြေစာထုတ်မည် / ဓာတ်ပုံအဖြစ် ပုံပြခန်း (Album) သို့ သိမ်းမည်"
                       >
                         <Camera className="w-4 h-4 text-rose-600" />
@@ -427,7 +427,7 @@ export const TransactionsPage: React.FC = () => {
                       {!isRefunded && (
                         <button
                           onClick={() => setRefundingOrder(order)}
-                          className="p-2 rounded-xl bg-stone-100 hover:bg-amber-100 hover:text-amber-800 text-stone-500 text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer"
+                          className="px-2.5 py-2 rounded-xl bg-stone-100 hover:bg-amber-100 hover:text-amber-800 active:bg-amber-200 text-stone-600 text-xs font-bold flex items-center gap-1 transition-all app-touch-btn cursor-pointer min-h-[38px]"
                           title="ငွေပြန်အမ်းမည် (Refund with Password)"
                         >
                           <RotateCcw className="w-4 h-4" />
@@ -437,7 +437,7 @@ export const TransactionsPage: React.FC = () => {
 
                       <button
                         onClick={() => setDeletingOrder(order)}
-                        className="p-2 rounded-xl bg-stone-100 hover:bg-red-100 hover:text-red-700 text-stone-500 text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer"
+                        className="px-2.5 py-2 rounded-xl bg-stone-100 hover:bg-red-100 hover:text-red-700 active:bg-red-200 text-stone-600 text-xs font-bold flex items-center gap-1 transition-all app-touch-btn cursor-pointer min-h-[38px]"
                         title="မှားယွင်းဖွင့်ထား၍ အမှာစာဖျက်မည် (Delete Order)"
                       >
                         <Trash2 className="w-4 h-4" />

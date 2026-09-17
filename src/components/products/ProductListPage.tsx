@@ -27,6 +27,10 @@ import {
   Camera,
   Barcode,
   FolderPlus,
+  Lock,
+  Eye,
+  EyeOff,
+  ShieldAlert,
 } from 'lucide-react';
 
 export const ProductListPage: React.FC = () => {
@@ -39,6 +43,7 @@ export const ProductListPage: React.FC = () => {
     setSelectedProductForEdit,
     useMyanmarDigits,
     categories,
+    verifyDeletePassword,
   } = useStore();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -68,6 +73,11 @@ export const ProductListPage: React.FC = () => {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isBatchDeleteModalOpen, setIsBatchDeleteModalOpen] = useState(false);
+  const [batchPassword, setBatchPassword] = useState('');
+  const [showBatchPassword, setShowBatchPassword] = useState(false);
+  const [batchError, setBatchError] = useState<string | null>(null);
+  const [isBatchConfirmed, setIsBatchConfirmed] = useState(false);
+  const [isBatchShake, setIsBatchShake] = useState(false);
   const [isClearAllModalOpen, setIsClearAllModalOpen] = useState(false);
   const [isCameraScannerOpen, setIsCameraScannerOpen] = useState(false);
   const [deleteNotice, setDeleteNotice] = useState<string | null>(null);
@@ -232,11 +242,47 @@ export const ProductListPage: React.FC = () => {
     setTimeout(() => setDeleteNotice(null), 3500);
   };
 
-  const handleBatchDelete = () => {
+  const handleOpenBatchDeleteModal = () => {
+    setBatchPassword('');
+    setShowBatchPassword(false);
+    setBatchError(null);
+    setIsBatchConfirmed(false);
+    setIsBatchShake(false);
+    setIsBatchDeleteModalOpen(true);
+  };
+
+  const handleBatchDelete = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setBatchError(null);
+
+    if (!isBatchConfirmed) {
+      setBatchError('ကျေးဇူးပြု၍ ဆက်လက်လုပ်ဆောင်ရန် အတည်ပြုချက် အမှန်ခြစ် ပေးပါ');
+      setIsBatchShake(true);
+      setTimeout(() => setIsBatchShake(false), 500);
+      return;
+    }
+
+    if (!batchPassword.trim()) {
+      setBatchError('ကျေးဇူးပြု၍ စီမံခန့်ခွဲသူ လျှို့ဝှက်စကားဝှက် ရိုက်ထည့်ပါ');
+      setIsBatchShake(true);
+      setTimeout(() => setIsBatchShake(false), 500);
+      return;
+    }
+
+    if (!verifyDeletePassword(batchPassword.trim())) {
+      setBatchError('လုံခြုံရေး လျှို့ဝှက်စကားဝှက် မှားယွင်းနေပါသည် (Password incorrect)');
+      setIsBatchShake(true);
+      setTimeout(() => setIsBatchShake(false), 500);
+      return;
+    }
+
     const count = selectedIds.length;
     deleteMultipleProducts(selectedIds);
     setSelectedIds([]);
     setIsBatchDeleteModalOpen(false);
+    setBatchPassword('');
+    setIsBatchConfirmed(false);
+    setBatchError(null);
     setDeleteNotice(`ကုန်ပစ္စည်း ${count} ခုကို စနစ်နှင့် Cloud မှ အောင်မြင်စွာ ဖျက်ပစ်ပြီးပါပြီ`);
     setTimeout(() => setDeleteNotice(null), 3500);
   };
@@ -518,7 +564,7 @@ export const ProductListPage: React.FC = () => {
               ရွေးချယ်မှု ပယ်ဖျက်မည်
             </button>
             <button
-              onClick={() => setIsBatchDeleteModalOpen(true)}
+              onClick={handleOpenBatchDeleteModal}
               className="px-3.5 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -874,33 +920,131 @@ export const ProductListPage: React.FC = () => {
 
       {/* Confirmation modal for batch delete */}
       {isBatchDeleteModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl border border-stone-200 text-center space-y-4">
-            <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 mx-auto flex items-center justify-center">
-              <Trash2 className="w-6 h-6" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-stone-900/60 backdrop-blur-xs animate-fadeIn">
+          <div className="bg-white rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-stone-200 space-y-4">
+            {/* Header */}
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-red-100 text-red-600 shrink-0 flex items-center justify-center">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <div className="text-left flex-1 min-w-0">
+                <h3 className="font-bold text-stone-900 text-base">
+                  ရွေးချယ်ထားသော ကုန်ပစ္စည်း {selectedIds.length} ခု ဖျက်မည်
+                </h3>
+                <p className="text-xs text-red-600 font-medium">
+                  {selectedIds.length === products.length
+                    ? 'သတိပြုရန်: ကုန်ပစ္စည်းစာရင်း အားလုံး ဖြစ်ပါသည်'
+                    : 'အစုလိုက် ဖျက်သိမ်းခြင်း (Batch Delete)'}
+                </p>
+              </div>
             </div>
-            <div>
-              <h3 className="font-bold text-stone-900 text-base">
-                ရွေးချယ်ထားသော ကုန်ပစ္စည်း {selectedIds.length} ခု ဖျက်မည်
-              </h3>
-              <p className="text-xs text-stone-500 mt-1">
-                ရွေးချယ်ထားသော ပစ္စည်း {selectedIds.length} မျိုးလုံးကို စာရင်းမှ လုံးဝဖျက်ပစ်မည်မှာ သေချာပါသလား?
+
+            {/* Warning description */}
+            <div className="p-3 rounded-2xl bg-amber-50 border border-amber-200 flex gap-2.5 text-amber-900 text-xs">
+              <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <p className="text-left leading-relaxed text-[11px]">
+                ရွေးချယ်ထားသော ပစ္စည်း {selectedIds.length} မျိုးလုံးကို စာရင်းနှင့် Cloud Database မှ လုံးဝဖျက်ပစ်မည်ဖြစ်ပြီး <strong>ပြန်လည်ရယူ၍ မရနိုင်ပါ</strong>။
               </p>
             </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setIsBatchDeleteModalOpen(false)}
-                className="flex-1 py-2 rounded-xl border border-stone-300 text-xs font-bold text-stone-700 hover:bg-stone-100 cursor-pointer"
+
+            {/* Form */}
+            <form onSubmit={handleBatchDelete} className="space-y-3.5">
+              {/* Secondary Confirmation Checkbox */}
+              <div
+                onClick={() => {
+                  setIsBatchConfirmed(!isBatchConfirmed);
+                  setBatchError(null);
+                }}
+                className={`p-3 rounded-xl border text-left transition-all cursor-pointer select-none flex items-start gap-2.5 ${
+                  isBatchConfirmed
+                    ? 'bg-red-50/80 border-red-300 ring-1 ring-red-200'
+                    : 'bg-stone-50 hover:bg-stone-100 border-stone-200'
+                }`}
               >
-                မဖျက်တော့ပါ
-              </button>
-              <button
-                onClick={handleBatchDelete}
-                className="flex-1 py-2 rounded-xl bg-red-600 text-white text-xs font-bold hover:bg-red-700 cursor-pointer"
-              >
-                ဖျက်မည် ({selectedIds.length})
-              </button>
-            </div>
+                <div className="mt-0.5 shrink-0 text-red-600">
+                  {isBatchConfirmed ? (
+                    <CheckSquare className="w-4 h-4 fill-red-100" />
+                  ) : (
+                    <Square className="w-4 h-4 text-stone-400" />
+                  )}
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-stone-900">
+                    (ဒုတိယအဆင့် အတည်ပြုချက်) ရွေးချယ်ထားသော ကုန်ပစ္စည်း {selectedIds.length} ခုလုံး အပြီးတိုင် ဖျက်ပစ်မည်ကို အတည်ပြုပါသည်
+                  </p>
+                  <p className="text-[10px] text-stone-500 mt-0.5">
+                    မှားယွင်းဖျက်မိခြင်းမှ ကာကွယ်ရန် ဤအကွက်ကို အမှန်ခြစ်ပေးပါ
+                  </p>
+                </div>
+              </div>
+
+              {/* Manager Password Field */}
+              <div className="space-y-1 text-left">
+                <label className="block text-xs font-bold text-stone-800 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <Lock className="w-3.5 h-3.5 text-red-600" />
+                    <span>စီမံခန့်ခွဲသူ လျှို့ဝှက်စကားဝှက်</span>
+                  </span>
+                  <span className="text-[10px] font-medium text-stone-400">
+                    မူလစကားဝှက်: 123456
+                  </span>
+                </label>
+                <div className={`relative transition-transform ${isBatchShake ? 'animate-bounce' : ''}`}>
+                  <input
+                    type={showBatchPassword ? 'text' : 'password'}
+                    value={batchPassword}
+                    onChange={(e) => {
+                      setBatchPassword(e.target.value);
+                      setBatchError(null);
+                    }}
+                    placeholder="စကားဝှက် ရိုက်ထည့်ပါ..."
+                    className={`w-full text-xs px-3.5 py-2.5 pr-9 rounded-xl border font-mono outline-hidden transition-all ${
+                      batchError
+                        ? 'border-red-500 bg-red-50/40 text-red-900'
+                        : 'border-stone-300 focus:border-red-500 focus:ring-1 focus:ring-red-200'
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowBatchPassword(!showBatchPassword)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-stone-400 hover:text-stone-600 cursor-pointer"
+                  >
+                    {showBatchPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Error Message */}
+              {batchError && (
+                <p className="text-xs font-semibold text-red-600 bg-red-50 p-2 rounded-xl border border-red-200 flex items-center gap-1.5 text-left animate-fadeIn">
+                  <AlertTriangle className="w-3.5 h-3.5 text-red-600 shrink-0" />
+                  <span>{batchError}</span>
+                </p>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsBatchDeleteModalOpen(false)}
+                  className="flex-1 py-2.5 rounded-xl border border-stone-300 text-xs font-bold text-stone-700 hover:bg-stone-100 cursor-pointer"
+                >
+                  မဖျက်တော့ပါ
+                </button>
+                <button
+                  type="submit"
+                  disabled={!isBatchConfirmed || !batchPassword.trim()}
+                  className={`flex-1 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-all cursor-pointer ${
+                    isBatchConfirmed && batchPassword.trim()
+                      ? 'bg-red-600 hover:bg-red-700 text-white'
+                      : 'bg-stone-200 text-stone-400 cursor-not-allowed'
+                  }`}
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>ဖျက်မည် ({selectedIds.length})</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

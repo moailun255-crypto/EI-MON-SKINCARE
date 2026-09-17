@@ -113,8 +113,6 @@ export const SecurityBackupPage: React.FC = () => {
       addressMy: cleanAddr,
       phone: profileForm.phone.trim(),
       activeCashier: profileForm.activeCashier.trim() || 'မအိမွန်',
-      kpayNumber: profileForm.kpayNumber?.trim() || '',
-      kpayName: profileForm.kpayName?.trim() || '',
     };
     updateStoreProfile(updated);
     showToast('ဆိုင်လိပ်စာနှင့် ဆက်တင်များ အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ (ဘောင်ချာတွင် ချက်ချင်းပြောင်းလဲပါမည်)');

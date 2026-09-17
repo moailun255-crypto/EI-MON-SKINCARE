@@ -20,7 +20,9 @@ function MainLayout() {
   return (
     <div
       className={`bg-stone-100 flex flex-col text-stone-900 font-sans selection:bg-rose-100 selection:text-rose-900 ${
-        isPos ? 'h-screen sm:h-screen overflow-hidden' : 'min-h-screen pb-20 sm:pb-8'
+        isPos
+          ? 'h-[100dvh] overflow-hidden'
+          : 'min-h-[100dvh] pb-[calc(5.5rem+env(safe-area-inset-bottom,8px))] sm:pb-8'
       }`}
     >
       {/* Top Header */}

@@ -702,21 +702,21 @@ export const POSPage: React.FC<POSPageProps> = ({
                         <div
                           key={product.id}
                           onClick={() => handleProductClick(product)}
-                          className={`group rounded-xl border p-2 flex flex-col justify-between relative cursor-pointer select-none transition-all duration-150 hover:border-rose-400 hover:shadow-2xs active:scale-[0.98] ${
+                          className={`group rounded-2xl border p-2.5 sm:p-2 flex flex-col justify-between relative cursor-pointer select-none transition-all duration-150 hover:border-rose-400 hover:shadow-2xs app-touch-card shadow-2xs ${
                             isOutOfStock
                               ? 'opacity-50 border-stone-200 bg-stone-50 cursor-not-allowed'
-                              : 'border-stone-200 bg-white'
+                              : 'border-stone-200/90 bg-white'
                           } ${isJustAdded ? 'ring-2 ring-emerald-500 bg-emerald-50/40 shadow-xs' : ''}`}
                         >
                           <div>
                             {/* Brand & Stock Header */}
-                            <div className="flex items-center justify-between gap-1 mb-1">
-                              <span className="text-[9px] text-rose-700 bg-rose-50 border border-rose-100 px-1.5 py-0.2 rounded font-bold truncate max-w-[70%]">
+                            <div className="flex items-center justify-between gap-1 mb-1.5">
+                              <span className="text-[9px] sm:text-[10px] text-rose-700 bg-rose-50 border border-rose-100 px-2 py-0.5 rounded-lg font-bold truncate max-w-[70%]">
                                 {product.brand || getCategoryName(product.category)}
                               </span>
 
                               <span
-                                className={`px-1.5 py-0.2 rounded text-[9px] font-bold shrink-0 ${
+                                className={`px-2 py-0.5 rounded-lg text-[9px] sm:text-[10px] font-bold shrink-0 ${
                                   isOutOfStock
                                     ? 'bg-red-500 text-white'
                                     : isLowStock
@@ -729,27 +729,27 @@ export const POSPage: React.FC<POSPageProps> = ({
                             </div>
 
                             {/* Product Name */}
-                            <h3 className="text-xs font-bold text-stone-900 line-clamp-2 leading-snug group-hover:text-rose-600 transition-colors mb-1">
+                            <h3 className="text-xs sm:text-sm font-bold text-stone-900 line-clamp-2 leading-snug group-hover:text-rose-600 transition-colors mb-1.5">
                               {product.nameMy}
                             </h3>
 
                             {/* SKU & Barcode Snippet */}
-                            <div className="flex items-center justify-between text-[9px] text-stone-400 font-mono mb-1">
+                            <div className="flex items-center justify-between text-[10px] text-stone-400 font-mono mb-1">
                               <span className="truncate">{product.sku}</span>
                               <span className="truncate">#{product.barcode.slice(-4)}</span>
                             </div>
                           </div>
 
                           {/* Price & Quick Add Button */}
-                          <div className="flex items-center justify-between pt-1 border-t border-stone-100 mt-1">
-                            <span className="text-xs sm:text-sm font-black text-rose-600">
+                          <div className="flex items-center justify-between pt-1.5 border-t border-stone-100 mt-1">
+                            <span className="text-xs sm:text-sm font-black text-rose-700">
                               {formatMMK(product.sellingPrice, useMyanmarDigits)}
                             </span>
 
                             <button
                               type="button"
                               disabled={isOutOfStock}
-                              className={`w-6 h-6 rounded-lg flex items-center justify-center transition-all cursor-pointer shadow-2xs ${
+                              className={`w-8 h-8 sm:w-7 sm:h-7 rounded-xl flex items-center justify-center transition-all cursor-pointer shadow-2xs app-touch-btn ${
                                 isJustAdded
                                   ? 'bg-emerald-600 text-white scale-110'
                                   : isOutOfStock
@@ -758,9 +758,9 @@ export const POSPage: React.FC<POSPageProps> = ({
                               }`}
                             >
                               {isJustAdded ? (
-                                <Check className="w-3 h-3" />
+                                <Check className="w-4 h-4 stroke-[2.5]" />
                               ) : (
-                                <Plus className="w-3 h-3" />
+                                <Plus className="w-4 h-4 stroke-[2.5]" />
                               )}
                             </button>
                           </div>
@@ -784,14 +784,14 @@ export const POSPage: React.FC<POSPageProps> = ({
       {/* FLOATING CART SUMMARY PILL (Mobile Catalog View Only)                     */}
       {/* ========================================================================= */}
       {mobileView === 'catalog' && cartItemCount > 0 && (
-        <div className="md:hidden fixed bottom-18 left-3 right-3 z-30 animate-slideUp">
+        <div className="md:hidden fixed bottom-[calc(4.25rem+var(--sab,0px))] left-3 right-3 z-30 animate-slideUp">
           <button
             type="button"
             onClick={() => {
               setMobileView('cart');
               setIsMobileCartOpen?.(true);
             }}
-            className="w-full bg-stone-900/95 backdrop-blur-md text-white px-3.5 py-2.5 rounded-2xl shadow-xl border border-stone-800 flex items-center justify-between cursor-pointer active:scale-[0.98] transition-transform"
+            className="w-full bg-stone-900/95 backdrop-blur-md text-white px-4 py-3 rounded-2xl shadow-xl border border-stone-800 flex items-center justify-between cursor-pointer app-touch-btn"
           >
             <div className="flex items-center gap-2">
               <span className="w-6 h-6 rounded-lg bg-rose-600 text-white flex items-center justify-center font-black text-xs">

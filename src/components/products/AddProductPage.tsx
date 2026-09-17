@@ -633,14 +633,14 @@ export const AddProductPage: React.FC = () => {
             <div />
           )}
 
-          <div className="flex items-center justify-end gap-3">
+          <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 sm:gap-3 w-full sm:w-auto">
             <button
               type="button"
               onClick={() => {
                 setSelectedProductForEdit(null);
                 goBack();
               }}
-              className="py-2.5 px-5 rounded-2xl border border-stone-300 text-stone-700 text-xs sm:text-sm font-bold hover:bg-stone-50 transition-colors cursor-pointer flex items-center gap-1.5 min-h-[44px]"
+              className="py-3 sm:py-2.5 px-5 rounded-2xl border border-stone-300 text-stone-700 text-sm font-bold hover:bg-stone-50 transition-colors cursor-pointer flex items-center justify-center gap-1.5 min-h-[46px] app-touch-btn"
             >
               <ArrowLeft className="w-4 h-4 text-stone-500" />
               <span>မလုပ်တော့ပါ (နောက်သို့)</span>
@@ -649,10 +649,10 @@ export const AddProductPage: React.FC = () => {
             <button
               type="submit"
               disabled={Boolean(duplicateProduct)}
-              className={`py-2.5 px-6 rounded-xl text-white text-xs sm:text-sm font-bold flex items-center gap-2 shadow-sm transition-all cursor-pointer ${
+              className={`py-3.5 sm:py-2.5 px-6 rounded-2xl text-white text-sm font-black flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all cursor-pointer min-h-[48px] app-touch-btn ${
                 duplicateProduct
                   ? 'bg-stone-300 cursor-not-allowed opacity-60'
-                  : 'bg-rose-600 hover:bg-rose-700'
+                  : 'bg-gradient-to-r from-rose-600 to-rose-700 active:from-rose-700 active:to-rose-800'
               }`}
             >
               <Save className="w-4 h-4" />

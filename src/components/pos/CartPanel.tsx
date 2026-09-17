@@ -233,23 +233,23 @@ export const CartPanel: React.FC<CartPanelProps> = ({
                   </div>
 
                   {/* Quantity Increment / Decrement */}
-                  <div className="flex items-center gap-2 bg-stone-100 p-0.5 rounded-xl border border-stone-200">
+                  <div className="flex items-center gap-1.5 bg-stone-100 p-1 rounded-xl border border-stone-200">
                     <button
                       type="button"
                       onClick={() => handleDecreaseQuantity(item)}
-                      className="w-6 h-6 rounded-lg bg-white text-stone-700 hover:bg-stone-200 flex items-center justify-center transition-colors shadow-2xs cursor-pointer"
+                      className="w-8 h-8 sm:w-7 sm:h-7 rounded-lg bg-white text-stone-700 active:bg-stone-200 flex items-center justify-center transition-all shadow-2xs app-touch-btn cursor-pointer"
                       title="အရေအတွက် လျှော့မည်"
                     >
-                      <Minus className="w-3 h-3" />
+                      <Minus className="w-3.5 h-3.5 stroke-[2.5]" />
                     </button>
-                    <span className="text-xs font-black w-5 text-center text-stone-900">
+                    <span className="text-xs sm:text-sm font-black w-6 text-center text-stone-900">
                       {item.quantity}
                     </span>
                     <button
                       type="button"
                       onClick={() => handleIncreaseQuantity(item)}
-                      className={`w-6 h-6 rounded-lg bg-white text-stone-700 hover:bg-stone-200 flex items-center justify-center transition-colors shadow-2xs cursor-pointer ${
-                        item.quantity >= item.product.stock ? 'text-stone-400 hover:bg-amber-100' : ''
+                      className={`w-8 h-8 sm:w-7 sm:h-7 rounded-lg bg-white text-stone-700 active:bg-stone-200 flex items-center justify-center transition-all shadow-2xs app-touch-btn cursor-pointer ${
+                        item.quantity >= item.product.stock ? 'text-stone-400 active:bg-amber-100' : ''
                       }`}
                       title={
                         item.quantity >= item.product.stock
@@ -257,7 +257,7 @@ export const CartPanel: React.FC<CartPanelProps> = ({
                           : 'အရေအတွက် တိုးမည်'
                       }
                     >
-                      <Plus className="w-3 h-3" />
+                      <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
                     </button>
                   </div>
                 </div>
@@ -342,11 +342,11 @@ export const CartPanel: React.FC<CartPanelProps> = ({
           {/* Checkout Button */}
           <button
             onClick={onCheckout}
-            className="w-full py-2.5 sm:py-3 px-3 rounded-xl bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-700 hover:to-rose-800 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xs hover:shadow-sm transition-all active:scale-[0.99] cursor-pointer"
+            className="w-full py-3.5 sm:py-3 px-4 rounded-2xl bg-gradient-to-r from-rose-600 to-rose-700 active:from-rose-700 active:to-rose-800 text-white font-extrabold text-sm sm:text-base flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all app-touch-btn cursor-pointer min-h-[48px]"
           >
-            <CreditCard className="w-4 h-4" />
+            <CreditCard className="w-4 h-4 sm:w-5 sm:h-5" />
             <span>ငွေရှင်းမည် ({formatMMK(grandTotal, useMyanmarDigits)})</span>
-            <ArrowRight className="w-3.5 h-3.5 ml-1" />
+            <ArrowRight className="w-4 h-4 ml-1" />
           </button>
         </div>
       )}
