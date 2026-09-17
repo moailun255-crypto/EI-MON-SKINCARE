@@ -112,23 +112,23 @@ export const TransactionsPage: React.FC = () => {
   const digitalTotal = totalRevenue - cashTotal;
 
   return (
-    <div className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-6 space-y-5">
+    <div className="max-w-7xl mx-auto px-2.5 sm:px-5 py-2.5 sm:py-3.5 space-y-2.5 sm:space-y-3">
       {/* Title & Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-black text-stone-900 tracking-tight flex items-center gap-2">
-            <ReceiptText className="w-6 h-6 sm:w-7 sm:h-7 text-rose-600" />
+          <h1 className="text-sm sm:text-base font-black text-stone-900 tracking-tight flex items-center gap-1.5">
+            <ReceiptText className="w-4 h-4 sm:w-5 sm:h-5 text-rose-600 shrink-0" />
             <span>အရောင်းမှတ်တမ်းနှင့် ငွေစီးဆင်းမှု</span>
           </h1>
-          <p className="text-xs sm:text-sm text-stone-500 mt-1">
-            EI MON SKINCARE • နေ့စဉ်ဘောင်ချာများ၊ ငွေသား/KBZPay စီးဆင်းမှုနှင့် ပြေစာမှတ်တမ်းများ
+          <p className="text-[10px] sm:text-[11px] text-stone-500 mt-0.5">
+            EI MON SKINCARE • နေ့စဉ်ဘောင်ချာများ၊ ငွေသား/ငွေလွှဲ စီးဆင်းမှုနှင့် ပြေစာမှတ်တမ်းများ
           </p>
         </div>
 
         {/* Date Filter Tabs, Day Picker, and Clear All Button */}
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5">
           {/* Preset Date Tabs */}
-          <div className="flex items-center bg-white p-1 rounded-xl border border-stone-200 shadow-xs text-xs overflow-x-auto">
+          <div className="flex items-center bg-white p-0.5 rounded-lg border border-stone-200 shadow-2xs text-xs overflow-x-auto">
             {(
               [
                 { id: 'today', my: 'ယနေ့' },
@@ -142,9 +142,9 @@ export const TransactionsPage: React.FC = () => {
               <button
                 key={tab.id}
                 onClick={() => setDateFilter(tab.id)}
-                className={`px-2.5 sm:px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap ${
+                className={`px-2 sm:px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer whitespace-nowrap text-xs ${
                   dateFilter === tab.id
-                    ? 'bg-rose-600 text-white shadow-xs'
+                    ? 'bg-rose-600 text-white shadow-2xs'
                     : 'text-stone-600 hover:text-stone-900'
                 }`}
               >
@@ -154,18 +154,18 @@ export const TransactionsPage: React.FC = () => {
           </div>
 
           {/* Interactive Date Picker (Single Day Selector) */}
-          <div className="flex items-center bg-white p-1 rounded-xl border border-stone-200 shadow-xs text-xs gap-1">
+          <div className="flex items-center bg-white p-0.5 rounded-lg border border-stone-200 shadow-2xs text-xs gap-0.5">
             <button
               type="button"
               onClick={() => handleStepDay(-1)}
-              className="p-1.5 rounded-lg hover:bg-stone-100 text-stone-600 transition-colors cursor-pointer"
+              className="p-1 rounded hover:bg-stone-100 text-stone-600 transition-colors cursor-pointer"
               title="ယခင်ရက်သို့ (Previous Day)"
             >
-              <ChevronLeft className="w-4 h-4" />
+              <ChevronLeft className="w-3.5 h-3.5" />
             </button>
 
-            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-stone-50 border border-stone-200/80">
-              <Calendar className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+            <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-stone-50 border border-stone-200/80">
+              <Calendar className="w-3 h-3 text-rose-600 shrink-0" />
               <input
                 type="date"
                 value={selectedDate}
@@ -182,10 +182,10 @@ export const TransactionsPage: React.FC = () => {
             <button
               type="button"
               onClick={() => handleStepDay(1)}
-              className="p-1.5 rounded-lg hover:bg-stone-100 text-stone-600 transition-colors cursor-pointer"
+              className="p-1 rounded hover:bg-stone-100 text-stone-600 transition-colors cursor-pointer"
               title="နောက်ရက်သို့ (Next Day)"
             >
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="w-3.5 h-3.5" />
             </button>
           </div>
 
@@ -193,11 +193,11 @@ export const TransactionsPage: React.FC = () => {
           {orders.length > 0 && (
             <button
               onClick={() => setShowClearAllModal(true)}
-              className="px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+              className="px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-red-100 text-rose-700 border border-rose-200 text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer shadow-2xs"
               title="အရောင်းမှတ်တမ်းများ အားလုံး ရှင်းလင်းမည်"
             >
               <Trash2 className="w-3.5 h-3.5" />
-              <span>မှတ်တမ်းရှင်းမည်</span>
+              <span>ရှင်းမည်</span>
             </button>
           )}
         </div>
@@ -205,12 +205,12 @@ export const TransactionsPage: React.FC = () => {
 
       {/* Selected Day Status Bar Banner when filtered by specific day or yesterday */}
       {(dateFilter === 'specific' || dateFilter === 'yesterday') && (
-        <div className="bg-rose-50/80 border border-rose-200 px-4 py-2.5 rounded-2xl flex flex-wrap items-center justify-between gap-2 text-xs">
-          <div className="flex items-center gap-2 text-rose-900 font-bold">
-            <Calendar className="w-4 h-4 text-rose-600" />
+        <div className="bg-rose-50/80 border border-rose-200 px-3 py-1.5 rounded-xl flex flex-wrap items-center justify-between gap-1.5 text-xs">
+          <div className="flex items-center gap-1.5 text-rose-900 font-bold">
+            <Calendar className="w-3.5 h-3.5 text-rose-600" />
             <span>
-              ရွေးချယ်ထားသော ရက်စွဲ:{' '}
-              <span className="font-mono text-stone-900 bg-white px-2 py-0.5 rounded-md border border-rose-200">
+              ရက်စွဲ:{' '}
+              <span className="font-mono text-stone-900 bg-white px-1.5 py-0.5 rounded border border-rose-200">
                 {dateFilter === 'yesterday' ? 'မနေ့က' : selectedDate}
               </span>
             </span>
@@ -226,81 +226,81 @@ export const TransactionsPage: React.FC = () => {
           <button
             type="button"
             onClick={() => setDateFilter('today')}
-            className="text-[11px] font-bold text-rose-700 hover:text-rose-900 underline cursor-pointer"
+            className="text-[10px] font-bold text-rose-700 hover:text-rose-900 underline cursor-pointer"
           >
-            ယနေ့အရောင်းသို့ ပြန်သွားမည် (Back to Today)
+            ယနေ့အရောင်းသို့ (Today)
           </button>
         </div>
       )}
 
       {/* Financial Summary Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-stone-200 shadow-xs">
-          <p className="text-[11px] font-semibold text-stone-500">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-1.5 sm:gap-2.5">
+        <div className="bg-white p-2.5 rounded-xl border border-stone-200/90 shadow-2xs">
+          <p className="text-[10px] font-semibold text-stone-500 leading-tight">
             ရောင်းရငွေ စုစုပေါင်း
           </p>
-          <p className="text-base sm:text-2xl font-black text-rose-700 mt-1">
+          <p className="text-sm sm:text-base font-black text-rose-700 mt-0.5 leading-tight">
             {formatMMK(totalRevenue, useMyanmarDigits)}
           </p>
-          <p className="text-[10px] text-stone-400 mt-0.5">
+          <p className="text-[9px] text-stone-400 mt-0.5">
             {completedOrders.length} စောင်
           </p>
         </div>
 
-        <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-stone-200 shadow-xs">
-          <p className="text-[11px] font-semibold text-stone-500">
+        <div className="bg-white p-2.5 rounded-xl border border-stone-200/90 shadow-2xs">
+          <p className="text-[10px] font-semibold text-stone-500 leading-tight">
             အကြမ်းဖျင်းအမြတ်
           </p>
-          <p className="text-base sm:text-2xl font-black text-emerald-700 mt-1">
+          <p className="text-sm sm:text-base font-black text-emerald-700 mt-0.5 leading-tight">
             {formatMMK(totalProfit, useMyanmarDigits)}
           </p>
-          <p className="text-[10px] text-emerald-600 mt-0.5">
+          <p className="text-[9px] text-emerald-600 mt-0.5">
             {totalRevenue > 0
-              ? `${Math.round((totalProfit / totalRevenue) * 100)}% အမြတ်ရာခိုင်နှုန်း`
+              ? `${Math.round((totalProfit / totalRevenue) * 100)}% အမြတ်`
               : '0%'}
           </p>
         </div>
 
-        <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-stone-200 shadow-xs">
-          <p className="text-[11px] font-semibold text-stone-500">
+        <div className="bg-white p-2.5 rounded-xl border border-stone-200/90 shadow-2xs">
+          <p className="text-[10px] font-semibold text-stone-500 leading-tight">
             ငွေသား လက်ခံရရှိငွေ
           </p>
-          <p className="text-base sm:text-xl font-black text-stone-800 mt-1">
+          <p className="text-xs sm:text-sm font-black text-stone-800 mt-0.5 leading-tight truncate">
             {formatMMK(cashTotal, useMyanmarDigits)}
           </p>
-          <p className="text-[10px] text-stone-400 mt-0.5">အံဆွဲအတွင်း ငွေသား</p>
+          <p className="text-[9px] text-stone-400 mt-0.5">အံဆွဲအတွင်း ငွေသား</p>
         </div>
 
-        <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-stone-200 shadow-xs">
-          <p className="text-[11px] font-semibold text-stone-500">
-            KBZPay လက်ခံရရှိငွေ
+        <div className="bg-white p-2.5 rounded-xl border border-stone-200/90 shadow-2xs">
+          <p className="text-[10px] font-semibold text-stone-500 leading-tight">
+            ငွေလွှဲ / KPay ရငွေ
           </p>
-          <p className="text-base sm:text-xl font-black text-blue-700 mt-1">
+          <p className="text-xs sm:text-sm font-black text-blue-700 mt-0.5 leading-tight truncate">
             {formatMMK(digitalTotal, useMyanmarDigits)}
           </p>
-          <p className="text-[10px] text-stone-400 mt-0.5">KBZPay အကောင့်သို့ တိုက်ရိုက်</p>
+          <p className="text-[9px] text-stone-400 mt-0.5">အကောင့်သို့ တိုက်ရိုက်</p>
         </div>
       </div>
 
       {/* Search and Filters Bar */}
-      <div className="bg-white p-3 sm:p-4 rounded-2xl border border-stone-200 shadow-xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+      <div className="bg-white p-2 sm:p-2.5 rounded-xl border border-stone-200/90 shadow-2xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
         <div className="relative flex-1">
-          <Search className="w-4 h-4 text-stone-400 absolute left-3 top-3" />
+          <Search className="w-3.5 h-3.5 text-stone-400 absolute left-2.5 top-2.5" />
           <input
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="ပြေစာအမှတ်၊ ဝယ်သူအမည်၊ ဖုန်း သို့မဟုတ် ပစ္စည်းရှာဖွေပါ..."
-            className="w-full text-xs sm:text-sm pl-9 pr-4 py-2 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-rose-500 bg-stone-50/50"
+            placeholder="ပြေစာအမှတ်၊ ဝယ်သူအမည်၊ ဖုန်း ရှာဖွေပါ..."
+            className="w-full text-xs pl-8 pr-4 py-1.5 rounded-lg border border-stone-200 focus:outline-none focus:ring-1 focus:ring-rose-500 bg-stone-50/50"
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5">
           {/* Payment Method Filter */}
           <select
             value={paymentFilter}
             onChange={(e) => setPaymentFilter(e.target.value as PaymentMethod | 'all')}
-            className="text-xs font-medium px-3 py-2 rounded-xl border border-stone-200 bg-white cursor-pointer"
+            className="text-xs font-medium px-2.5 py-1.5 rounded-lg border border-stone-200 bg-white cursor-pointer"
           >
             <option value="all">ပေးချေမှုပုံစံ အားလုံး</option>
             {Object.entries(PAYMENT_LABELS).map(([m, label]) => (
@@ -316,7 +316,7 @@ export const TransactionsPage: React.FC = () => {
             onChange={(e) =>
               setStatusFilter(e.target.value as 'all' | 'completed' | 'refunded')
             }
-            className="text-xs font-medium px-3 py-2 rounded-xl border border-stone-200 bg-white cursor-pointer"
+            className="text-xs font-medium px-2.5 py-1.5 rounded-lg border border-stone-200 bg-white cursor-pointer"
           >
             <option value="all">အခြေအနေ အားလုံး</option>
             <option value="completed">ပြီးစီး</option>
@@ -345,18 +345,18 @@ export const TransactionsPage: React.FC = () => {
               return (
                 <div
                   key={order.id}
-                  className={`p-3.5 sm:p-4 transition-colors flex flex-col lg:flex-row lg:items-center justify-between gap-3 ${
+                  className={`p-2.5 sm:p-3 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 ${
                     isRefunded ? 'bg-red-50/30' : 'hover:bg-rose-50/20'
                   }`}
                 >
                   {/* Left: Receipt details and item list */}
-                  <div className="space-y-1.5 flex-1 min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-mono font-bold text-xs sm:text-sm text-stone-900">
+                  <div className="space-y-1 flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="font-mono font-bold text-xs text-stone-900">
                         {order.receiptNumber}
                       </span>
                       <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        className={`text-[9px] font-bold px-1.5 py-0.2 rounded-full ${
                           isRefunded
                             ? 'bg-red-100 text-red-700'
                             : 'bg-emerald-100 text-emerald-800'
@@ -365,28 +365,28 @@ export const TransactionsPage: React.FC = () => {
                         {isRefunded ? 'ငွေပြန်အမ်းပြီး' : 'ပြီးစီး'}
                       </span>
                       <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        className={`text-[9px] font-bold px-1.5 py-0.2 rounded-full ${
                           order.paymentMethod === 'cash'
                             ? 'bg-emerald-100 text-emerald-800'
                             : 'bg-blue-100 text-blue-800'
                         }`}
                       >
-                        {order.paymentMethod === 'cash' ? 'ငွေသား' : 'KBZPay'}
+                        {order.paymentMethod === 'cash' ? 'ငွေသား' : 'ငွေလွှဲ/KPay'}
                       </span>
-                      <span className="text-[11px] text-stone-400">
+                      <span className="text-[10px] text-stone-400">
                         {formatDateMy(order.createdAt)}
                       </span>
                     </div>
 
                     {/* Items preview */}
-                    <p className="text-xs text-stone-600 line-clamp-1">
+                    <p className="text-[11px] text-stone-600 line-clamp-1">
                       {order.items
                         .map((it) => `${it.productNameMy} (x${it.quantity})`)
                         .join(', ')}
                     </p>
 
                     {/* Customer & Cashier info */}
-                    <div className="flex items-center gap-3 text-[11px] text-stone-500">
+                    <div className="flex items-center gap-2 text-[10px] text-stone-500">
                       <span>ငွေကိုင်: {order.cashierName}</span>
                       {order.customerName && (
                         <span>• ဝယ်သူ: {order.customerName}</span>
@@ -396,10 +396,10 @@ export const TransactionsPage: React.FC = () => {
                   </div>
 
                   {/* Right: Amounts and Action Buttons */}
-                  <div className="flex items-center justify-between lg:justify-end gap-4 pt-2 lg:pt-0 border-t lg:border-t-0 border-stone-100">
-                    <div className="text-left lg:text-right">
+                  <div className="flex items-center justify-between sm:justify-end gap-3 pt-1.5 sm:pt-0 border-t sm:border-t-0 border-stone-100">
+                    <div className="text-left sm:text-right">
                       <div
-                        className={`text-base sm:text-lg font-black ${
+                        className={`text-sm sm:text-base font-black ${
                           isRefunded
                             ? 'line-through text-stone-400'
                             : 'text-rose-700'
@@ -408,39 +408,39 @@ export const TransactionsPage: React.FC = () => {
                         {formatMMK(order.grandTotal, useMyanmarDigits)}
                       </div>
                       {!isRefunded && (
-                        <span className="text-[10px] font-bold text-emerald-700 block">
+                        <span className="text-[9px] font-bold text-emerald-700 block">
                           အမြတ်: +{formatMMK(order.profit, useMyanmarDigits)}
                         </span>
                       )}
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
                       <button
                         onClick={() => setActiveReceiptOrder(order)}
-                        className="px-3 py-2 rounded-xl bg-stone-100 hover:bg-rose-100 hover:text-rose-700 active:bg-rose-200 text-stone-700 text-xs font-bold flex items-center gap-1.5 transition-all app-touch-btn cursor-pointer min-h-[38px]"
-                        title="ပြေစာထုတ်မည် / ဓာတ်ပုံအဖြစ် ပုံပြခန်း (Album) သို့ သိမ်းမည်"
+                        className="px-2.5 py-1.5 rounded-lg bg-stone-100 hover:bg-rose-100 hover:text-rose-700 active:bg-rose-200 text-stone-700 text-xs font-bold flex items-center gap-1 transition-all cursor-pointer"
+                        title="ပြေစာထုတ်မည် / ဓာတ်ပုံအဖြစ် သိမ်းမည်"
                       >
-                        <Camera className="w-4 h-4 text-rose-600" />
+                        <Camera className="w-3.5 h-3.5 text-rose-600" />
                         <span>ပြေစာ / ပုံ</span>
                       </button>
 
                       {!isRefunded && (
                         <button
                           onClick={() => setRefundingOrder(order)}
-                          className="px-2.5 py-2 rounded-xl bg-stone-100 hover:bg-amber-100 hover:text-amber-800 active:bg-amber-200 text-stone-600 text-xs font-bold flex items-center gap-1 transition-all app-touch-btn cursor-pointer min-h-[38px]"
+                          className="px-2 py-1.5 rounded-lg bg-stone-100 hover:bg-amber-100 hover:text-amber-800 active:bg-amber-200 text-stone-600 text-xs font-bold flex items-center gap-1 transition-all cursor-pointer"
                           title="ငွေပြန်အမ်းမည် (Refund with Password)"
                         >
-                          <RotateCcw className="w-4 h-4" />
+                          <RotateCcw className="w-3.5 h-3.5" />
                           <span className="hidden sm:inline">ပြန်အမ်း</span>
                         </button>
                       )}
 
                       <button
                         onClick={() => setDeletingOrder(order)}
-                        className="px-2.5 py-2 rounded-xl bg-stone-100 hover:bg-red-100 hover:text-red-700 active:bg-red-200 text-stone-600 text-xs font-bold flex items-center gap-1 transition-all app-touch-btn cursor-pointer min-h-[38px]"
+                        className="px-2 py-1.5 rounded-lg bg-stone-100 hover:bg-red-100 hover:text-red-700 active:bg-red-200 text-stone-600 text-xs font-bold flex items-center gap-1 transition-all cursor-pointer"
                         title="မှားယွင်းဖွင့်ထား၍ အမှာစာဖျက်မည် (Delete Order)"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-3.5 h-3.5" />
                         <span className="hidden sm:inline">ဖျက်မည်</span>
                       </button>
                     </div>

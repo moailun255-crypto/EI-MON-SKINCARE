@@ -288,28 +288,28 @@ export const ProductListPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-6 space-y-5">
+    <div className="max-w-7xl mx-auto px-2.5 sm:px-5 py-2.5 sm:py-3.5 space-y-2.5 sm:space-y-3">
       {/* Top Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-black text-stone-900 tracking-tight flex items-center gap-2">
-            <Boxes className="w-6 h-6 sm:w-7 sm:h-7 text-rose-600" />
+          <h1 className="text-sm sm:text-base font-black text-stone-900 tracking-tight flex items-center gap-1.5">
+            <Boxes className="w-4 h-4 sm:w-5 sm:h-5 text-rose-600 shrink-0" />
             <span>ကုန်ပစ္စည်း စီမံခန့်ခွဲမှုစနစ်</span>
           </h1>
-          <p className="text-xs sm:text-sm text-stone-500 mt-1">
-            EI MON SKINCARE • အလှကုန်ပစ္စည်းစာရင်း၊ ဝယ်ရင်း/ရောင်းစျေး နှင့် ပစ္စည်းလက်ကျန် စီမံခန့်ခွဲရန်
+          <p className="text-[10px] sm:text-[11px] text-stone-500 mt-0.5">
+            EI MON SKINCARE • အလှကုန်ပစ္စည်းစာရင်း၊ စျေးနှုန်း နှင့် လက်ကျန် စီမံခန့်ခွဲရန်
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5">
           {products.length > 0 && (
             <button
               onClick={() => setIsClearAllModalOpen(true)}
-              className="px-3.5 py-2.5 rounded-xl border border-red-200 hover:border-red-300 bg-red-50 hover:bg-red-100 text-red-700 text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-2xs transition-all cursor-pointer"
+              className="px-2.5 py-1.5 rounded-lg border border-red-200 hover:border-red-300 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs transition-all cursor-pointer"
               title="ကုန်ပစ္စည်းအားလုံး ရှင်းလင်းမည် (Clear All Products)"
             >
-              <Trash2 className="w-4 h-4 text-red-600" />
-              <span>ကုန်ပစ္စည်းအားလုံး ရှင်းလင်းမည်</span>
+              <Trash2 className="w-3.5 h-3.5 text-red-600" />
+              <span>အားလုံး ရှင်းမည်</span>
             </button>
           )}
 
@@ -318,27 +318,27 @@ export const ProductListPage: React.FC = () => {
               setSelectedProductForEdit(null);
               setActiveTab('add-product');
             }}
-            className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
+            className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs transition-all cursor-pointer"
           >
-            <PlusCircle className="w-4 h-4" />
-            <span>ကုန်ပစ္စည်းအသစ် ထည့်သွင်းမည်</span>
+            <PlusCircle className="w-3.5 h-3.5" />
+            <span>ပစ္စည်းအသစ် ထည့်မည်</span>
           </button>
         </div>
       </div>
 
       {/* Delete Feedback Banner */}
       {deleteNotice && (
-        <div className="bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-2xl p-3 px-4 flex items-center justify-between gap-2 shadow-xs animate-fadeIn">
+        <div className="bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-xl p-2.5 px-3 flex items-center justify-between gap-2 shadow-2xs animate-fadeIn text-xs">
           <div className="flex items-center gap-2">
             <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
-            <p className="text-xs font-bold">{deleteNotice}</p>
+            <p className="font-bold">{deleteNotice}</p>
           </div>
           <button
             type="button"
             onClick={() => setDeleteNotice(null)}
             className="text-emerald-700 hover:text-emerald-900 p-1 cursor-pointer"
           >
-            <X className="w-4 h-4" />
+            <X className="w-3.5 h-3.5" />
           </button>
         </div>
       )}
@@ -346,7 +346,7 @@ export const ProductListPage: React.FC = () => {
       {/* Stock Adjustment Feedback Banner */}
       {stockNotice && (
         <div
-          className={`rounded-2xl p-3 px-4 flex items-center justify-between gap-2 shadow-xs animate-fadeIn ${
+          className={`rounded-xl p-2.5 px-3 flex items-center justify-between gap-2 shadow-2xs animate-fadeIn text-xs ${
             stockNotice.type === 'success'
               ? 'bg-emerald-50 border border-emerald-200 text-emerald-900'
               : 'bg-amber-50 border border-amber-300 text-amber-950'
@@ -358,64 +358,64 @@ export const ProductListPage: React.FC = () => {
             ) : (
               <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
             )}
-            <p className="text-xs font-bold">{stockNotice.text}</p>
+            <p className="font-bold">{stockNotice.text}</p>
           </div>
           <button
             type="button"
             onClick={() => setStockNotice(null)}
             className="p-1 cursor-pointer opacity-70 hover:opacity-100"
           >
-            <X className="w-4 h-4" />
+            <X className="w-3.5 h-3.5" />
           </button>
         </div>
       )}
 
-      {/* Summary KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-        <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-stone-200 shadow-xs">
-          <p className="text-stone-500 text-[11px] font-semibold">
-            ပစ္စည်းအမျိုးအစား စုစုပေါင်း
+      {/* Summary KPI Cards - Compact native app strip */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5 sm:gap-2.5">
+        <div className="bg-white p-2.5 rounded-xl border border-stone-200/90 shadow-2xs">
+          <p className="text-stone-500 text-[10px] font-semibold leading-tight">
+            အမျိုးအစား စုစုပေါင်း
           </p>
-          <p className="text-lg sm:text-2xl font-black text-stone-900 mt-1">
+          <p className="text-sm sm:text-base font-black text-stone-900 mt-0.5 leading-tight">
             {products.length}{' '}
-            <span className="text-xs font-medium text-stone-400">
+            <span className="text-[10px] font-medium text-stone-400">
               မျိုး
             </span>
           </p>
         </div>
 
-        <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-stone-200 shadow-xs">
-          <p className="text-stone-500 text-[11px] font-semibold">
-            လက်ကျန်ပစ္စည်း အခုရေစုစုပေါင်း
+        <div className="bg-white p-2.5 rounded-xl border border-stone-200/90 shadow-2xs">
+          <p className="text-stone-500 text-[10px] font-semibold leading-tight">
+            လက်ကျန် အခုရေ
           </p>
-          <p className="text-lg sm:text-2xl font-black text-stone-900 mt-1">
+          <p className="text-sm sm:text-base font-black text-stone-900 mt-0.5 leading-tight">
             {totalStockCount}{' '}
-            <span className="text-xs font-medium text-stone-400">
+            <span className="text-[10px] font-medium text-stone-400">
               ခု
             </span>
           </p>
         </div>
 
-        <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-stone-200 shadow-xs">
-          <p className="text-stone-500 text-[11px] font-semibold">
-            ကုန်ပစ္စည်း ဝယ်ရင်းတန်ဖိုး
+        <div className="bg-white p-2.5 rounded-xl border border-stone-200/90 shadow-2xs">
+          <p className="text-stone-500 text-[10px] font-semibold leading-tight">
+            ဝယ်ရင်းတန်ဖိုး
           </p>
-          <p className="text-base sm:text-xl font-black text-stone-800 mt-1">
+          <p className="text-xs sm:text-sm font-black text-stone-800 mt-0.5 leading-tight truncate">
             {formatMMK(totalInventoryCost, useMyanmarDigits)}
           </p>
         </div>
 
-        <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-stone-200 shadow-xs">
-          <p className="text-stone-500 text-[11px] font-semibold">
+        <div className="bg-white p-2.5 rounded-xl border border-stone-200/90 shadow-2xs">
+          <p className="text-stone-500 text-[10px] font-semibold leading-tight">
             လက်ကျန် သတိပေးချက်
           </p>
           <p
-            className={`text-lg sm:text-2xl font-black mt-1 ${
+            className={`text-sm sm:text-base font-black mt-0.5 leading-tight ${
               lowStockCount > 0 ? 'text-amber-600' : 'text-emerald-600'
             }`}
           >
             {lowStockCount}{' '}
-            <span className="text-xs font-medium text-stone-400">
+            <span className="text-[10px] font-medium text-stone-400">
               ခု
             </span>
           </p>
@@ -423,10 +423,10 @@ export const ProductListPage: React.FC = () => {
       </div>
 
       {/* Filter and Search Controls */}
-      <div className="bg-white p-3 sm:p-4 rounded-2xl border border-stone-200 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-        <div className="flex flex-col sm:flex-row items-stretch gap-2 flex-1">
+      <div className="bg-white p-2 sm:p-2.5 rounded-xl border border-stone-200/90 shadow-2xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2">
+        <div className="flex flex-col sm:flex-row items-stretch gap-1.5 flex-1">
           <div className="relative flex-1">
-            <Search className="w-4 h-4 text-stone-400 absolute left-3 top-3" />
+            <Search className="w-3.5 h-3.5 text-stone-400 absolute left-2.5 top-2.5" />
             <input
               type="text"
               value={searchTerm}
@@ -437,16 +437,16 @@ export const ProductListPage: React.FC = () => {
                 }
               }}
               placeholder="ပစ္စည်းအမည်၊ SKU သို့မဟုတ် ဘားကုဒ် ရှာဖွေပါ..."
-              className="w-full text-xs sm:text-sm pl-9 pr-8 py-2 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-rose-500 bg-stone-50/50 font-medium"
+              className="w-full text-xs pl-8 pr-7 py-1.5 rounded-lg border border-stone-200 focus:outline-none focus:ring-1 focus:ring-rose-500 bg-stone-50/50 font-medium"
             />
             {searchTerm && (
               <button
                 type="button"
                 onClick={() => setSearchTerm('')}
-                className="absolute right-2.5 top-2.5 text-stone-400 hover:text-stone-700 p-0.5 cursor-pointer"
+                className="absolute right-2 top-2 text-stone-400 hover:text-stone-700 p-0.5 cursor-pointer"
                 title="ရှာဖွေမှု ရှင်းလင်းမည်"
               >
-                <X className="w-4 h-4" />
+                <X className="w-3.5 h-3.5" />
               </button>
             )}
           </div>
@@ -454,18 +454,18 @@ export const ProductListPage: React.FC = () => {
           <button
             type="button"
             onClick={() => setIsCameraScannerOpen(true)}
-            className="px-3 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 active:scale-95 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-all cursor-pointer shrink-0"
+            className="px-2.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 active:scale-95 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs transition-all cursor-pointer shrink-0"
             title="ဘားကုဒ် ကင်မရာဖြင့် စကင်ဖတ် ရှာဖွေမည် (Scan Barcode to Find Product)"
           >
-            <Camera className="w-4 h-4" />
-            <Barcode className="w-4 h-4" />
-            <span>ဘားကုဒ် စကင်ဖတ်ရှာမည်</span>
+            <Camera className="w-3.5 h-3.5" />
+            <Barcode className="w-3.5 h-3.5" />
+            <span>ဘားကုဒ် စကင်ဖတ်မည်</span>
           </button>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5">
           {/* Category dropdown */}
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1">
             <select
               value={categoryFilter}
               onChange={(e) => {
@@ -475,7 +475,7 @@ export const ProductListPage: React.FC = () => {
                   setCategoryFilter(e.target.value as ProductCategory);
                 }
               }}
-              className="text-xs font-medium px-3 py-2 rounded-xl border border-stone-200 bg-white focus:outline-none focus:ring-1 focus:ring-rose-500 cursor-pointer"
+              className="text-xs font-medium px-2.5 py-1.5 rounded-lg border border-stone-200 bg-white focus:outline-none focus:ring-1 focus:ring-rose-500 cursor-pointer"
             >
               <option value="all">အမျိုးအစားအားလုံး ({products.length})</option>
               {(Object.entries(groupedCategories) as [string, CategoryItem[]][]).map(([grpName, catList]) => (
@@ -495,21 +495,21 @@ export const ProductListPage: React.FC = () => {
             <button
               type="button"
               onClick={() => setShowCategoryManager(true)}
-              className="px-2.5 py-2 rounded-xl border border-stone-200 bg-white hover:bg-stone-50 text-stone-700 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+              className="p-1.5 sm:px-2 rounded-lg border border-stone-200 bg-white hover:bg-stone-50 text-stone-700 text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
               title="အမျိုးအစားများ စီမံခန့်ခွဲခြင်းနှင့် မလိုအပ်သည်များ ဖျက်ခြင်း"
             >
               <FolderPlus className="w-3.5 h-3.5 text-rose-600" />
-              <span className="hidden sm:inline">အမျိုးအစား စီမံမည်</span>
+              <span className="hidden sm:inline">စီမံမည်</span>
             </button>
           </div>
 
           {/* Stock status filter */}
-          <div className="flex items-center bg-stone-100 p-0.5 rounded-xl border border-stone-200 text-xs">
+          <div className="flex items-center bg-stone-100 p-0.5 rounded-lg border border-stone-200 text-xs">
             <button
               onClick={() => setStockFilter('all')}
-              className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
+              className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer ${
                 stockFilter === 'all'
-                  ? 'bg-white text-stone-900 shadow-xs'
+                  ? 'bg-white text-stone-900 shadow-2xs'
                   : 'text-stone-500 hover:text-stone-900'
               }`}
             >
@@ -517,9 +517,9 @@ export const ProductListPage: React.FC = () => {
             </button>
             <button
               onClick={() => setStockFilter('low')}
-              className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
+              className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer ${
                 stockFilter === 'low'
-                  ? 'bg-amber-500 text-white shadow-xs'
+                  ? 'bg-amber-500 text-white shadow-2xs'
                   : 'text-stone-500 hover:text-stone-900'
               }`}
             >
@@ -527,9 +527,9 @@ export const ProductListPage: React.FC = () => {
             </button>
             <button
               onClick={() => setStockFilter('out')}
-              className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
+              className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer ${
                 stockFilter === 'out'
-                  ? 'bg-red-500 text-white shadow-xs'
+                  ? 'bg-red-500 text-white shadow-2xs'
                   : 'text-stone-500 hover:text-stone-900'
               }`}
             >
@@ -541,33 +541,30 @@ export const ProductListPage: React.FC = () => {
 
       {/* Batch Action Bar (Appears when items are selected) */}
       {selectedIds.length > 0 && (
-        <div className="bg-rose-50/90 border border-rose-200 rounded-2xl p-3 px-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shadow-xs animate-fadeIn">
-          <div className="flex items-center gap-2.5">
-            <span className="w-6 h-6 rounded-full bg-rose-600 text-white font-black flex items-center justify-center text-xs shadow-2xs">
+        <div className="bg-rose-50/90 border border-rose-200 rounded-xl p-2 px-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 shadow-2xs animate-fadeIn text-xs">
+          <div className="flex items-center gap-2">
+            <span className="w-5 h-5 rounded-full bg-rose-600 text-white font-black flex items-center justify-center text-[11px] shadow-2xs">
               {selectedIds.length}
             </span>
             <div>
-              <p className="text-xs font-black text-rose-950">
+              <p className="font-bold text-rose-950">
                 ရွေးချယ်ထားသော ကုန်ပစ္စည်း {selectedIds.length} ခု
-              </p>
-              <p className="text-[10px] text-rose-700">
-                ({selectedIds.length} items selected for batch delete)
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 self-end sm:self-auto">
+          <div className="flex items-center gap-1.5 self-end sm:self-auto">
             <button
               onClick={() => setSelectedIds([])}
-              className="px-3 py-1.5 rounded-xl border border-rose-200 text-rose-700 hover:bg-rose-100/70 text-xs font-bold transition-colors cursor-pointer"
+              className="px-2.5 py-1 rounded-lg border border-rose-200 text-rose-700 hover:bg-rose-100/70 font-bold transition-colors cursor-pointer"
             >
-              ရွေးချယ်မှု ပယ်ဖျက်မည်
+              ပယ်ဖျက်မည်
             </button>
             <button
               onClick={handleOpenBatchDeleteModal}
-              className="px-3.5 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+              className="px-2.5 py-1 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold flex items-center gap-1 shadow-2xs transition-colors cursor-pointer"
             >
-              <Trash2 className="w-3.5 h-3.5" />
+              <Trash2 className="w-3 h-3" />
               <span>ရွေးထားသည်များ ဖျက်မည် ({selectedIds.length})</span>
             </button>
           </div>
@@ -631,8 +628,8 @@ export const ProductListPage: React.FC = () => {
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-stone-50 border-b border-stone-200 text-[11px] font-bold text-stone-600 tracking-wider">
-                    <th className="py-3 px-3 w-10 text-center">
+                  <tr className="bg-stone-50 border-b border-stone-200 text-[10px] uppercase font-bold text-stone-500 tracking-wider">
+                    <th className="py-2 px-2.5 w-9 text-center">
                       <input
                         type="checkbox"
                         checked={isAllSelected}
@@ -640,18 +637,18 @@ export const ProductListPage: React.FC = () => {
                           if (el) el.indeterminate = isSomeSelected;
                         }}
                         onChange={handleToggleSelectAll}
-                        className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-stone-300 cursor-pointer"
+                        className="w-3.5 h-3.5 rounded text-rose-600 focus:ring-rose-500 border-stone-300 cursor-pointer"
                         title="အားလုံး ရွေးမည် (Select All)"
                       />
                     </th>
-                    <th className="py-3 px-3">ပစ္စည်းအမည်</th>
-                    <th className="py-3 px-3">အမျိုးအစား</th>
-                    <th className="py-3 px-3">ဘားကုဒ်</th>
-                    <th className="py-3 px-3 text-right">ဝယ်ရင်းစျေး</th>
-                    <th className="py-3 px-3 text-right">ရောင်းစျေး</th>
-                    <th className="py-3 px-3 text-right">အမြတ်ငွေ</th>
-                    <th className="py-3 px-3 text-center">လက်ကျန်</th>
-                    <th className="py-3 px-4 text-right">လုပ်ဆောင်ချက်</th>
+                    <th className="py-2 px-2.5">ပစ္စည်းအမည်</th>
+                    <th className="py-2 px-2.5">အမျိုးအစား</th>
+                    <th className="py-2 px-2.5">ဘားကုဒ်</th>
+                    <th className="py-2 px-2.5 text-right">ဝယ်ရင်းစျေး</th>
+                    <th className="py-2 px-2.5 text-right">ရောင်းစျေး</th>
+                    <th className="py-2 px-2.5 text-right">အမြတ်ငွေ</th>
+                    <th className="py-2 px-2.5 text-center">လက်ကျန်</th>
+                    <th className="py-2 px-3 text-right">လုပ်ဆောင်ချက်</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100 text-xs">
@@ -669,16 +666,16 @@ export const ProductListPage: React.FC = () => {
                           isSelected ? 'bg-rose-50/50' : 'hover:bg-rose-50/20'
                         }`}
                       >
-                        <td className="py-3 px-3 text-center">
+                        <td className="py-2 px-2.5 text-center">
                           <input
                             type="checkbox"
                             checked={isSelected}
                             onChange={() => handleToggleSelect(p.id)}
-                            className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-stone-300 cursor-pointer"
+                            className="w-3.5 h-3.5 rounded text-rose-600 focus:ring-rose-500 border-stone-300 cursor-pointer"
                           />
                         </td>
 
-                        <td className="py-3 px-3">
+                        <td className="py-2 px-2.5">
                           <div className="min-w-0">
                             <p className="font-bold text-stone-900 truncate max-w-sm">
                               {p.nameMy}
@@ -686,35 +683,35 @@ export const ProductListPage: React.FC = () => {
                           </div>
                         </td>
 
-                        <td className="py-3 px-3">
-                          <span className="px-2 py-0.5 rounded-md bg-stone-100 text-stone-700 font-medium text-[11px]">
+                        <td className="py-2 px-2.5">
+                          <span className="px-2 py-0.5 rounded-md bg-stone-100 text-stone-700 font-medium text-[10px]">
                             {getCategoryName(p.category)}
                           </span>
                         </td>
 
-                        <td className="py-3 px-3 font-mono text-[11px] text-stone-700 font-bold">
+                        <td className="py-2 px-2.5 font-mono text-[10px] text-stone-700 font-bold">
                           {p.barcode}
                         </td>
 
-                        <td className="py-3 px-3 text-right font-semibold text-stone-600">
+                        <td className="py-2 px-2.5 text-right font-semibold text-stone-600">
                           {formatMMK(p.costPrice, useMyanmarDigits)}
                         </td>
 
-                        <td className="py-3 px-3 text-right font-bold text-rose-700">
+                        <td className="py-2 px-2.5 text-right font-bold text-rose-700">
                           {formatMMK(p.sellingPrice, useMyanmarDigits)}
                         </td>
 
-                        <td className="py-3 px-3 text-right">
+                        <td className="py-2 px-2.5 text-right">
                           <span className="font-bold text-emerald-700">
                             +{formatMMK(profitMMK, useMyanmarDigits)}
                           </span>
-                          <span className="text-[10px] text-emerald-600 block">
+                          <span className="text-[9px] text-emerald-600 block">
                             ({profitPct}%)
                           </span>
                         </td>
 
-                        <td className="py-3 px-3 text-center">
-                          <div className="flex items-center justify-center gap-1.5">
+                        <td className="py-2 px-2.5 text-center">
+                          <div className="flex items-center justify-center gap-1">
                             <button
                               onClick={() => handleAdjustStockWithFeedback(p, -1)}
                               className="w-5 h-5 rounded bg-stone-100 hover:bg-stone-200 text-stone-700 flex items-center justify-center text-xs cursor-pointer"
@@ -723,7 +720,7 @@ export const ProductListPage: React.FC = () => {
                               <Minus className="w-3 h-3" />
                             </button>
                             <span
-                              className={`font-black px-2 py-0.5 rounded text-xs min-w-[32px] ${
+                              className={`font-black px-1.5 py-0.5 rounded text-xs min-w-[28px] ${
                                 isOut
                                   ? 'bg-red-100 text-red-700'
                                   : isLow
@@ -748,21 +745,21 @@ export const ProductListPage: React.FC = () => {
                           )}
                         </td>
 
-                        <td className="py-3 px-4 text-right">
-                          <div className="flex items-center justify-end gap-1.5">
+                        <td className="py-2 px-3 text-right">
+                          <div className="flex items-center justify-end gap-1">
                             <button
                               onClick={() => handleEdit(p)}
-                              className="p-1.5 rounded-lg text-stone-600 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                              className="p-1 rounded-lg text-stone-600 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
                               title="ပြင်ဆင်မည်"
                             >
-                              <Edit2 className="w-4 h-4" />
+                              <Edit2 className="w-3.5 h-3.5" />
                             </button>
                             <button
                               onClick={() => setConfirmDeleteId(p.id)}
-                              className="p-1.5 rounded-lg text-stone-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                              className="p-1 rounded-lg text-stone-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
                               title="ဖျက်မည်"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
                         </td>
@@ -773,10 +770,10 @@ export const ProductListPage: React.FC = () => {
               </table>
             </div>
 
-            {/* Card View on Mobile (sm/xs) */}
+            {/* Card View on Mobile (sm/xs) - Compact native mobile list */}
             <div className="md:hidden divide-y divide-stone-100">
               {/* Mobile Select All Bar */}
-              <div className="p-3 bg-stone-50 border-b border-stone-100 flex items-center justify-between text-xs">
+              <div className="p-2.5 bg-stone-50 border-b border-stone-100 flex items-center justify-between text-xs">
                 <label className="flex items-center gap-2 cursor-pointer font-bold text-stone-700">
                   <input
                     type="checkbox"
@@ -785,11 +782,11 @@ export const ProductListPage: React.FC = () => {
                       if (el) el.indeterminate = isSomeSelected;
                     }}
                     onChange={handleToggleSelectAll}
-                    className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-stone-300"
+                    className="w-3.5 h-3.5 rounded text-rose-600 focus:ring-rose-500 border-stone-300"
                   />
                   <span>အားလုံး ရွေးမည် (Select All)</span>
                 </label>
-                <span className="text-[11px] text-stone-400">
+                <span className="text-[10px] text-stone-400">
                   {filteredProducts.length} မျိုး
                 </span>
               </div>
@@ -801,25 +798,25 @@ export const ProductListPage: React.FC = () => {
                 return (
                   <div
                     key={p.id}
-                    className={`p-3.5 space-y-2 transition-colors ${
-                      isSelected ? 'bg-rose-50/40' : ''
+                    className={`p-2.5 space-y-1.5 transition-colors ${
+                      isSelected ? 'bg-rose-50/40' : 'bg-white'
                     }`}
                   >
-                    <div className="flex items-start gap-2.5">
+                    <div className="flex items-start gap-2">
                       <input
                         type="checkbox"
                         checked={isSelected}
                         onChange={() => handleToggleSelect(p.id)}
-                        className="w-4 h-4 mt-0.5 rounded text-rose-600 focus:ring-rose-500 border-stone-300 cursor-pointer shrink-0"
+                        className="w-3.5 h-3.5 mt-0.5 rounded text-rose-600 focus:ring-rose-500 border-stone-300 cursor-pointer shrink-0"
                       />
 
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-stone-100 text-stone-700">
+                        <div className="flex items-center gap-1">
+                          <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-stone-100 text-stone-700">
                             {getCategoryName(p.category)}
                           </span>
                           <span
-                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                            className={`text-[9px] font-bold px-1.5 py-0.2 rounded-full ${
                               isOut
                                 ? 'bg-red-100 text-red-800'
                                 : isLow
@@ -831,10 +828,10 @@ export const ProductListPage: React.FC = () => {
                           </span>
                         </div>
 
-                        <h4 className="text-xs font-bold text-stone-900 mt-1 line-clamp-1">
+                        <h4 className="text-xs font-bold text-stone-900 mt-0.5 line-clamp-1">
                           {p.nameMy}
                         </h4>
-                        <p className="text-[10px] text-stone-400">
+                        <p className="text-[9px] text-stone-400">
                           ဘားကုဒ်: {p.barcode}
                         </p>
                       </div>
@@ -842,38 +839,38 @@ export const ProductListPage: React.FC = () => {
 
                     <div className="flex items-center justify-between pt-1 border-t border-stone-50 text-xs">
                       <div>
-                        <span className="text-[10px] text-stone-400 block">ရောင်းစျေး</span>
-                        <span className="font-extrabold text-rose-700">
+                        <span className="text-[9px] text-stone-400 block leading-tight">ရောင်းစျေး</span>
+                        <span className="font-extrabold text-rose-700 text-xs">
                           {formatMMK(p.sellingPrice, useMyanmarDigits)}
                         </span>
                       </div>
 
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1">
                         <button
                           onClick={() => handleAdjustStockWithFeedback(p, -1)}
-                          className="w-7 h-7 rounded-lg bg-stone-100 flex items-center justify-center font-bold cursor-pointer"
+                          className="w-6 h-6 rounded-md bg-stone-100 flex items-center justify-center font-bold cursor-pointer"
                         >
-                          <Minus className="w-3.5 h-3.5" />
+                          <Minus className="w-3 h-3" />
                         </button>
-                        <span className="font-bold text-xs w-6 text-center">{p.stock}</span>
+                        <span className="font-bold text-xs w-5 text-center">{p.stock}</span>
                         <button
                           onClick={() => handleAdjustStockWithFeedback(p, 1)}
-                          className="w-7 h-7 rounded-lg bg-stone-100 flex items-center justify-center font-bold cursor-pointer"
+                          className="w-6 h-6 rounded-md bg-stone-100 flex items-center justify-center font-bold cursor-pointer"
                         >
-                          <Plus className="w-3.5 h-3.5" />
+                          <Plus className="w-3 h-3" />
                         </button>
 
                         <button
                           onClick={() => handleEdit(p)}
-                          className="p-1.5 ml-2 rounded-lg bg-stone-100 text-stone-700 cursor-pointer"
+                          className="p-1 ml-1.5 rounded-md bg-stone-100 text-stone-700 cursor-pointer"
                         >
-                          <Edit2 className="w-3.5 h-3.5" />
+                          <Edit2 className="w-3 h-3" />
                         </button>
                         <button
                           onClick={() => setConfirmDeleteId(p.id)}
-                          className="p-1.5 rounded-lg bg-red-50 text-red-600 cursor-pointer"
+                          className="p-1 rounded-md bg-red-50 text-red-600 cursor-pointer"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <Trash2 className="w-3 h-3" />
                         </button>
                       </div>
                     </div>

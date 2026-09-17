@@ -458,111 +458,111 @@ export const FinancePage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-6 space-y-6">
+    <div className="max-w-7xl mx-auto px-2.5 sm:px-5 py-2.5 sm:py-3.5 space-y-2.5 sm:space-y-3">
       {/* Title & Top Navigation Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-black text-stone-900 tracking-tight flex items-center gap-2">
-            <TrendingUp className="w-6 h-6 sm:w-7 sm:h-7 text-rose-600" />
+          <h1 className="text-sm sm:text-base font-black text-stone-900 tracking-tight flex items-center gap-1.5">
+            <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-rose-600 shrink-0" />
             <span>ဘဏ္ဍာရေးနှင့် စာရင်းကိုင် စီမံခန့်ခွဲမှု</span>
           </h1>
-          <p className="text-xs sm:text-sm text-stone-500 mt-0.5">
+          <p className="text-[10px] sm:text-[11px] text-stone-500 mt-0.5">
             EI MON SKINCARE • အရောင်းဝင်ငွေ၊ အရှုံးအမြတ်ရှင်းတမ်း၊ ကုန်ကျစရိတ်နှင့် ငွေသိမ်းသေတ္တာ စစ်ဆေးချက်
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <button
             type="button"
             onClick={() => setIsAddExpenseOpen(true)}
-            className="px-4 py-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+            className="px-3 py-1.5 rounded-lg bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
           >
-            <PlusCircle className="w-4 h-4 text-amber-400" />
-            <span>စရိတ်အသစ် ထည့်သွင်းမည်</span>
+            <PlusCircle className="w-3.5 h-3.5 text-amber-400" />
+            <span>စရိတ်အသစ် ထည့်မည်</span>
           </button>
         </div>
       </div>
 
       {/* Module Sub-Tabs (Professional Accounting Workspace) */}
-      <div className="bg-white p-1.5 rounded-2xl border border-stone-200 shadow-xs flex items-center gap-1 overflow-x-auto">
+      <div className="bg-white p-1 rounded-xl border border-stone-200 shadow-2xs flex items-center gap-1 overflow-x-auto">
         <button
           type="button"
           onClick={() => setActiveView('overview')}
-          className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+          className={`flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
             activeView === 'overview'
-              ? 'bg-rose-600 text-white shadow-xs'
+              ? 'bg-rose-600 text-white shadow-2xs'
               : 'text-stone-600 hover:bg-stone-100'
           }`}
         >
-          <BarChart3 className="w-4 h-4" />
+          <BarChart3 className="w-3.5 h-3.5" />
           <span>၁။ ခြုံငုံသုံးသပ်ချက်</span>
         </button>
 
         <button
           type="button"
           onClick={() => setActiveView('pnl')}
-          className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+          className={`flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
             activeView === 'pnl'
-              ? 'bg-rose-600 text-white shadow-xs'
+              ? 'bg-rose-600 text-white shadow-2xs'
               : 'text-stone-600 hover:bg-stone-100'
           }`}
         >
-          <FileSpreadsheet className="w-4 h-4" />
+          <FileSpreadsheet className="w-3.5 h-3.5" />
           <span>၂။ အရှုံးအမြတ် ရှင်းတမ်း</span>
         </button>
 
         <button
           type="button"
           onClick={() => setActiveView('reconciliation')}
-          className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+          className={`flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
             activeView === 'reconciliation'
-              ? 'bg-rose-600 text-white shadow-xs'
+              ? 'bg-rose-600 text-white shadow-2xs'
               : 'text-stone-600 hover:bg-stone-100'
           }`}
         >
-          <Coins className="w-4 h-4" />
-          <span>၃။ ငွေသိမ်းသေတ္တာ စစ်ဆေးချက်</span>
+          <Coins className="w-3.5 h-3.5" />
+          <span>၃။ ငွေသေတ္တာ စစ်ဆေးချက်</span>
         </button>
 
         <button
           type="button"
           onClick={() => setActiveView('profitability')}
-          className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+          className={`flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
             activeView === 'profitability'
-              ? 'bg-rose-600 text-white shadow-xs'
+              ? 'bg-rose-600 text-white shadow-2xs'
               : 'text-stone-600 hover:bg-stone-100'
           }`}
         >
-          <Sparkles className="w-4 h-4" />
-          <span>၄။ ပစ္စည်းအလိုက် အမြတ်နှုန်း</span>
+          <Sparkles className="w-3.5 h-3.5" />
+          <span>၄။ အမြတ်နှုန်း</span>
         </button>
 
         <button
           type="button"
           onClick={() => setActiveView('expenses')}
-          className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+          className={`flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
             activeView === 'expenses'
-              ? 'bg-rose-600 text-white shadow-xs'
+              ? 'bg-rose-600 text-white shadow-2xs'
               : 'text-stone-600 hover:bg-stone-100'
           }`}
         >
-          <Receipt className="w-4 h-4" />
-          <span>၅။ ဆိုင်စရိတ် မှတ်တမ်းများ</span>
+          <Receipt className="w-3.5 h-3.5" />
+          <span>၅။ ဆိုင်စရိတ်</span>
         </button>
       </div>
 
       {/* Interactive Date Range & Timeline Filter Bar */}
-      <div className="bg-stone-100/80 p-2.5 sm:p-3 rounded-2xl border border-stone-200/80 flex flex-wrap items-center justify-between gap-3 text-xs">
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-[11px] font-bold text-stone-500 uppercase flex items-center gap-1 mr-1">
-            <Calendar className="w-3.5 h-3.5 text-rose-600" />
+      <div className="bg-stone-100/80 p-2 rounded-xl border border-stone-200/80 flex flex-wrap items-center justify-between gap-2 text-xs">
+        <div className="flex flex-wrap items-center gap-1">
+          <span className="text-[10px] font-bold text-stone-500 uppercase flex items-center gap-1 mr-0.5">
+            <Calendar className="w-3 h-3 text-rose-600" />
             ကာလ:
           </span>
 
           <button
             type="button"
             onClick={() => setDateFilterMode('this-month')}
-            className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap ${
+            className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer whitespace-nowrap text-xs ${
               dateFilterMode === 'this-month'
                 ? 'bg-stone-900 text-white shadow-2xs'
                 : 'bg-white text-stone-700 hover:bg-stone-50 border border-stone-200'
@@ -574,7 +574,7 @@ export const FinancePage: React.FC = () => {
           <button
             type="button"
             onClick={() => setDateFilterMode('today')}
-            className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap ${
+            className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer whitespace-nowrap text-xs ${
               dateFilterMode === 'today'
                 ? 'bg-stone-900 text-white shadow-2xs'
                 : 'bg-white text-stone-700 hover:bg-stone-50 border border-stone-200'
@@ -586,7 +586,7 @@ export const FinancePage: React.FC = () => {
           <button
             type="button"
             onClick={() => setDateFilterMode('yesterday')}
-            className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap ${
+            className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer whitespace-nowrap text-xs ${
               dateFilterMode === 'yesterday'
                 ? 'bg-stone-900 text-white shadow-2xs'
                 : 'bg-white text-stone-700 hover:bg-stone-50 border border-stone-200'
@@ -598,7 +598,7 @@ export const FinancePage: React.FC = () => {
           <button
             type="button"
             onClick={() => setDateFilterMode('this-week')}
-            className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap ${
+            className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer whitespace-nowrap text-xs ${
               dateFilterMode === 'this-week'
                 ? 'bg-stone-900 text-white shadow-2xs'
                 : 'bg-white text-stone-700 hover:bg-stone-50 border border-stone-200'
@@ -610,7 +610,7 @@ export const FinancePage: React.FC = () => {
           <button
             type="button"
             onClick={() => setDateFilterMode('last-month')}
-            className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap ${
+            className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer whitespace-nowrap text-xs ${
               dateFilterMode === 'last-month'
                 ? 'bg-stone-900 text-white shadow-2xs'
                 : 'bg-white text-stone-700 hover:bg-stone-50 border border-stone-200'
@@ -622,7 +622,7 @@ export const FinancePage: React.FC = () => {
           <button
             type="button"
             onClick={() => setDateFilterMode('all')}
-            className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap ${
+            className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer whitespace-nowrap text-xs ${
               dateFilterMode === 'all'
                 ? 'bg-stone-900 text-white shadow-2xs'
                 : 'bg-white text-stone-700 hover:bg-stone-50 border border-stone-200'
@@ -633,16 +633,16 @@ export const FinancePage: React.FC = () => {
         </div>
 
         {/* Interactive Single Day Stepper & Custom Date inputs */}
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5">
           {/* Day Stepper */}
-          <div className="flex items-center bg-white p-0.5 rounded-xl border border-stone-200 shadow-2xs text-xs">
+          <div className="flex items-center bg-white p-0.5 rounded-lg border border-stone-200 shadow-2xs text-xs">
             <button
               type="button"
               onClick={() => handleStepFinanceDay(-1)}
-              className="p-1.5 rounded-lg hover:bg-stone-100 text-stone-600 cursor-pointer"
+              className="p-1 rounded hover:bg-stone-100 text-stone-600 cursor-pointer"
               title="ယခင်ရက် (Previous Day)"
             >
-              <ChevronLeft className="w-4 h-4" />
+              <ChevronLeft className="w-3.5 h-3.5" />
             </button>
             <input
               type="date"
@@ -653,20 +653,20 @@ export const FinancePage: React.FC = () => {
                   setDateFilterMode('specific-day');
                 }
               }}
-              className="text-xs font-mono font-bold text-stone-800 bg-transparent border-none outline-none cursor-pointer px-2"
+              className="text-xs font-mono font-bold text-stone-800 bg-transparent border-none outline-none cursor-pointer px-1 py-0.5"
             />
             <button
               type="button"
               onClick={() => handleStepFinanceDay(1)}
-              className="p-1.5 rounded-lg hover:bg-stone-100 text-stone-600 cursor-pointer"
+              className="p-1 rounded hover:bg-stone-100 text-stone-600 cursor-pointer"
               title="နောက်ရက် (Next Day)"
             >
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="w-3.5 h-3.5" />
             </button>
           </div>
 
           {/* Custom Date Range Picker */}
-          <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-stone-200 text-xs">
+          <div className="flex items-center gap-1 bg-white px-2 py-0.5 rounded-lg border border-stone-200 text-xs">
             <input
               type="date"
               value={customStartDate}
@@ -674,9 +674,9 @@ export const FinancePage: React.FC = () => {
                 setCustomStartDate(e.target.value);
                 setDateFilterMode('custom');
               }}
-              className="font-mono text-[11px] font-bold text-stone-700 bg-transparent border-none outline-none cursor-pointer"
+              className="font-mono text-[10px] font-bold text-stone-700 bg-transparent border-none outline-none cursor-pointer"
             />
-            <span className="text-stone-400">မှ</span>
+            <span className="text-stone-400 text-[10px]">မှ</span>
             <input
               type="date"
               value={customEndDate}
@@ -684,18 +684,18 @@ export const FinancePage: React.FC = () => {
                 setCustomEndDate(e.target.value);
                 setDateFilterMode('custom');
               }}
-              className="font-mono text-[11px] font-bold text-stone-700 bg-transparent border-none outline-none cursor-pointer"
+              className="font-mono text-[10px] font-bold text-stone-700 bg-transparent border-none outline-none cursor-pointer"
             />
           </div>
         </div>
       </div>
 
       {/* Active Filter Period Status Badge */}
-      <div className="flex items-center justify-between text-xs text-stone-600 px-1">
-        <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+      <div className="flex items-center justify-between text-xs text-stone-600 px-0.5">
+        <div className="flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
           <span>
-            စစ်ဆေးနေသော ကာလ: <strong className="text-stone-900">{activeDateLabel}</strong>
+            ကာလ: <strong className="text-stone-900">{activeDateLabel}</strong>
           </span>
           <span className="text-stone-400">•</span>
           <span>
@@ -714,96 +714,96 @@ export const FinancePage: React.FC = () => {
 
       {/* VIEW 1: EXECUTIVE OVERVIEW */}
       {activeView === 'overview' && (
-        <div className="space-y-6">
+        <div className="space-y-3 sm:space-y-4">
           {/* Executive P&L Cards Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1.5 sm:gap-2.5">
             {/* 1. Total Revenue */}
-            <div className="bg-white p-4 rounded-2xl border border-stone-200 shadow-xs">
-              <div className="flex items-center justify-between text-stone-500 mb-1">
-                <span className="text-[11px] font-bold uppercase tracking-wider">
-                  ရောင်းရငွေ (ဝင်ငွေ)
+            <div className="bg-white p-2.5 rounded-xl border border-stone-200/90 shadow-2xs">
+              <div className="flex items-center justify-between text-stone-500 mb-0.5">
+                <span className="text-[10px] font-bold uppercase tracking-wider">
+                  ရောင်းရငွေ
                 </span>
-                <div className="w-6 h-6 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center">
-                  <ArrowUpRight className="w-4 h-4" />
+                <div className="w-5 h-5 rounded bg-rose-50 text-rose-600 flex items-center justify-center">
+                  <ArrowUpRight className="w-3.5 h-3.5" />
                 </div>
               </div>
-              <h3 className="text-xl sm:text-2xl font-black text-rose-700">
+              <h3 className="text-sm sm:text-base font-black text-rose-700 leading-tight">
                 {formatMMK(totalRevenue, useMyanmarDigits)}
               </h3>
-              <p className="text-[10px] text-stone-400 mt-1">
+              <p className="text-[9px] text-stone-400 mt-0.5">
                 {completedOrders.length} ဘောင်ချာစောင်
               </p>
             </div>
 
             {/* 2. COGS (Cost of Goods Sold) */}
-            <div className="bg-white p-4 rounded-2xl border border-stone-200 shadow-xs">
-              <div className="flex items-center justify-between text-stone-500 mb-1">
-                <span className="text-[11px] font-bold uppercase tracking-wider">
-                  ဝယ်ရင်းစရိတ် (COGS)
+            <div className="bg-white p-2.5 rounded-xl border border-stone-200/90 shadow-2xs">
+              <div className="flex items-center justify-between text-stone-500 mb-0.5">
+                <span className="text-[10px] font-bold uppercase tracking-wider">
+                  ဝယ်ရင်းစရိတ်
                 </span>
-                <div className="w-6 h-6 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
-                  <ArrowDownRight className="w-4 h-4" />
+                <div className="w-5 h-5 rounded bg-amber-50 text-amber-600 flex items-center justify-center">
+                  <ArrowDownRight className="w-3.5 h-3.5" />
                 </div>
               </div>
-              <h3 className="text-xl sm:text-2xl font-black text-stone-800">
+              <h3 className="text-sm sm:text-base font-black text-stone-800 leading-tight">
                 {formatMMK(totalCOGS, useMyanmarDigits)}
               </h3>
-              <p className="text-[10px] text-stone-400 mt-1">ကုန်ပစ္စည်းမူရင်း လက်ကားဈေး</p>
+              <p className="text-[9px] text-stone-400 mt-0.5">လက်ကားဈေး</p>
             </div>
 
             {/* 3. Gross Profit */}
-            <div className="bg-white p-4 rounded-2xl border border-stone-200 shadow-xs">
-              <div className="flex items-center justify-between text-stone-500 mb-1">
-                <span className="text-[11px] font-bold uppercase tracking-wider">
+            <div className="bg-white p-2.5 rounded-xl border border-stone-200/90 shadow-2xs">
+              <div className="flex items-center justify-between text-stone-500 mb-0.5">
+                <span className="text-[10px] font-bold uppercase tracking-wider">
                   အကြမ်းဖျင်းအမြတ်
                 </span>
-                <span className="text-xs font-extrabold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">
+                <span className="text-[9px] font-extrabold px-1 py-0.2 rounded bg-emerald-100 text-emerald-800">
                   {grossMargin}%
                 </span>
               </div>
-              <h3 className="text-xl sm:text-2xl font-black text-emerald-700">
+              <h3 className="text-sm sm:text-base font-black text-emerald-700 leading-tight">
                 {formatMMK(grossProfit, useMyanmarDigits)}
               </h3>
-              <p className="text-[10px] text-stone-400 mt-1">ဝင်ငွေမှ ကုန်ကျစရိတ်နုတ်ပြီး</p>
+              <p className="text-[9px] text-stone-400 mt-0.5">ရောင်းရငွေ - ဝယ်ရင်း</p>
             </div>
 
             {/* 4. Operating Expenses */}
-            <div className="bg-white p-4 rounded-2xl border border-stone-200 shadow-xs">
-              <div className="flex items-center justify-between text-stone-500 mb-1">
-                <span className="text-[11px] font-bold uppercase tracking-wider">
-                  ဆိုင်စရိတ်များ (OPEX)
+            <div className="bg-white p-2.5 rounded-xl border border-stone-200/90 shadow-2xs">
+              <div className="flex items-center justify-between text-stone-500 mb-0.5">
+                <span className="text-[10px] font-bold uppercase tracking-wider">
+                  ဆိုင်စရိတ်
                 </span>
-                <div className="w-6 h-6 rounded-lg bg-red-50 text-red-600 flex items-center justify-center">
-                  <ArrowDownRight className="w-4 h-4" />
+                <div className="w-5 h-5 rounded bg-red-50 text-red-600 flex items-center justify-center">
+                  <ArrowDownRight className="w-3.5 h-3.5" />
                 </div>
               </div>
-              <h3 className="text-xl sm:text-2xl font-black text-red-600">
+              <h3 className="text-sm sm:text-base font-black text-red-600 leading-tight">
                 {formatMMK(totalExpenses, useMyanmarDigits)}
               </h3>
-              <p className="text-[10px] text-stone-400 mt-1">
-                {filteredExpenses.length} ကြိမ် မှတ်တမ်းတင်ပြီး
+              <p className="text-[9px] text-stone-400 mt-0.5">
+                {filteredExpenses.length} ကြိမ် မှတ်တမ်း
               </p>
             </div>
 
             {/* 5. Net Profit */}
-            <div className="bg-gradient-to-br from-stone-900 to-stone-800 text-white p-4 rounded-2xl shadow-md">
-              <div className="flex items-center justify-between text-stone-300 mb-1">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-amber-300">
+            <div className="bg-stone-900 text-white p-2.5 rounded-xl shadow-2xs col-span-2 sm:col-span-1">
+              <div className="flex items-center justify-between text-stone-300 mb-0.5">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-300">
                   အသားတင်အမြတ်
                 </span>
-                <span className="text-xs font-extrabold px-1.5 py-0.5 rounded bg-emerald-500 text-white">
+                <span className="text-[9px] font-extrabold px-1 py-0.2 rounded bg-emerald-500 text-white">
                   {netMargin}%
                 </span>
               </div>
               <h3
-                className={`text-xl sm:text-2xl font-black ${
+                className={`text-sm sm:text-base font-black leading-tight ${
                   netProfit >= 0 ? 'text-emerald-400' : 'text-red-400'
                 }`}
               >
                 {formatMMK(netProfit, useMyanmarDigits)}
               </h3>
-              <p className="text-[10px] text-stone-400 mt-1">
-                စရိတ်အားလုံးနုတ်ပြီး အသားတင်အမြတ်
+              <p className="text-[9px] text-stone-400 mt-0.5">
+                စရိတ်နုတ်ပြီး အသားတင်
               </p>
             </div>
           </div>
