@@ -105,6 +105,7 @@ interface StoreContextType {
   deleteMultipleProducts: (productIds: string[]) => void;
   clearAllProducts: (password: string) => { success: boolean; message: string };
   adjustStock: (productId: string, delta: number) => void;
+  restoreDefaultProducts: () => Promise<void>;
 
   // Categories Management (All categories can be deleted, added, or managed)
   categories: CategoryItem[];
@@ -1018,6 +1019,14 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
+  const restoreDefaultProducts = async () => {
+    localStorage.removeItem('ei_mon_products_explicitly_cleared');
+    setProducts(INITIAL_PRODUCTS);
+    productsRef.current = INITIAL_PRODUCTS;
+    localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(INITIAL_PRODUCTS));
+    pushProductsToCloud(INITIAL_PRODUCTS);
+  };
+
   // Expense management
   const addExpense = (expenseData: Omit<Expense, 'id'>) => {
     const newExp: Expense = {
@@ -1298,6 +1307,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         deleteMultipleProducts,
         clearAllProducts,
         adjustStock,
+        restoreDefaultProducts,
 
         // Categories Management
         categories,

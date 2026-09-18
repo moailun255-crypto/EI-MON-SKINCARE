@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
-  BrowserMultiFormatReader,
-  BarcodeFormat,
-  DecodeHintType,
-} from '@zxing/library';
+  Html5Qrcode,
+  Html5QrcodeSupportedFormats,
+  Html5QrcodeScannerState,
+} from 'html5-qrcode';
 import {
   Camera,
   X,
@@ -13,13 +13,13 @@ import {
   Zap,
   ZapOff,
   SwitchCamera,
-  ZoomIn,
   Search,
   Plus,
   Check,
   Scan,
   Volume2,
   VolumeX,
+  Upload,
 } from 'lucide-react';
 import { playBarcodeBeep, getSoundMuted, setSoundMuted } from '../../utils/scannerSound';
 import { useStore } from '../../context/StoreContext';
@@ -31,8 +31,9 @@ interface CameraScannerModalProps {
   onClose: () => void;
   onScan?: (code: string) => { success: boolean; message: string; productName?: string };
   title?: string;
-  elementId?: string;
 }
+
+const VIEWPORT_ID = 'pos-camera-scanner-viewport';
 
 export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
   isOpen,
@@ -57,33 +58,27 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
   const [isMutedState, setIsMutedState] = useState<boolean>(getSoundMuted());
   const [isCameraLoading, setIsCameraLoading] = useState<boolean>(true);
   const [isVideoReady, setIsVideoReady] = useState<boolean>(false);
+  const [isFileScanning, setIsFileScanning] = useState<boolean>(false);
 
-  // Keep onScan in a ref so changes to parent callback never trigger camera teardown
-  const onScanRef = useRef(onScan);
-  useEffect(() => {
-    onScanRef.current = onScan;
-  }, [onScan]);
-
-  // Multi-camera and Zoom controls
-  const [availableCameras, setAvailableCameras] = useState<MediaDeviceInfo[]>([]);
+  // Available cameras and active selection
+  const [availableCameras, setAvailableCameras] = useState<{ id: string; label: string }[]>([]);
   const [selectedCameraId, setSelectedCameraId] = useState<string>('');
-  const [currentZoom, setCurrentZoom] = useState<number>(1);
-  const [hasHardwareZoom, setHasHardwareZoom] = useState<boolean>(false);
-  const [focusRingPos, setFocusRingPos] = useState<{ x: number; y: number } | null>(null);
 
   // In-modal quick search & direct add
   const [modalSearch, setModalSearch] = useState('');
   const [justAddedModalId, setJustAddedModalId] = useState<string | null>(null);
 
-  // DOM and Stream Refs
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const mediaStreamRef = useRef<MediaStream | null>(null);
-  const zxingReaderRef = useRef<BrowserMultiFormatReader | null>(null);
-  const animFrameRef = useRef<number | null>(null);
-  const isDetectingRef = useRef<boolean>(false);
+  // Scanner engine refs
+  const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
+  const isMountedRef = useRef<boolean>(false);
   const isCooldownRef = useRef<boolean>(false);
   const lastScannedCodeRef = useRef<string>('');
   const lastScannedTimeRef = useRef<number>(0);
+  const onScanRef = useRef(onScan);
+
+  useEffect(() => {
+    onScanRef.current = onScan;
+  }, [onScan]);
 
   // Filtered products for quick-select inside modal
   const searchResults = React.useMemo(() => {
@@ -101,14 +96,14 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
       .slice(0, 5);
   }, [products, modalSearch]);
 
-  // Handle scanned barcode with instant beep, haptic, and UI feedback
+  // Handle scanned barcode with instant sound, vibration, and cart integration
   const handleScannedCode = useCallback((rawCode: string) => {
     const clean = normalizeBarcode(rawCode);
     if (!clean || clean.length < 3) return;
 
     const now = Date.now();
-    // Debounce: prevent duplicate scan of the EXACT SAME barcode within 900ms
-    if (clean === lastScannedCodeRef.current && now - lastScannedTimeRef.current < 900) {
+    // Debounce: prevent duplicate scan of the EXACT SAME barcode within 700ms
+    if (clean === lastScannedCodeRef.current && now - lastScannedTimeRef.current < 700) {
       return;
     }
 
@@ -120,7 +115,7 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
     // Haptic vibration feedback for mobile devices
     if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
       try {
-        navigator.vibrate(60);
+        navigator.vibrate(70);
       } catch {
         // ignore
       }
@@ -136,9 +131,9 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
         setUnregisteredScannedBarcode(null);
         setTimeout(() => {
           setScanSuccessText(null);
-        }, 1600);
+        }, 1800);
       } else {
-        // Error buzz vibration
+        // Error vibration
         if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
           try {
             navigator.vibrate([80, 50, 80]);
@@ -150,377 +145,287 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
         setScanErrorText(res.message || `[${clean}] ပစ္စည်းစာရင်းထဲ မတွေ့ပါ`);
         // Store unregistered barcode so user can click to create product immediately
         setUnregisteredScannedBarcode(clean);
+        setTimeout(() => {
+          setScanErrorText(null);
+        }, 3000);
       }
     }
 
-    // Short cooldown between scans (400ms) for high-speed continuous cashier scanning
+    // Cooldown window
     setTimeout(() => {
       isCooldownRef.current = false;
     }, 400);
   }, []);
 
-  // Stop all camera streams and decoder loops cleanly
-  const stopCamera = useCallback(() => {
-    isDetectingRef.current = false;
-
-    if (animFrameRef.current !== null) {
-      cancelAnimationFrame(animFrameRef.current);
-      animFrameRef.current = null;
-    }
-
-    if (zxingReaderRef.current) {
+  // Cleanly stop scanner instance
+  const stopScanner = useCallback(async () => {
+    const scanner = html5QrCodeRef.current;
+    if (scanner) {
       try {
-        zxingReaderRef.current.stopContinuousDecode();
-        zxingReaderRef.current.reset();
-      } catch {
-        // ignore
-      }
-      zxingReaderRef.current = null;
-    }
-
-    if (mediaStreamRef.current) {
-      mediaStreamRef.current.getTracks().forEach((track) => {
-        try {
-          track.stop();
-        } catch {
-          // ignore
+        const state = scanner.getState();
+        if (state === Html5QrcodeScannerState.SCANNING || state === Html5QrcodeScannerState.PAUSED) {
+          await scanner.stop();
         }
-      });
-      mediaStreamRef.current = null;
-    }
-
-    if (videoRef.current) {
-      videoRef.current.onloadedmetadata = null;
-      videoRef.current.oncanplay = null;
-      videoRef.current.onplaying = null;
-      videoRef.current.srcObject = null;
+        scanner.clear();
+      } catch (err) {
+        console.warn('Error during scanner cleanup:', err);
+      }
+      html5QrCodeRef.current = null;
     }
     setIsVideoReady(false);
     setIsCameraLoading(false);
   }, []);
 
-  // Enumerate cameras in background
-  const queryCameras = useCallback(async () => {
-    try {
-      if (!navigator?.mediaDevices?.enumerateDevices) return;
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const videoInputs = devices.filter((d) => d.kind === 'videoinput');
-      setAvailableCameras(videoInputs);
-    } catch {
-      // ignore
-    }
-  }, []);
+  // Launch camera scanner with Html5Qrcode
+  const startScanner = useCallback(
+    async (cameraId?: string) => {
+      if (!isMountedRef.current) return;
 
-  // Launch camera smoothly without black screen or device renegotiation freeze
-  const startCamera = useCallback(
-    async (deviceId?: string) => {
-      try {
-        setCameraError(null);
-        setScanSuccessText(null);
-        setScanErrorText(null);
-        setTorchOn(false);
-        setHasTorch(false);
-        setHasHardwareZoom(false);
-        setCurrentZoom(1);
-        setIsCameraLoading(true);
-        setIsVideoReady(false);
-
-        if (!navigator?.mediaDevices?.getUserMedia) {
-          setIsCameraLoading(false);
-          setCameraError(
-            'ဤဘရောက်ဇာတွင် ကင်မရာစနစ် မထောက်ပံ့သေးပါ သို့မဟုတ် HTTPS လုံခြုံရေးလိုင်း လိုအပ်ပါသည်။'
-          );
-          return;
-        }
-
-        stopCamera();
-
-        // 1. Standard 720p HD mobile-safe constraints
-        const constraints: MediaStreamConstraints = {
-          video: deviceId
-            ? { deviceId: { exact: deviceId } }
-            : {
-                facingMode: { ideal: 'environment' },
-                width: { ideal: 1280, max: 1280 },
-                height: { ideal: 720, max: 720 },
-              },
-          audio: false,
-        };
-
-        const stream = await navigator.mediaDevices.getUserMedia(constraints);
-        mediaStreamRef.current = stream;
-
-        const video = videoRef.current;
-        if (!video) {
-          setIsCameraLoading(false);
-          return;
-        }
-
-        video.srcObject = stream;
-        video.setAttribute('playsinline', 'true');
-        video.setAttribute('autoplay', 'true');
-        video.muted = true;
-
-        // Reveal video only when frames are actively rendering (prevents pitch-black flash)
-        const markVideoActive = () => {
-          setIsVideoReady(true);
-          setIsCameraLoading(false);
-        };
-
-        video.onloadeddata = markVideoActive;
-        video.onplaying = markVideoActive;
-
-        try {
-          await video.play();
-        } catch (playErr) {
-          console.warn('Video play interrupted:', playErr);
-        }
-
-        // Check hardware capabilities safely WITHOUT calling applyConstraints (avoids driver renegotiation black flash)
-        const track = stream.getVideoTracks()[0];
-        if (track) {
-          try {
-            const caps = (track.getCapabilities ? track.getCapabilities() : {}) as any;
-            if (caps?.torch) setHasTorch(true);
-            if (caps?.zoom && caps.zoom.max > 1) {
-              setHasHardwareZoom(true);
-            }
-          } catch {
-            // ignore
-          }
-        }
-
-        // Query available camera list asynchronously in background
-        queryCameras().catch(() => {});
-
-        // 2. High-Performance Frame Scanner with 10 FPS Throttling (ZERO UI Lag)
-        isDetectingRef.current = true;
-
-        let nativeDetector: any = null;
-        if ('BarcodeDetector' in window) {
-          try {
-            const BarcodeDetectorClass = (window as unknown as {
-              BarcodeDetector: new (opts: { formats: string[] }) => any;
-            }).BarcodeDetector;
-
-            nativeDetector = new BarcodeDetectorClass({
-              formats: [
-                'ean_13',
-                'ean_8',
-                'upc_a',
-                'upc_e',
-                'code_128',
-                'code_39',
-                'code_93',
-                'qr_code',
-              ],
-            });
-          } catch {
-            nativeDetector = null;
-          }
-        }
-
-        if (nativeDetector) {
-          // Throttled native detection (runs at ~8.5 FPS instead of 60 FPS)
-          // Instant response within 120ms with 90% lower CPU/GPU workload
-          let isProcessingFrame = false;
-          let lastDetectTime = 0;
-          const DETECT_INTERVAL_MS = 120;
-
-          const runNativeFrameDetection = async () => {
-            if (!isDetectingRef.current) return;
-            const curVid = videoRef.current;
-            const now = performance.now();
-
-            if (
-              curVid &&
-              curVid.readyState >= 2 &&
-              curVid.videoWidth > 0 &&
-              !isCooldownRef.current &&
-              !isProcessingFrame &&
-              now - lastDetectTime >= DETECT_INTERVAL_MS
-            ) {
-              lastDetectTime = now;
-              isProcessingFrame = true;
-              try {
-                const barcodes = await nativeDetector.detect(curVid);
-                if (barcodes && barcodes.length > 0 && barcodes[0].rawValue) {
-                  handleScannedCode(barcodes[0].rawValue);
-                }
-              } catch {
-                // silent frame skip
-              } finally {
-                isProcessingFrame = false;
-              }
-            }
-
-            if (isDetectingRef.current) {
-              animFrameRef.current = requestAnimationFrame(runNativeFrameDetection);
-            }
-          };
-
-          animFrameRef.current = requestAnimationFrame(runNativeFrameDetection);
-        } else {
-          // Throttled fallback for browsers without native BarcodeDetector
-          try {
-            const hints = new Map<DecodeHintType, any>();
-            hints.set(DecodeHintType.POSSIBLE_FORMATS, [
-              BarcodeFormat.EAN_13,
-              BarcodeFormat.UPC_A,
-              BarcodeFormat.CODE_128,
-              BarcodeFormat.EAN_8,
-              BarcodeFormat.UPC_E,
-              BarcodeFormat.CODE_39,
-              BarcodeFormat.QR_CODE,
-            ]);
-
-            // Set decode interval to 220ms to prevent CPU freeze on mobile
-            const reader = new BrowserMultiFormatReader(hints, 220);
-            zxingReaderRef.current = reader;
-
-            reader.decodeFromVideoElementContinuously(video, (result) => {
-              if (!isDetectingRef.current) return;
-              if (result && result.getText()) {
-                handleScannedCode(result.getText());
-              }
-            });
-          } catch (e) {
-            console.warn('ZXing reader start failed:', e);
-          }
-        }
-      } catch (err: unknown) {
-        setIsCameraLoading(false);
-        setIsVideoReady(false);
-        const errName = err instanceof Error ? err.name : '';
-        const errMsg = err instanceof Error ? err.message : String(err);
-        const isPermissionDenied =
-          errName === 'NotAllowedError' ||
-          errMsg.includes('Permission denied') ||
-          errMsg.includes('NotAllowedError');
-
-        if (isPermissionDenied) {
-          setCameraError(
-            'ကင်မရာ အသုံးပြုခွင့် (Permission) ပိတ်ထားပါသည်။ ဘရောက်ဇာ Settings တွင် ကင်မရာဖွင့်ခွင့် ပေးပါ သို့မဟုတ် အောက်တွင် ဘားကုဒ် ရိုက်ထည့်နိုင်ပါသည်။'
-          );
-        } else if (errName === 'NotFoundError' || errMsg.includes('NotFoundError')) {
-          setCameraError('စက်တွင် ကင်မရာ တပ်ဆင်ထားခြင်း မတွေ့ရှိပါ။');
-        } else {
-          setCameraError('ကင်မရာ ဖွင့်၍ မရသေးပါ။ ဘားကုဒ်ကို အောက်တွင် တိုက်ရိုက် ရိုက်ထည့်နိုင်ပါသည်။');
-        }
+      const viewportEl = document.getElementById(VIEWPORT_ID);
+      if (!viewportEl) {
+        console.warn('Scanner viewport element not ready');
+        return;
       }
-    },
-    [handleScannedCode, stopCamera, queryCameras]
-  );
 
-  // Switch Camera Lens (e.g. tablet wide angle vs main rear lens)
-  const handleSwitchCamera = async () => {
-    if (availableCameras.length <= 1) return;
-    const currentIndex = availableCameras.findIndex((c) => c.deviceId === selectedCameraId);
-    const nextIndex = (currentIndex + 1) % availableCameras.length;
-    const nextCamera = availableCameras[nextIndex];
-    setSelectedCameraId(nextCamera.deviceId);
-    await startCamera(nextCamera.deviceId);
-  };
+      await stopScanner();
+      if (!isMountedRef.current) return;
 
-  // Toggle Torch / Flashlight
-  const toggleTorch = async () => {
-    if (!hasTorch || !mediaStreamRef.current) return;
-    const nextTorch = !torchOn;
-    const track = mediaStreamRef.current.getVideoTracks()[0];
-    if (track) {
+      setIsCameraLoading(true);
+      setCameraError(null);
+      setIsVideoReady(false);
+
       try {
-        await track.applyConstraints({
-          advanced: [{ torch: nextTorch } as any],
+        // All major 1D retail barcode formats + QR Code
+        const formatsToSupport = [
+          Html5QrcodeSupportedFormats.EAN_13,
+          Html5QrcodeSupportedFormats.CODE_128,
+          Html5QrcodeSupportedFormats.UPC_A,
+          Html5QrcodeSupportedFormats.UPC_E,
+          Html5QrcodeSupportedFormats.EAN_8,
+          Html5QrcodeSupportedFormats.CODE_39,
+          Html5QrcodeSupportedFormats.CODE_93,
+          Html5QrcodeSupportedFormats.ITF,
+          Html5QrcodeSupportedFormats.QR_CODE,
+        ];
+
+        const scanner = new Html5Qrcode(VIEWPORT_ID, {
+          formatsToSupport,
+          verbose: false,
+          experimentalFeatures: {
+            useBarCodeDetectorIfSupported: true,
+          },
         });
-        setTorchOn(nextTorch);
-      } catch (err) {
-        console.warn('Torch toggle failed:', err);
-      }
-    }
-  };
+        html5QrCodeRef.current = scanner;
 
-  // Set Zoom Level (1x, 1.5x, 2x) - Seamless Hardware Sensor Zoom & CSS Magnification
-  const handleSetZoom = async (zoomVal: number) => {
-    setCurrentZoom(zoomVal);
-
-    // Apply hardware camera zoom if supported
-    if (hasHardwareZoom && mediaStreamRef.current) {
-      const track = mediaStreamRef.current.getVideoTracks()[0];
-      if (track) {
+        // Query available camera list
         try {
-          await track.applyConstraints({
-            advanced: [{ zoom: zoomVal } as any],
-          });
+          const devices = await Html5Qrcode.getCameras();
+          if (isMountedRef.current && devices && devices.length > 0) {
+            setAvailableCameras(devices);
+          }
         } catch {
-          // fallback to CSS transform
+          // ignore device enumeration failure
         }
-      }
-    }
-  };
 
-  // Tap-to-Focus interaction: Touching anywhere on the camera focuses on that area
-  const handleTapToFocus = async (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+        const cameraConfig = cameraId
+          ? { deviceId: { exact: cameraId } }
+          : { facingMode: 'environment' };
 
-    setFocusRingPos({ x, y });
-    setTimeout(() => setFocusRingPos(null), 900);
+        // 15 FPS scanning with wide 1D barcode scanning window
+        await scanner.start(
+          cameraConfig,
+          {
+            fps: 15,
+            qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
+              const w = Math.min(Math.floor(viewfinderWidth * 0.92), 420);
+              const h = Math.min(Math.floor(viewfinderHeight * 0.6), 260);
+              return { width: Math.max(w, 220), height: Math.max(h, 120) };
+            },
+            aspectRatio: undefined,
+            disableFlip: false,
+          },
+          (decodedText) => {
+            handleScannedCode(decodedText);
+          },
+          () => {
+            // normal frame miss, no-op
+          }
+        );
 
-    // Trigger autofocus re-lock on hardware
-    if (mediaStreamRef.current) {
-      const track = mediaStreamRef.current.getVideoTracks()[0];
-      if (track && 'applyConstraints' in track) {
+        if (!isMountedRef.current) {
+          await scanner.stop();
+          scanner.clear();
+          html5QrCodeRef.current = null;
+          return;
+        }
+
+        setIsCameraLoading(false);
+        setIsVideoReady(true);
+
+        // Check if flashlight/torch is supported
         try {
-          const normX = x / rect.width;
-          const normY = y / rect.height;
-          await track.applyConstraints({
-            advanced: [
-              { pointsOfInterest: [{ x: normX, y: normY }] } as any,
-              { focusMode: 'continuous' } as any,
-            ],
-          });
+          const caps = scanner.getRunningTrackCapabilities();
+          if (caps && (caps as any).torch) {
+            setHasTorch(true);
+          }
         } catch {
           // ignore
         }
+      } catch (err: unknown) {
+        if (!isMountedRef.current) return;
+        setIsCameraLoading(false);
+        setIsVideoReady(false);
+
+        const errMsg = err instanceof Error ? err.message : String(err);
+        if (errMsg.includes('NotAllowedError') || errMsg.includes('Permission denied')) {
+          setCameraError('ကင်မရာ အသုံးပြုခွင့် (Permission) ပိတ်ထားပါသည်။ ဘရောက်ဇာ ဆက်တင်တွင် Camera ဖွင့်ပေးပါ။');
+        } else if (errMsg.includes('NotFoundError') || errMsg.includes('DevicesNotFoundError')) {
+          setCameraError('ကင်မရာ ချိတ်ဆက်ထားခြင်း မရှိပါ သို့မဟုတ် ကင်မရာ ရှာမတွေ့ပါ။');
+        } else {
+          setCameraError(`ကင်မရာ ဖွင့်မရပါ: ${errMsg}`);
+        }
       }
+    },
+    [handleScannedCode, stopScanner]
+  );
+
+  // Switch between front/back/external cameras
+  const handleSwitchCamera = useCallback(async () => {
+    if (availableCameras.length <= 1) return;
+    const currentIndex = availableCameras.findIndex((c) => c.id === selectedCameraId);
+    const nextIndex = (currentIndex + 1) % availableCameras.length;
+    const nextCamera = availableCameras[nextIndex];
+    setSelectedCameraId(nextCamera.id);
+    await startScanner(nextCamera.id);
+  }, [availableCameras, selectedCameraId, startScanner]);
+
+  // Flashlight toggle
+  const toggleTorch = useCallback(async () => {
+    const scanner = html5QrCodeRef.current;
+    if (!scanner || !hasTorch) return;
+    try {
+      const nextTorch = !torchOn;
+      await scanner.applyVideoConstraints({
+        advanced: [{ torch: nextTorch } as any],
+      });
+      setTorchOn(nextTorch);
+    } catch (e) {
+      console.warn('Torch toggle failed:', e);
     }
-  };
+  }, [hasTorch, torchOn]);
 
   // Sound Mute Toggle
-  const toggleSound = () => {
+  const toggleSound = useCallback(() => {
     const next = !isMutedState;
     setIsMutedState(next);
     setSoundMuted(next);
-  };
+  }, [isMutedState]);
 
-  // Lifecycle: open/close camera
+  // Scan from uploaded image file
+  const handleFileUpload = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      setIsFileScanning(true);
+      try {
+        let scanner = html5QrCodeRef.current;
+        let createdTemp = false;
+
+        if (!scanner) {
+          scanner = new Html5Qrcode(VIEWPORT_ID, {
+            formatsToSupport: [
+              Html5QrcodeSupportedFormats.EAN_13,
+              Html5QrcodeSupportedFormats.CODE_128,
+              Html5QrcodeSupportedFormats.UPC_A,
+              Html5QrcodeSupportedFormats.UPC_E,
+              Html5QrcodeSupportedFormats.EAN_8,
+              Html5QrcodeSupportedFormats.CODE_39,
+              Html5QrcodeSupportedFormats.QR_CODE,
+            ],
+            verbose: false,
+          });
+          createdTemp = true;
+        }
+
+        const decoded = await scanner.scanFile(file, false);
+        if (decoded) {
+          handleScannedCode(decoded);
+        }
+
+        if (createdTemp) {
+          scanner.clear();
+        }
+      } catch {
+        playBarcodeBeep('error');
+        setScanErrorText('ပုံဖိုင်ထဲတွင် ဘားကုဒ် ရှာမတွေ့ပါ (ရှင်းလင်းသော ဓာတ်ပုံရွေးပါ)');
+        setTimeout(() => setScanErrorText(null), 3000);
+      } finally {
+        setIsFileScanning(false);
+        e.target.value = '';
+      }
+    },
+    [handleScannedCode]
+  );
+
+  // Modal open/close lifecycle
   useEffect(() => {
     if (isOpen) {
+      isMountedRef.current = true;
       const timer = setTimeout(() => {
-        startCamera();
-      }, 80);
+        startScanner();
+      }, 120);
+
       return () => {
+        isMountedRef.current = false;
         clearTimeout(timer);
-        stopCamera();
+        stopScanner();
       };
     } else {
-      stopCamera();
+      isMountedRef.current = false;
+      stopScanner();
       setScanSuccessText(null);
       setScanErrorText(null);
       setCameraError(null);
       setTorchOn(false);
       setHasTorch(false);
-      setHasHardwareZoom(false);
       setUnregisteredScannedBarcode(null);
       setModalSearch('');
     }
-  }, [isOpen, startCamera, stopCamera]);
+  }, [isOpen, startScanner, stopScanner]);
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 bg-stone-950/85 backdrop-blur-xs">
+      {/* CSS Override to integrate Html5Qrcode cleanly into modern dark POS theme */}
+      <style>{`
+        #${VIEWPORT_ID} {
+          width: 100% !important;
+          height: 100% !important;
+          min-height: 290px !important;
+          border: none !important;
+          position: relative !important;
+          background: #0c0a09 !important;
+          overflow: hidden !important;
+        }
+        #${VIEWPORT_ID} video {
+          width: 100% !important;
+          height: 100% !important;
+          object-fit: cover !important;
+          border-radius: 0.75rem !important;
+        }
+        #${VIEWPORT_ID} canvas {
+          display: none !important;
+        }
+        #${VIEWPORT_ID} img {
+          display: none !important;
+        }
+        #${VIEWPORT_ID} div[id$="shaded_region"] {
+          border-color: rgba(0, 0, 0, 0.45) !important;
+        }
+      `}</style>
+
       {/* Modal Dialog */}
       <div className="bg-stone-900 w-full h-full sm:h-auto sm:max-w-md sm:rounded-3xl shadow-2xl border-0 sm:border sm:border-stone-700 overflow-hidden flex flex-col animate-fadeIn text-white">
         
@@ -532,16 +437,31 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
             </div>
             <div>
               <h3 className="text-sm font-bold text-white tracking-tight leading-none">
-                {title || 'ဘားကုဒ် အမြန်စကင်ဖတ်ရန်'}
+                {title || 'ဘားကုဒ် အမြန်စကင်ဖတ်ရန် (Barcode Scanner)'}
               </h3>
               <p className="text-[10px] text-emerald-400 font-medium mt-0.5 flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-                <span>ဘားကုဒ် သို့မဟုတ် QR ကုဒ်အား ကင်မရာရှေ့တွင် ပြပါ</span>
+                <span>1D ဘားကုဒ် / QR ကုဒ် အလိုအလျောက် ဖတ်ရှုနေပါသည်</span>
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-1.5">
+            {/* Image File Upload Scanner Button */}
+            <label
+              className="p-1.5 rounded-lg text-stone-300 hover:text-white hover:bg-stone-800 transition-colors cursor-pointer"
+              title="ပုံဖိုင်ဖြင့် ဘားကုဒ်ဖတ်မည် (Upload Barcode Image)"
+            >
+              <Upload className="w-4 h-4" />
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileUpload}
+                className="hidden"
+                disabled={isFileScanning}
+              />
+            </label>
+
             {/* Sound Mute/Unmute */}
             <button
               type="button"
@@ -595,12 +515,12 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
         </div>
 
         {/* Camera Viewport Area */}
-        <div
-          onClick={handleTapToFocus}
-          className="relative flex-1 sm:flex-none sm:aspect-square bg-stone-900 flex items-center justify-center overflow-hidden min-h-[320px] sm:min-h-[350px] cursor-crosshair select-none"
-        >
-          {/* Smooth Warm Illuminated Placeholder (Zero Black Screen) */}
-          {!isVideoReady && !cameraError && (
+        <div className="relative flex-1 sm:flex-none sm:aspect-square bg-stone-900 flex items-center justify-center overflow-hidden min-h-[320px] sm:min-h-[350px] select-none">
+          {/* Html5Qrcode Mounted Region */}
+          <div id={VIEWPORT_ID} className="w-full h-full" />
+
+          {/* Warm Illuminated Placeholder while camera starts */}
+          {isCameraLoading && !cameraError && (
             <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-radial from-stone-800 to-stone-950 text-center p-6 select-none">
               <div className="relative mb-3 flex items-center justify-center">
                 <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 animate-pulse">
@@ -611,60 +531,14 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
               <p className="text-xs font-bold text-stone-100 tracking-wide">ကင်မရာ အသင့်ပြင်နေပါသည်...</p>
               <p className="text-[10px] text-emerald-400/80 mt-1 font-medium flex items-center gap-1.5 justify-center">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-                အလင်းနှင့် ဘားကုဒ်ကို ချိန်ညှိနေသည်
+                1D ဘားကုဒ် ကြည်လင်ပြတ်သားစွာ ဖတ်ရှုရန် ပြင်ဆင်နေသည်
               </p>
             </div>
           )}
 
-          {/* Direct Hardware-Accelerated Video Stream Element with Smooth Fade-in */}
-          <video
-            ref={videoRef}
-            playsInline
-            autoPlay
-            muted
-            style={{
-              transform: currentZoom > 1 ? `scale(${currentZoom})` : 'none',
-              transformOrigin: 'center center',
-              transition: 'transform 0.2s ease-out',
-            }}
-            className={`w-full h-full object-contain pointer-events-none transition-opacity duration-300 ${
-              isVideoReady ? 'opacity-100' : 'opacity-0'
-            }`}
-          />
-
-          {/* Tap-to-Focus Animated Target Ring */}
-          {focusRingPos && (
-            <div
-              style={{ left: focusRingPos.x - 24, top: focusRingPos.y - 24 }}
-              className="absolute w-12 h-12 rounded-full border-2 border-emerald-400 pointer-events-none animate-ping z-30"
-            />
-          )}
-
-          {/* Zoom Control Bar (1x, 1.5x, 2x) */}
-          <div className="absolute top-3 left-3 z-20 flex items-center gap-1 bg-black/75 backdrop-blur-md p-1 rounded-xl border border-white/15 shadow-lg">
-            <ZoomIn className="w-3.5 h-3.5 text-stone-300 ml-1" />
-            {[1, 1.5, 2].map((z) => (
-              <button
-                key={z}
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleSetZoom(z);
-                }}
-                className={`px-2 py-0.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
-                  currentZoom === z
-                    ? 'bg-emerald-600 text-white shadow-xs'
-                    : 'text-stone-300 hover:text-white hover:bg-white/20'
-                }`}
-              >
-                {z}x
-              </button>
-            ))}
-          </div>
-
-          {/* Full-View Laser Reticle Frame (No strict clipping - visual alignment helper only) */}
-          {!cameraError && (
-            <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center p-3">
+          {/* High-Precision Laser Reticle Frame */}
+          {isVideoReady && !cameraError && (
+            <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center p-4 z-20">
               <div
                 className={`relative transition-all duration-200 rounded-2xl w-[90%] max-w-[340px] h-44 sm:h-48 ${
                   scanSuccessText
@@ -712,7 +586,7 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
                   }`}
                 />
 
-                {/* High-Tech Laser Beam Scanning Line */}
+                {/* Animated Horizontal Laser Scan Line */}
                 <div
                   className={`absolute inset-x-2 top-1/2 -translate-y-1/2 h-0.5 rounded-full ${
                     scanSuccessText
@@ -724,7 +598,7 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
                 />
               </div>
 
-              {/* Instant Status Toast / Instructions */}
+              {/* Instant Status Toast / Scanning Prompt */}
               {scanSuccessText ? (
                 <div className="mt-3 px-4 py-1.5 rounded-full bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-lg animate-bounce">
                   <CheckCircle className="w-4 h-4 shrink-0" />
@@ -739,10 +613,10 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
                 <div className="mt-3 text-center pointer-events-auto space-y-1">
                   <div className="px-3.5 py-1 rounded-full bg-black/80 text-stone-200 text-[11px] font-medium backdrop-blur-md shadow-md inline-flex items-center gap-1.5 border border-white/10">
                     <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                    <span>မျက်နှာပြင်တစ်ခုလုံး အလိုအလျောက် ဖတ်ရှုနေပါသည်</span>
+                    <span>ဘားကုဒ်အား ကင်မရာ အလယ်တည့်တည့်တွင် ပြပါ</span>
                   </div>
                   <p className="text-[10px] text-stone-400">
-                    ဘားကုဒ်အား ကင်မရာရှေ့တွင် တည့်တည့်ပြပါ • မျက်နှာပြင်ကိုနှိပ်၍ Focus ချိန်နိုင်ပါသည်
+                    EAN-13, UPC, Code 128, QR အားလုံး ဖတ်ရှုနိုင်ပါသည်
                   </p>
                 </div>
               )}
@@ -763,7 +637,7 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
               </p>
               <button
                 type="button"
-                onClick={() => startCamera(selectedCameraId || undefined)}
+                onClick={() => startScanner(selectedCameraId || undefined)}
                 className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 mx-auto transition-colors cursor-pointer shadow-md"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
@@ -789,7 +663,7 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
               type="button"
               onClick={() => {
                 setPendingBarcodeForAdd(unregisteredScannedBarcode);
-                setActiveTab('add_product');
+                setActiveTab('add-product');
                 onClose();
               }}
               className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-1 shrink-0 cursor-pointer"

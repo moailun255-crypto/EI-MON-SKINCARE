@@ -46,6 +46,9 @@ export const POSPage: React.FC<POSPageProps> = ({
     cartItemCount,
     cartTotal,
     categories,
+    setActiveTab,
+    setPendingBarcodeForAdd,
+    restoreDefaultProducts,
   } = useStore();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -76,6 +79,7 @@ export const POSPage: React.FC<POSPageProps> = ({
   const [scanAlert, setScanAlert] = useState<{
     type: 'success' | 'error';
     message: string;
+    unregisteredBarcode?: string;
   } | null>(null);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -152,8 +156,12 @@ export const POSPage: React.FC<POSPageProps> = ({
           }
         }
         const failMsg = `[${cleanCode}] ဤဘားကုဒ်ဖြင့် ပစ္စည်းစာရင်းထဲ မတွေ့ပါ (Barcode Not Found)`;
-        setScanAlert({ type: 'error', message: failMsg });
-        setTimeout(() => setScanAlert(null), 3500);
+        setScanAlert({
+          type: 'error',
+          message: failMsg,
+          unregisteredBarcode: cleanCode,
+        });
+        setTimeout(() => setScanAlert(null), 6000);
         return { success: false, message: failMsg };
       }
 
@@ -223,15 +231,18 @@ export const POSPage: React.FC<POSPageProps> = ({
       const elapsed = now - lastKeyTime;
       lastKeyTime = now;
 
-      if (elapsed > 120) {
+      // Allow 400ms interval for Bluetooth or wireless scanner gun latency
+      if (elapsed > 400) {
         buffer = '';
       }
 
-      if (e.key === 'Enter') {
-        if (buffer.length >= 3) {
+      if (e.key === 'Enter' || e.key === 'Tab') {
+        const candidate = buffer.trim().length >= 3 ? buffer.trim() : (searchInputRef.current?.value || '').trim();
+        if (candidate.length >= 3) {
           e.preventDefault();
-          executeBarcodeScan(buffer);
+          executeBarcodeScan(candidate);
           buffer = '';
+          setSearchQuery('');
           if (searchInputRef.current) {
             searchInputRef.current.value = '';
           }
@@ -270,9 +281,10 @@ export const POSPage: React.FC<POSPageProps> = ({
       // If single item left from search, add directly on Enter
       handleProductClick(filteredProducts[0]);
       setSearchQuery('');
-    } else if (filteredProducts.length === 0) {
-      // Not found anywhere
-      executeBarcodeScan(query);
+    } else {
+      // Direct barcode scan attempt (provides immediate clear toast and 1-click Add Product option)
+      executeBarcodeScan(normalizedQuery || query);
+      setSearchQuery('');
     }
   };
 
@@ -381,13 +393,29 @@ export const POSPage: React.FC<POSPageProps> = ({
             )}
             <span className="truncate">{scanAlert.message}</span>
           </div>
-          <button
-            type="button"
-            onClick={() => setScanAlert(null)}
-            className="p-1 rounded-lg hover:bg-black/10 text-stone-600 cursor-pointer shrink-0"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-1.5 shrink-0">
+            {scanAlert.unregisteredBarcode && (
+              <button
+                type="button"
+                onClick={() => {
+                  setPendingBarcodeForAdd(scanAlert.unregisteredBarcode!);
+                  setActiveTab('add-product');
+                  setScanAlert(null);
+                }}
+                className="px-2.5 py-1 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold flex items-center gap-1 cursor-pointer shrink-0 shadow-xs"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>ပစ္စည်းအသစ်ထည့်မည်</span>
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setScanAlert(null)}
+              className="p-1 rounded-lg hover:bg-black/10 text-stone-600 cursor-pointer shrink-0"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       )}
 
@@ -646,7 +674,7 @@ export const POSPage: React.FC<POSPageProps> = ({
             {/* Compact Scan Alert Banner */}
             {scanAlert && (
               <div
-                className={`px-2.5 py-1 rounded-xl text-xs font-bold flex items-center justify-between gap-2 border animate-fadeIn shrink-0 ${
+                className={`px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center justify-between gap-2 border animate-fadeIn shrink-0 ${
                   scanAlert.type === 'success'
                     ? 'bg-emerald-50 text-emerald-900 border-emerald-200'
                     : 'bg-red-50 text-red-900 border-red-200'
@@ -660,13 +688,29 @@ export const POSPage: React.FC<POSPageProps> = ({
                   )}
                   <span className="truncate">{scanAlert.message}</span>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setScanAlert(null)}
-                  className="text-stone-400 hover:text-stone-700 p-0.5 cursor-pointer"
-                >
-                  <X className="w-3 h-3" />
-                </button>
+                <div className="flex items-center gap-1 shrink-0">
+                  {scanAlert.unregisteredBarcode && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPendingBarcodeForAdd(scanAlert.unregisteredBarcode!);
+                        setActiveTab('add-product');
+                        setScanAlert(null);
+                      }}
+                      className="px-2 py-0.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-[11px] font-bold flex items-center gap-1 cursor-pointer shrink-0 shadow-2xs"
+                    >
+                      <Plus className="w-3 h-3" />
+                      <span>ပစ္စည်းအသစ်ထည့်မည်</span>
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setScanAlert(null)}
+                    className="text-stone-400 hover:text-stone-700 p-0.5 cursor-pointer"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
               </div>
             )}
 
@@ -683,14 +727,40 @@ export const POSPage: React.FC<POSPageProps> = ({
               <div className="flex-1 min-h-0 overflow-y-auto pos-scrollbar overscroll-contain p-2 sm:p-2.5">
                 <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
                   {filteredProducts.length === 0 ? (
-                    <div className="col-span-full py-10 text-center p-4">
-                      <Sparkles className="w-7 h-7 text-rose-300 mx-auto mb-1.5" />
-                      <p className="font-bold text-stone-700 text-xs sm:text-sm">
-                        ရှာဖွေမှုနှင့် ကိုက်ညီသော ပစ္စည်းမတွေ့ပါ
-                      </p>
-                      <p className="text-[11px] text-stone-400 mt-0.5">
-                        အခြား အမည် သို့မဟုတ် ဘားကုဒ်ဖြင့် ရှာကြည့်ပါ
-                      </p>
+                    <div className="col-span-full py-10 text-center p-4 space-y-3">
+                      <Sparkles className="w-7 h-7 text-rose-300 mx-auto" />
+                      <div>
+                        <p className="font-bold text-stone-700 text-xs sm:text-sm">
+                          {products.length === 0
+                            ? 'ဆိုင်တွင် ကုန်ပစ္စည်း မရှိသေးပါ (No Products In Store)'
+                            : 'ရှာဖွေမှုနှင့် ကိုက်ညီသော ပစ္စည်းမတွေ့ပါ'}
+                        </p>
+                        <p className="text-[11px] text-stone-400 mt-0.5">
+                          {products.length === 0
+                            ? 'မူလ နမူနာ အလှကုန်ပစ္စည်းများ ပြန်လည်ရယူနိုင်ပါသည်'
+                            : 'အခြား အမည် သို့မဟုတ် ဘားကုဒ်ဖြင့် ရှာကြည့်ပါ'}
+                        </p>
+                      </div>
+                      {products.length === 0 && (
+                        <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+                          <button
+                            type="button"
+                            onClick={() => restoreDefaultProducts()}
+                            className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+                          >
+                            <Boxes className="w-3.5 h-3.5" />
+                            <span>မူလ နမူနာပစ္စည်းများ ပြန်ယူမည်</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setActiveTab('add-product')}
+                            className="px-3 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-800 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                            <span>ပစ္စည်းအသစ် ထည့်မည်</span>
+                          </button>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     filteredProducts.map((product) => {
